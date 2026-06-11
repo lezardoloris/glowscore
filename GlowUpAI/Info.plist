@@ -1,0 +1,25 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE plist PUBLIC "-//Apple//DTD PLIST 1.0//EN" "http://www.apple.com/DTDs/PropertyList-1.0.dtd">
+<plist version="1.0">
+<dict>
+	<key>NSCameraUsageDescription</key>
+	<string>GlowUp AI needs camera access to take a selfie for your transformation.</string>
+	<key>NSPhotoLibraryUsageDescription</key>
+	<string>GlowUp AI needs access to your photos to select a selfie for transformation.</string>
+	<key>NSPhotoLibraryAddUsageDescription</key>
+	<string>GlowUp AI needs permission to save your transformed photos to your camera roll.</string>
+	<key>UIUserInterfaceStyle</key>
+	<string>Dark</string>
+	<key>REVENUECAT_API_KEY</key>
+	<string>$(REVENUECAT_API_KEY)</string>
+	<key>WORKER_BASE_URL</key>
+	<string>$(WORKER_BASE_URL)</string>
+	<key>ITSAppUsesNonExemptEncryption</key>
+	<false/>
+	<key>LSApplicationQueriesSchemes</key>
+	<array>
+		<string>instagram-stories</string>
+		<string>instagram</string>
+	</array>
+</dict>
+</plist>

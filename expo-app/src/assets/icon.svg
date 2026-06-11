@@ -1,0 +1,53 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1024 1024" width="1024" height="1024">
+  <defs>
+    <!-- Background radial gradient -->
+    <radialGradient id="bgGrad" cx="50%" cy="50%" r="70%">
+      <stop offset="0%" stop-color="#1a1a2e"/>
+      <stop offset="100%" stop-color="#0a0a0a"/>
+    </radialGradient>
+    <!-- Sparkle pink-purple gradient -->
+    <linearGradient id="sparkleGrad" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" stop-color="#FF2D87"/>
+      <stop offset="50%" stop-color="#D946EF"/>
+      <stop offset="100%" stop-color="#A855F7"/>
+    </linearGradient>
+    <!-- Outer glow -->
+    <radialGradient id="glowGrad" cx="50%" cy="50%" r="50%">
+      <stop offset="0%" stop-color="#D946EF" stop-opacity="0.3"/>
+      <stop offset="60%" stop-color="#D946EF" stop-opacity="0.05"/>
+      <stop offset="100%" stop-color="#D946EF" stop-opacity="0"/>
+    </radialGradient>
+    <!-- Rounded rect clip for app icon shape -->
+    <clipPath id="iconClip">
+      <rect x="0" y="0" width="1024" height="1024" rx="224" ry="224"/>
+    </clipPath>
+  </defs>
+
+  <g clip-path="url(#iconClip)">
+    <!-- Dark background -->
+    <rect width="1024" height="1024" fill="url(#bgGrad)"/>
+
+    <!-- Subtle glow behind sparkle -->
+    <circle cx="512" cy="512" r="400" fill="url(#glowGrad)"/>
+
+    <!-- Main 4-point sparkle/star -->
+    <g transform="translate(512,512)">
+      <!-- Vertical diamond -->
+      <path d="M0,-260 C30,-80 80,-30 0,0 C-80,-30 -30,-80 0,-260Z" fill="url(#sparkleGrad)"/>
+      <path d="M0,260 C-30,80 -80,30 0,0 C80,30 30,80 0,260Z" fill="url(#sparkleGrad)"/>
+      <!-- Horizontal diamond -->
+      <path d="M-260,0 C-80,-30 -30,-80 0,0 C-30,80 -80,30 -260,0Z" fill="url(#sparkleGrad)"/>
+      <path d="M260,0 C80,30 30,80 0,0 C30,-80 80,-30 260,0Z" fill="url(#sparkleGrad)"/>
+
+      <!-- Small accent sparkles -->
+      <circle cx="-160" cy="-160" r="12" fill="#FF2D87" opacity="0.9"/>
+      <circle cx="170" cy="-140" r="8" fill="#D946EF" opacity="0.8"/>
+      <circle cx="140" cy="170" r="10" fill="#A855F7" opacity="0.7"/>
+      <circle cx="-150" cy="150" r="6" fill="#FF2D87" opacity="0.6"/>
+
+      <!-- Center bright dot -->
+      <circle cx="0" cy="0" r="28" fill="white" opacity="0.95"/>
+      <circle cx="0" cy="0" r="16" fill="white"/>
+    </g>
+  </g>
+</svg>

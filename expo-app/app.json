@@ -1,0 +1,64 @@
+{
+  "expo": {
+    "name": "GlowUp AI",
+    "owner": "lezardoloris1324s-organization",
+    "slug": "glowup-ai",
+    "version": "1.0.0",
+    "orientation": "portrait",
+    "icon": "./assets/icon.png",
+    "userInterfaceStyle": "light",
+    "scheme": "glowupai",
+    "splash": {
+      "image": "./assets/splash.png",
+      "resizeMode": "contain",
+      "backgroundColor": "#F9E0E8"
+    },
+    "ios": {
+      "supportsTablet": false,
+      "bundleIdentifier": "com.glowupai.app",
+      "buildNumber": "1",
+      "infoPlist": {
+        "NSCameraUsageDescription": "GlowUp AI needs camera access to take a selfie for your transformation.",
+        "NSPhotoLibraryUsageDescription": "GlowUp AI needs access to your photos to select a selfie.",
+        "NSPhotoLibraryAddUsageDescription": "GlowUp AI needs permission to save your transformed photos.",
+        "LSApplicationQueriesSchemes": [
+          "instagram-stories",
+          "instagram"
+        ],
+        "ITSAppUsesNonExemptEncryption": false
+      }
+    },
+    "android": {
+      "adaptiveIcon": {
+        "foregroundImage": "./assets/adaptive-icon.png",
+        "backgroundColor": "#F9E0E8"
+      },
+      "package": "com.glowupai.app",
+      "versionCode": 1,
+      "permissions": [
+        "android.permission.CAMERA"
+      ]
+    },
+    "plugins": [
+      "expo-router",
+      "expo-camera",
+      "expo-image-picker",
+      "expo-media-library",
+      "expo-notifications",
+      "expo-asset",
+      "expo-font",
+      [
+        "react-native-vision-camera",
+        {
+          "cameraPermissionText": "GlowScore needs camera access to scan your face for your Facial Harmony analysis.",
+          "enableMicrophonePermission": false
+        }
+      ]
+    ],
+    "extra": {
+      "eas": {
+        "projectId": "6b06dbe4-3470-42db-9542-e748059be140"
+      }
+    }
+  }
+}

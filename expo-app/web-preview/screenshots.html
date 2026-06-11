@@ -1,0 +1,493 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>GlowUp AI — App Store Screenshots</title>
+  <style>
+    * { margin: 0; padding: 0; box-sizing: border-box; }
+
+    body {
+      background: #0a0a0a;
+      color: #fff;
+      font-family: -apple-system, BlinkMacSystemFont, 'SF Pro Display', 'Segoe UI', Roboto, sans-serif;
+      min-height: 100vh;
+      overflow-x: hidden;
+    }
+
+    .header {
+      text-align: center;
+      padding: 60px 20px 40px;
+    }
+
+    .header h1 {
+      font-size: 42px;
+      font-weight: 800;
+      background: linear-gradient(135deg, #FF2D87, #D946EF, #A855F7);
+      -webkit-background-clip: text;
+      -webkit-text-fill-color: transparent;
+      background-clip: text;
+      margin-bottom: 12px;
+    }
+
+    .header p {
+      font-size: 18px;
+      color: #888;
+      max-width: 600px;
+      margin: 0 auto;
+    }
+
+    .screenshots-grid {
+      display: grid;
+      grid-template-columns: repeat(3, 1fr);
+      gap: 40px;
+      max-width: 1400px;
+      margin: 0 auto;
+      padding: 40px 40px 80px;
+    }
+
+    @media (max-width: 1200px) {
+      .screenshots-grid { grid-template-columns: repeat(2, 1fr); }
+    }
+    @media (max-width: 700px) {
+      .screenshots-grid { grid-template-columns: 1fr; }
+    }
+
+    .screenshot-card {
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      gap: 20px;
+    }
+
+    .screenshot-label {
+      text-align: center;
+    }
+
+    .screenshot-label h2 {
+      font-size: 20px;
+      font-weight: 700;
+      color: #fff;
+      margin-bottom: 4px;
+    }
+
+    .screenshot-label p {
+      font-size: 14px;
+      color: #999;
+    }
+
+    .phone-frame {
+      position: relative;
+      width: 280px;
+      height: 606px; /* 1290:2796 ratio scaled */
+      border-radius: 36px;
+      border: 4px solid #333;
+      overflow: hidden;
+      background: #111;
+      box-shadow: 0 20px 60px rgba(0,0,0,0.6), 0 0 80px rgba(217,70,239,0.08);
+    }
+
+    .phone-notch {
+      position: absolute;
+      top: 0; left: 50%;
+      transform: translateX(-50%);
+      width: 120px;
+      height: 30px;
+      background: #000;
+      border-radius: 0 0 18px 18px;
+      z-index: 10;
+    }
+
+    .phone-screen {
+      width: 100%;
+      height: 100%;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      padding: 50px 24px 40px;
+      text-align: center;
+      position: relative;
+      overflow: hidden;
+    }
+
+    /* Gradient backgrounds per screen */
+    .screen-1 .phone-screen {
+      background: linear-gradient(180deg, #1a0a2e 0%, #0d0d1a 50%, #0a0a0a 100%);
+    }
+    .screen-2 .phone-screen {
+      background: linear-gradient(180deg, #0a1a2e 0%, #0a0a1a 100%);
+    }
+    .screen-3 .phone-screen {
+      background: linear-gradient(180deg, #2e0a1a 0%, #1a0a0a 100%);
+    }
+    .screen-4 .phone-screen {
+      background: linear-gradient(180deg, #0a2e1a 0%, #0a0a0a 100%);
+    }
+    .screen-5 .phone-screen {
+      background: linear-gradient(180deg, #2e1a0a 0%, #0a0a0a 100%);
+    }
+    .screen-6 .phone-screen {
+      background: linear-gradient(180deg, #1a0a2e 0%, #0a0a2e 50%, #0a0a0a 100%);
+    }
+
+    .screen-icon {
+      font-size: 64px;
+      margin-bottom: 16px;
+    }
+
+    .screen-title {
+      font-size: 22px;
+      font-weight: 800;
+      margin-bottom: 8px;
+      background: linear-gradient(135deg, #FF2D87, #D946EF);
+      -webkit-background-clip: text;
+      -webkit-text-fill-color: transparent;
+      background-clip: text;
+    }
+
+    .screen-subtitle {
+      font-size: 13px;
+      color: #aaa;
+      line-height: 1.5;
+      max-width: 200px;
+    }
+
+    /* Screen-specific elements */
+    .style-grid {
+      display: grid;
+      grid-template-columns: repeat(2, 1fr);
+      gap: 8px;
+      margin-top: 16px;
+      width: 100%;
+    }
+
+    .style-chip {
+      background: rgba(255,255,255,0.08);
+      border: 1px solid rgba(255,255,255,0.12);
+      border-radius: 12px;
+      padding: 10px 6px;
+      font-size: 11px;
+      color: #ccc;
+      text-align: center;
+    }
+
+    .style-chip.new-badge::after {
+      content: 'NEW';
+      display: inline-block;
+      font-size: 8px;
+      background: linear-gradient(135deg, #FF2D87, #D946EF);
+      color: #fff;
+      padding: 2px 5px;
+      border-radius: 4px;
+      margin-left: 4px;
+      font-weight: 700;
+    }
+
+    .progress-ring {
+      width: 80px;
+      height: 80px;
+      border-radius: 50%;
+      border: 4px solid rgba(255,255,255,0.1);
+      border-top-color: #D946EF;
+      margin: 16px auto;
+      animation: spin 1.5s linear infinite;
+    }
+
+    @keyframes spin {
+      to { transform: rotate(360deg); }
+    }
+
+    .before-after {
+      display: flex;
+      gap: 8px;
+      margin-top: 16px;
+      width: 100%;
+    }
+
+    .ba-box {
+      flex: 1;
+      height: 140px;
+      border-radius: 12px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-size: 12px;
+      font-weight: 600;
+    }
+
+    .ba-box.before {
+      background: linear-gradient(135deg, #333, #222);
+      color: #888;
+    }
+
+    .ba-box.after {
+      background: linear-gradient(135deg, #D946EF33, #FF2D8733);
+      border: 1px solid #D946EF55;
+      color: #D946EF;
+    }
+
+    .share-icons {
+      display: flex;
+      gap: 12px;
+      margin-top: 20px;
+    }
+
+    .share-icon {
+      width: 44px;
+      height: 44px;
+      border-radius: 12px;
+      background: rgba(255,255,255,0.1);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-size: 20px;
+    }
+
+    .cta-button {
+      margin-top: 20px;
+      background: linear-gradient(135deg, #FF2D87, #D946EF);
+      color: #fff;
+      border: none;
+      padding: 12px 28px;
+      border-radius: 24px;
+      font-size: 14px;
+      font-weight: 700;
+      cursor: pointer;
+    }
+
+    .weekly-dots {
+      display: flex;
+      gap: 8px;
+      margin-top: 16px;
+    }
+
+    .weekly-dot {
+      width: 32px;
+      height: 32px;
+      border-radius: 50%;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-size: 14px;
+    }
+
+    .weekly-dot.active {
+      background: linear-gradient(135deg, #FF2D87, #D946EF);
+    }
+
+    .weekly-dot.inactive {
+      background: rgba(255,255,255,0.08);
+      border: 1px solid rgba(255,255,255,0.15);
+    }
+
+    /* Export section */
+    .export-section {
+      text-align: center;
+      padding: 20px;
+      margin-bottom: 20px;
+    }
+
+    .export-section p {
+      color: #666;
+      font-size: 14px;
+      margin-bottom: 12px;
+    }
+
+    .export-btn {
+      background: linear-gradient(135deg, #FF2D87, #D946EF);
+      color: white;
+      border: none;
+      padding: 14px 32px;
+      border-radius: 28px;
+      font-size: 16px;
+      font-weight: 700;
+      cursor: pointer;
+      transition: opacity 0.2s;
+    }
+
+    .export-btn:hover { opacity: 0.85; }
+  </style>
+</head>
+<body>
+
+  <div class="header">
+    <h1>GlowUp AI</h1>
+    <p>App Store Screenshot Preview &mdash; Right-click any phone frame to save as image, or use the export button below.</p>
+  </div>
+
+  <div class="screenshots-grid">
+
+    <!-- Screenshot 1: Hero -->
+    <div class="screenshot-card screen-1" id="screen-1">
+      <div class="screenshot-label">
+        <h2>See Your Best Self</h2>
+        <p>Home screen hero</p>
+      </div>
+      <div class="phone-frame">
+        <div class="phone-notch"></div>
+        <div class="phone-screen">
+          <div class="screen-icon">&#10024;</div>
+          <div class="screen-title">See Your Best Self</div>
+          <div class="screen-subtitle">AI-powered glow-ups in seconds. Discover your most stunning look.</div>
+          <button class="cta-button">Get Started</button>
+        </div>
+      </div>
+    </div>
+
+    <!-- Screenshot 2: Style Grid -->
+    <div class="screenshot-card screen-2" id="screen-2">
+      <div class="screenshot-label">
+        <h2>8 Stunning Styles</h2>
+        <p>Choose your transformation</p>
+      </div>
+      <div class="phone-frame">
+        <div class="phone-notch"></div>
+        <div class="phone-screen">
+          <div class="screen-icon">&#11088;</div>
+          <div class="screen-title">Pick Your Style</div>
+          <div class="style-grid">
+            <div class="style-chip">&#10024; Clear Skin</div>
+            <div class="style-chip">&#11088; Model Look</div>
+            <div class="style-chip">&#9986;&#65039; Hair Makeover</div>
+            <div class="style-chip">&#128260; Age Rewind</div>
+            <div class="style-chip">&#127939; Fit Version</div>
+            <div class="style-chip new-badge">&#127775; Celebrity Glam</div>
+            <div class="style-chip new-badge">&#128247; Vintage Retro</div>
+            <div class="style-chip new-badge">&#128302; Cyberpunk</div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- Screenshot 3: Processing -->
+    <div class="screenshot-card screen-3" id="screen-3">
+      <div class="screenshot-label">
+        <h2>AI Glow Up in 30s</h2>
+        <p>Lightning-fast AI processing</p>
+      </div>
+      <div class="phone-frame">
+        <div class="phone-notch"></div>
+        <div class="phone-screen">
+          <div class="screen-icon">&#9889;</div>
+          <div class="screen-title">Transforming...</div>
+          <div class="progress-ring"></div>
+          <div class="screen-subtitle">Our AI is creating your perfect glow-up. Just 30 seconds.</div>
+        </div>
+      </div>
+    </div>
+
+    <!-- Screenshot 4: Before & After -->
+    <div class="screenshot-card screen-4" id="screen-4">
+      <div class="screenshot-label">
+        <h2>Before &amp; After</h2>
+        <p>Stunning side-by-side comparison</p>
+      </div>
+      <div class="phone-frame">
+        <div class="phone-notch"></div>
+        <div class="phone-screen">
+          <div class="screen-icon">&#128524;</div>
+          <div class="screen-title">Your Glow Up</div>
+          <div class="before-after">
+            <div class="ba-box before">Before</div>
+            <div class="ba-box after">After &#10024;</div>
+          </div>
+          <div class="screen-subtitle" style="margin-top:12px">Swipe to compare your transformation</div>
+        </div>
+      </div>
+    </div>
+
+    <!-- Screenshot 5: Share -->
+    <div class="screenshot-card screen-5" id="screen-5">
+      <div class="screenshot-label">
+        <h2>Share Everywhere</h2>
+        <p>Show off your glow</p>
+      </div>
+      <div class="phone-frame">
+        <div class="phone-notch"></div>
+        <div class="phone-screen">
+          <div class="screen-icon">&#128640;</div>
+          <div class="screen-title">Share Your Glow</div>
+          <div class="screen-subtitle">Post your glow-up to all your favorite platforms</div>
+          <div class="share-icons">
+            <div class="share-icon">&#128248;</div>
+            <div class="share-icon">&#127908;</div>
+            <div class="share-icon">&#128172;</div>
+            <div class="share-icon">&#128279;</div>
+          </div>
+          <button class="cta-button" style="margin-top:16px">Share Now</button>
+        </div>
+      </div>
+    </div>
+
+    <!-- Screenshot 6: Weekly Drops -->
+    <div class="screenshot-card screen-6" id="screen-6">
+      <div class="screenshot-label">
+        <h2>New Styles Weekly</h2>
+        <p>Fresh drops every Monday</p>
+      </div>
+      <div class="phone-frame">
+        <div class="phone-notch"></div>
+        <div class="phone-screen">
+          <div class="screen-icon">&#128293;</div>
+          <div class="screen-title">Style Drops</div>
+          <div class="screen-subtitle">New styles added every week. Never run out of fresh looks.</div>
+          <div class="weekly-dots">
+            <div class="weekly-dot active">&#10024;</div>
+            <div class="weekly-dot active">&#127775;</div>
+            <div class="weekly-dot active">&#128302;</div>
+            <div class="weekly-dot inactive">?</div>
+            <div class="weekly-dot inactive">?</div>
+          </div>
+          <button class="cta-button" style="margin-top:16px">Get Notified</button>
+        </div>
+      </div>
+    </div>
+
+  </div>
+
+  <div class="export-section">
+    <p>To export screenshots: right-click a phone frame &rarr; Inspect &rarr; Capture node screenshot, or use a browser extension. For automated PNG export, integrate html2canvas.</p>
+    <button class="export-btn" onclick="exportAll()">Export All (html2canvas)</button>
+  </div>
+
+  <!-- html2canvas CDN for export -->
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/html2canvas/1.4.1/html2canvas.min.js"></script>
+  <script>
+    async function exportAll() {
+      if (typeof html2canvas === 'undefined') {
+        alert('html2canvas not loaded. Check your internet connection.');
+        return;
+      }
+
+      const screens = document.querySelectorAll('.screenshot-card');
+      const names = [
+        'see-your-best-self',
+        '8-stunning-styles',
+        'ai-glow-up-30s',
+        'before-and-after',
+        'share-everywhere',
+        'new-styles-weekly'
+      ];
+
+      for (let i = 0; i < screens.length; i++) {
+        try {
+          const canvas = await html2canvas(screens[i], {
+            backgroundColor: '#0a0a0a',
+            scale: 3, // High-res export
+          });
+          const link = document.createElement('a');
+          link.download = `glowup-screenshot-${names[i]}.png`;
+          link.href = canvas.toDataURL('image/png');
+          link.click();
+          // Small delay between downloads so browser doesn't block them
+          await new Promise(r => setTimeout(r, 500));
+        } catch (err) {
+          console.error(`Failed to export screen ${i + 1}:`, err);
+        }
+      }
+    }
+  </script>
+
+</body>
+</html>

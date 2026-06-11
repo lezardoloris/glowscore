@@ -1,0 +1,20 @@
+name = "glowup-api"
+main = "src/index.ts"
+compatibility_date = "2026-03-17"
+
+[vars]
+ENVIRONMENT = "production"
+
+# Secrets (set via `wrangler secret put`)
+# FAL_API_KEY
+# REVENUECAT_API_KEY
+
+# KV Namespace for rate limiting
+[[kv_namespaces]]
+binding = "RATE_LIMIT_KV"
+id = "your-kv-namespace-id"
+
+# R2 Bucket for temporary image storage
+[[r2_buckets]]
+binding = "IMAGES_BUCKET"
+bucket_name = "glowup-images"

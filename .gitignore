@@ -1,0 +1,58 @@
+# Xcode
+*.xcodeproj/xcuserdata/
+*.xcworkspace/xcuserdata/
+*.xcodeproj/project.xcworkspace/xcshareddata/IDEWorkspaceChecks.plist
+DerivedData/
+build/
+*.moved-aside
+*.pbxuser
+!default.pbxuser
+*.mode1v3
+!default.mode1v3
+*.mode2v3
+!default.mode2v3
+*.perspectivev3
+!default.perspectivev3
+xcuserdata/
+
+# SPM
+.build/
+.swiftpm/
+
+# CocoaPods (if used later)
+Pods/
+
+# Secrets - NEVER commit these
+.env
+*.env
+Secrets.swift
+
+# OS
+.DS_Store
+Thumbs.db
+
+# IDE
+.idea/
+.vscode/
+
+# JS / Expo / Node
+node_modules/
+.expo/
+dist/
+web-build/
+*.tsbuildinfo
+*.log
+
+# Local web-preview screenshots (keep scripts, drop generated images)
+expo-app/web-preview/*.png
+expo-app/web-preview/*.jpg
+expo-app/web-preview/*.jpeg
+expo-app/web-preview/*.webp
+
+# Env / secrets
+.env.*
+.dev.vars
+*.keystore
+*.p8
+*.p12
+secrets.json

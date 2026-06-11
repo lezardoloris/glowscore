@@ -1,0 +1,6 @@
+// Debug configuration — safe placeholder keys for development
+// These values are injected into Info.plist at build time
+
+REVENUECAT_API_KEY = appl_dev_placeholder
+WORKER_BASE_URL = https:\/\/glowup-api-dev.workers.dev
+PRODUCT_BUNDLE_IDENTIFIER = com.glowupai.app.debug

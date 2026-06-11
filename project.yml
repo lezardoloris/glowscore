@@ -1,0 +1,56 @@
+name: GlowUpAI
+options:
+  bundleIdPrefix: com.glowupai
+  deploymentTarget:
+    iOS: "18.0"
+  xcodeVersion: "17.0"
+  generateEmptyDirectories: true
+
+settings:
+  base:
+    MARKETING_VERSION: "1.0.0"
+    CURRENT_PROJECT_VERSION: "1"
+    SWIFT_VERSION: "6.0"
+    DEVELOPMENT_TEAM: ""
+    CODE_SIGN_STYLE: Automatic
+    INFOPLIST_FILE: GlowUpAI/Info.plist
+    ASSETCATALOG_COMPILER_APPICON_NAME: AppIcon
+
+packages:
+  RevenueCat:
+    url: https://github.com/RevenueCat/purchases-ios-spm.git
+    from: "5.0.0"
+  Firebase:
+    url: https://github.com/firebase/firebase-ios-sdk.git
+    from: "11.0.0"
+
+targets:
+  GlowUpAI:
+    type: application
+    platform: iOS
+    sources:
+      - path: GlowUpAI
+        excludes:
+          - "**/.DS_Store"
+    resources:
+      - path: GlowUpAI/Resources
+      - path: GlowUpAI/Info.plist
+    dependencies:
+      - package: RevenueCat
+        product: RevenueCat
+      - package: Firebase
+        product: FirebaseAnalytics
+      - package: Firebase
+        product: FirebaseCrashlytics
+    settings:
+      base:
+        PRODUCT_BUNDLE_IDENTIFIER: com.glowupai.app
+        TARGETED_DEVICE_FAMILY: "1"
+        SUPPORTS_XR_DESIGNED_FOR_IPHONE_IPAD: "NO"
+    info:
+      path: GlowUpAI/Info.plist
+      properties:
+        UILaunchScreen: {}
+        UISupportedInterfaceOrientations:
+          - UIInterfaceOrientationPortrait
+        ITSAppUsesNonExemptEncryption: false
