@@ -4,6 +4,33 @@ Date 2026-06-11. Plan d'exécution pour passer du "playground GlowUp AI 19 featu
 
 ---
 
+## 📊 STATUT (2026-06-11, à jour)
+
+### ✅ FAIT (code, tsc clean, pushé GitHub)
+- **EPIC 1 complet** — hard paywall: trial retiré, free tier technique supprimé (transformPreview/usageMeter preview), processing + 7 outils gatés → /pricing, invite-3-friends GARDÉ (décision 1.3 = B).
+- **EPIC 2 complet** — 14 features supprimées (+ photo-restore), hub rebrandé "Glow-Up Studio" (8 cartes + vignettes), routes nettoyées, Worker /api/features aligné (8 outils).
+- **EPIC 3.1/3.2 quasi complet** — tous les écrans en rose (processing, result, history, hub, styles, hair, relight, headshot, age, fitness, makeup, glow-plan, settings, home, tabs), icônes Ionicons, logo/icône app posés (3.3: mark dans les en-têtes restant).
+- **EPIC 4.1** — preview bidon supprimé, slider before/after réparé. **4.4 FAIT** — teaser Maxed-Out Self flouté avant le paywall (glow_max standard auto-généré au scan, carte floutée + lock → paywall). **Moteur glow_max = Gemini Nano Banana** (identité préservée, fallback fal), clé en .dev.vars.
+- **EPIC 5.2** — onglet Progress = timeline de scans (score + delta + streak).
+- **EPIC 6.1 quasi complet** — magic-byte avant tout appel payant, percentile server-side (normal CDF, plus de confab LLM), clés R2 UUID complètes, **URLs R2 signées HMAC** (activées si secret SIGNING_SECRET posé).
+- **EPIC 6.2 partiel** — consentement IA ✅, suppression compte in-app ✅, subtitle ≤30 ✅, encryption flag ✅.
+- **EPIC 7.2 FAIT** — persona focus: les goals du quiz partent dans /api/face-scan et biaisent treatments/tips.
+- Dev: override web `dev_premium` pour preview complète locale; admin console /admin.
+
+### 🔴 RESTE À FAIRE — CODE
+- 4.2 Makeup réel (mock → endpoint IA). 4.3 Skin Glow tracker. 5.1 Blueprint 12 semaines. 5.3 Notifications perso (rescan J+6 existe, streak-at-risk manque). 3.3 logo en en-têtes. 4.5 slider expo-image-compare (option). Age gate 17+ (quiz). 7.1 galerie d'options (18 images prêtes). 7.3 web-to-app. 7.4 usine UGC. 7.5 scan caméra on-device (libs installées).
+
+### 🔴 RESTE À FAIRE — MANUEL (toi, cf. plan HTML Bureau)
+1. Compte Apple Developer (99$/an, 24-48h — LE goulot).
+2. `wrangler deploy` + secrets: FAL_API_KEY, LLM_API_KEY, REVENUECAT_API_KEY, **GEMINI_API_KEY**, SIGNING_SECRET (+ KV, R2).
+3. RevenueCat: produits SANS trial (weekly_1299/annual_5999/lifetime_3999) + entitlement glowup_premium.
+4. Vraies clés dans app.config.ts (REVENUECAT_IOS_KEY, WORKER_BASE_URL) + eas.json (Apple IDs).
+5. Pages légales live (glowupai.app/privacy|terms|support).
+6. App Store Connect: fiche, IAP, Privacy labels, age rating, screenshots 6.7"/6.1".
+7. `npx expo install --check` (machine avec réseau) → `eas build` → test device → `eas submit`.
+
+---
+
 ## 🎯 North Star (décisions verrouillées)
 1. **Hard paywall. Pas de free tier, pas de free trial.** On ne dévoile aucun résultat (score, composants, transfos) sans abonnement actif. Le scan tourne, le reveal est teasé/flouté, puis paywall. (Modèle Umax/Cal-AI : l'achat vient d'un user émotionnellement investi par le reveal.)
 2. **Suite cohérente face/beauté féminine.** On garde uniquement les outils qui servent le glow-up du visage. On coupe le reste.

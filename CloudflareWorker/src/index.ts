@@ -10,6 +10,8 @@ export interface Env {
   // Optional: Gemini "Nano Banana" image model for the Maxed-Out Self glow-up
   // (better identity preservation than fal IP-adapter). If unset, falls back to fal.
   GEMINI_API_KEY?: string;
+  // Optional: HMAC secret for signed /images/ URLs. If set, unsigned requests are rejected.
+  SIGNING_SECRET?: string;
 }
 
 // ─── Style presets for Glow Up transforms ───────────────────────────────────
@@ -250,6 +252,43 @@ async function parseBody<T>(request: Request, headers: Record<string, string>): 
   }
 }
 
+/** Magic-byte check on base64 payloads: only pay for AI calls on real images.
+ *  JPEG => "/9j/", PNG => "iVBOR", WebP => "UklGR", GIF => "R0lGOD", HEIC-in-base64 covered by ftyp. */
+function isValidImageBase64(b64: string): boolean {
+  if (!b64 || b64.length < 64) return false;
+  const head = b64.slice(0, 24);
+  return (
+    head.startsWith("/9j/") || head.startsWith("iVBOR") || head.startsWith("UklGR") ||
+    head.startsWith("R0lGOD") || head.includes("ZnR5cA")
+  );
+}
+
+/** Deterministic percentile from the overall score (LLM percentiles were
+ *  confabulated). Normal CDF approximation around mean 68, sd 12. */
+function percentileFromOverall(overall: number): number {
+  const z = (overall - 68) / 12;
+  // Abramowitz-Stegun erf approximation
+  const t = 1 / (1 + 0.3275911 * Math.abs(z) / Math.SQRT2);
+  const erf = 1 - (((((1.061405429 * t - 1.453152027) * t) + 1.421413741) * t - 0.284496736) * t + 0.254829592) * t * Math.exp(-(z * z) / 2);
+  const cdf = z >= 0 ? 0.5 * (1 + erf) : 0.5 * (1 - erf);
+  return Math.max(1, Math.min(99, Math.round(cdf * 100)));
+}
+
+/** HMAC-SHA256 signature (first 16 bytes, hex) for signed /images/ URLs. */
+async function signKey(key: string, secret: string): Promise<string> {
+  const enc = new TextEncoder();
+  const cryptoKey = await crypto.subtle.importKey("raw", enc.encode(secret), { name: "HMAC", hash: "SHA-256" }, false, ["sign"]);
+  const sig = await crypto.subtle.sign("HMAC", cryptoKey, enc.encode(key));
+  return [...new Uint8Array(sig)].slice(0, 16).map((b) => b.toString(16).padStart(2, "0")).join("");
+}
+
+/** Build the public URL for an R2 key, signed when SIGNING_SECRET is set. */
+async function publicImageUrl(key: string, request: Request, env: Env): Promise<string> {
+  const base = `${new URL(request.url).origin}/images/${key}`;
+  if (!env.SIGNING_SECRET) return base;
+  return `${base}?sig=${await signKey(key, env.SIGNING_SECRET)}`;
+}
+
 /** Enforce POST method */
 function requirePost(request: Request, headers: Record<string, string>): Response | null {
   if (request.method !== "POST") {
@@ -285,7 +324,7 @@ async function resolveMediaUrl(
       bytes[i] = binaryString.charCodeAt(i);
     }
     const ext = contentType.includes("video") ? "mp4" : contentType.includes("audio") ? "wav" : "bin";
-    const key = `uploads/${prefix}/${Date.now()}-${crypto.randomUUID().slice(0, 16)}.${ext}`;
+    const key = `uploads/${prefix}/${Date.now()}-${crypto.randomUUID()}.${ext}`;
     await env.IMAGES_BUCKET.put(key, bytes, { httpMetadata: { contentType } });
     const workerUrl = new URL(request.url);
     return `${workerUrl.origin}/images/${key}`;
@@ -491,9 +530,9 @@ async function callGeminiGlowup(
     const binary = atob(imgB64);
     const bytes = new Uint8Array(binary.length);
     for (let i = 0; i < binary.length; i++) bytes[i] = binary.charCodeAt(i);
-    const key = `transformations/${Date.now()}-${crypto.randomUUID().slice(0, 16)}.png`;
+    const key = `transformations/${Date.now()}-${crypto.randomUUID()}.png`;
     await env.IMAGES_BUCKET.put(key, bytes, { httpMetadata: { contentType: "image/png" } });
-    return { url: `${new URL(request.url).origin}/images/${key}` };
+    return { url: await publicImageUrl(key, request, env) };
   } catch {
     await rollbackRateLimit(env, rateLimitKey, currentCount);
     return Response.json({ error: "Failed to store image" }, { status: 500, headers });
@@ -522,12 +561,11 @@ async function cacheImageInR2(
     const imgResponse = await fetch(imageUrl);
     if (imgResponse.ok) {
       const imgBlob = await imgResponse.arrayBuffer();
-      const key = `${feature}/${Date.now()}-${crypto.randomUUID().slice(0, 16)}.jpg`;
+      const key = `${feature}/${Date.now()}-${crypto.randomUUID()}.jpg`;
       await env.IMAGES_BUCKET.put(key, imgBlob, {
         httpMetadata: { contentType: "image/jpeg" },
       });
-      const workerUrl = new URL(request.url);
-      finalImageUrl = `${workerUrl.origin}/images/${key}`;
+      finalImageUrl = await publicImageUrl(key, request, env);
     }
   } catch (r2Error) {
     console.error("R2 upload failed, falling back to fal.ai URL:", r2Error);
@@ -547,12 +585,11 @@ async function cacheVideoInR2(
     const vidResponse = await fetch(videoUrl);
     if (vidResponse.ok) {
       const vidBlob = await vidResponse.arrayBuffer();
-      const key = `${feature}/${Date.now()}-${crypto.randomUUID().slice(0, 16)}.mp4`;
+      const key = `${feature}/${Date.now()}-${crypto.randomUUID()}.mp4`;
       await env.IMAGES_BUCKET.put(key, vidBlob, {
         httpMetadata: { contentType: "video/mp4" },
       });
-      const workerUrl = new URL(request.url);
-      finalVideoUrl = `${workerUrl.origin}/images/${key}`;
+      finalVideoUrl = await publicImageUrl(key, request, env);
     }
   } catch (r2Error) {
     console.error("R2 video upload failed, falling back to fal.ai URL:", r2Error);
@@ -638,7 +675,7 @@ export default {
         default:
           // M3: Serve R2-cached images at /images/...
           if (url.pathname.startsWith("/images/")) {
-            return await handleServeImage(url.pathname.slice("/images/".length), env, corsHeaders);
+            return await handleServeImage(url.pathname.slice("/images/".length), env, corsHeaders, url.searchParams.get("sig"));
           }
           return Response.json({ error: "Not found" }, { status: 404, headers: corsHeaders });
       }
@@ -699,6 +736,9 @@ async function handleTransform(request: Request, env: Env, headers: Record<strin
   // Validate image size (max 10MB base64)
   if (!body.image || body.image.length > 14_000_000) {
     return Response.json({ error: "Image too large (max 10MB)" }, { status: 400, headers });
+  }
+  if (!isValidImageBase64(body.image)) {
+    return Response.json({ error: "Invalid image format" }, { status: 400, headers });
   }
 
   const quality = body.quality === "hd" ? "hd" : "standard";
@@ -775,10 +815,16 @@ async function callVisionLLM(
   headers: Record<string, string>,
   rateLimitKey: string,
   currentCount: number,
-  timeoutMs: number = 25000
+  timeoutMs: number = 25000,
+  focus?: string
 ): Promise<{ data: any } | Response> {
   const baseUrl = (env.LLM_BASE_URL || "https://openrouter.ai/api/v1").replace(/\/$/, "");
   const model = env.LLM_MODEL || "openai/gpt-4o-mini";
+
+  // Persona-branching (EPIC 7.2): bias treatments toward the user's declared focus
+  const focusLine = focus && typeof focus === "string"
+    ? ` The user's primary glow-up focus is: ${focus.slice(0, 120)}. Bias the 3 treatments and tips toward that focus.`
+    : "";
 
   const rubric = [
     "You are a facial aesthetics analyzer for a positive, entertainment 'glow-up' app.",
@@ -791,7 +837,7 @@ async function callVisionLLM(
     '{"overall":int,"skin":int,"jawline":int,"symmetry":int,"eyes":int,"harmony":int,"nose_lip_ratio":int,"lip_harmony":int,"potential":int,"percentile":int,"rationale":string,"tips":[string,string,string],"treatments":[{"name":string,"detail":string,"impact":int},{"name":string,"detail":string,"impact":int},{"name":string,"detail":string,"impact":int}]}',
     "rationale: one upbeat sentence (max 140 chars). tips: 3 short actionable glow-up tips.",
     "If no clear human face is visible, set every score to 0 and rationale to 'No face detected'.",
-  ].join(" ");
+  ].join(" ") + focusLine;
 
   const controller = new AbortController();
   const timeoutId = setTimeout(() => controller.abort(), timeoutMs);
@@ -894,12 +940,15 @@ async function handleFaceScan(request: Request, env: Env, headers: Record<string
   const methodErr = requirePost(request, headers);
   if (methodErr) return methodErr;
 
-  const bodyOrErr = await parseBody<{ image: string }>(request, headers);
+  const bodyOrErr = await parseBody<{ image: string; focus?: string }>(request, headers);
   if (bodyOrErr instanceof Response) return bodyOrErr;
   const body = bodyOrErr;
 
   if (!body.image || body.image.length > 14_000_000) {
     return Response.json({ error: "Image too large (max 10MB)" }, { status: 400, headers });
+  }
+  if (!isValidImageBase64(body.image)) {
+    return Response.json({ error: "Invalid image format" }, { status: 400, headers });
   }
 
   // Optional auth — subscribers get a higher daily scan limit
@@ -918,11 +967,14 @@ async function handleFaceScan(request: Request, env: Env, headers: Record<string
   const { currentCount, rateLimitKey } = rlResult;
 
   const imageDataUrl = `data:image/jpeg;base64,${body.image}`;
-  const llm = await callVisionLLM(env, imageDataUrl, headers, rateLimitKey, currentCount);
+  const llm = await callVisionLLM(env, imageDataUrl, headers, rateLimitKey, currentCount, 25000, body.focus);
   if (llm instanceof Response) return llm;
 
+  // Deterministic percentile (the LLM's percentile was confabulated — EPIC 6.1)
+  const out = { ...llm.data, percentile: percentileFromOverall(llm.data.overall) };
+
   return Response.json(
-    { ...llm.data, feature: "face_scan", remaining_today: dailyLimit - (currentCount + 1) },
+    { ...out, feature: "face_scan", remaining_today: dailyLimit - (currentCount + 1) },
     { headers }
   );
 }
@@ -1576,7 +1628,7 @@ async function handleBackgroundRemoval(request: Request, env: Env, headers: Reco
     const imgResponse = await fetch(imageUrl);
     if (imgResponse.ok) {
       const imgBlob = await imgResponse.arrayBuffer();
-      const key = `background-removal/${Date.now()}-${crypto.randomUUID().slice(0, 16)}.${outputFormat}`;
+      const key = `background-removal/${Date.now()}-${crypto.randomUUID()}.${outputFormat}`;
       await env.IMAGES_BUCKET.put(key, imgBlob, {
         httpMetadata: { contentType: outputFormat === "webp" ? "image/webp" : "image/png" },
       });
@@ -1895,7 +1947,7 @@ async function handleUpscale(request: Request, env: Env, headers: Record<string,
     const imgResponse = await fetch(imageUrl);
     if (imgResponse.ok) {
       const imgBlob = await imgResponse.arrayBuffer();
-      const key = `upscale/${Date.now()}-${crypto.randomUUID().slice(0, 16)}.png`;
+      const key = `upscale/${Date.now()}-${crypto.randomUUID()}.png`;
       await env.IMAGES_BUCKET.put(key, imgBlob, {
         httpMetadata: { contentType: "image/png" },
       });
@@ -1914,7 +1966,14 @@ async function handleUpscale(request: Request, env: Env, headers: Record<string,
 
 // ─── Serve images from R2 bucket ────────────────────────────────────────────
 
-async function handleServeImage(key: string, env: Env, headers: Record<string, string>): Promise<Response> {
+async function handleServeImage(key: string, env: Env, headers: Record<string, string>, sig?: string | null): Promise<Response> {
+  // Signed URLs (EPIC 6.1): when SIGNING_SECRET is set, only HMAC-signed links are served
+  if (env.SIGNING_SECRET) {
+    const expected = await signKey(key, env.SIGNING_SECRET);
+    if (!sig || sig !== expected) {
+      return Response.json({ error: "Forbidden" }, { status: 403, headers });
+    }
+  }
   const object = await env.IMAGES_BUCKET.get(key);
   if (!object) {
     return Response.json({ error: "Image not found" }, { status: 404, headers });

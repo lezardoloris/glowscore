@@ -17,6 +17,8 @@ import {
   shareInvite, getInviteCount, isInviteUnlocked, INVITES_REQUIRED,
 } from '../src/services/inviteUnlock';
 import { hasAiConsent, setAiConsent } from '../src/services/aiConsent';
+import { getQuizProfile } from '../src/services/quizProfile';
+import { transformTeaser } from '../src/services/transform';
 import ShareCard from '../src/components/ShareCard';
 import { AnimatedCircularProgress } from 'react-native-circular-progress';
 import AnimatedNumbers from 'react-native-animated-numbers';
@@ -62,6 +64,7 @@ export default function ScanResultScreen() {
   const [prevOverall, setPrevOverall] = useState<number | null>(null);
   const [awaitingConsent, setAwaitingConsent] = useState(false);
   const [consentTick, setConsentTick] = useState(0);
+  const [teaserUri, setTeaserUri] = useState<string | null>(null);
   const [page, setPage] = useState(0);
   const [animatedTarget, setAnimatedTarget] = useState(0);
   const pagerRef = useRef<ScrollView>(null);
@@ -102,12 +105,24 @@ export default function ScanResultScreen() {
         const prev = await getLastScan();
         if (mounted.current && prev) setPrevOverall(prev.overall);
 
-        const res = await faceScan(imageUri, token);
+        // Persona-branching (EPIC 7.2): bias the scan toward the quiz focus
+        const quiz = await getQuizProfile();
+        const focus = quiz?.goals?.length ? quiz.goals.join(', ') : quiz?.glowUpType;
+
+        const res = await faceScan(imageUri, token, focus || undefined);
         if (!mounted.current) return;
         if (!res.overall) { setError('No face detected. Try a clear, front-facing selfie.'); setLoading(false); return; }
         setScore(res);
         setLoading(false);
         notificationSuccess();
+
+        // Maxed-Out Self teaser (EPIC 4.4): pre-generate the glow_max so the
+        // locked reveal shows HER blurred potential right before the paywall.
+        if (!sub) {
+          transformTeaser(imageUri).then((uri) => {
+            if (mounted.current && uri) setTeaserUri(uri);
+          }).catch(() => {});
+        }
 
         // Retention plumbing (fire-and-forget): persist scan, build plan, schedule rescan
         const record: ScanRecord = {
@@ -307,6 +322,20 @@ export default function ScanResultScreen() {
                 {unlocked ? `Top ${Math.max(1, 100 - score.percentile)}%` : 'Unlock to explore your unique proportions'}
               </Text>
             </View>
+
+            {/* Maxed-Out Self teaser (EPIC 4.4): her blurred potential, right before the paywall */}
+            {!unlocked && teaserUri && (
+              <Pressable style={styles.teaserCard} onPress={openPaywall}>
+                <Image source={{ uri: teaserUri }} style={styles.teaserImg} blurRadius={32} />
+                <View style={styles.teaserOverlay}>
+                  <View style={styles.teaserLock}>
+                    <Ionicons name="lock-closed" size={20} color="#fff" />
+                  </View>
+                  <Text style={styles.teaserTitle}>Your Maxed-Out Self is ready</Text>
+                  <Text style={styles.teaserSub}>Unlock to reveal your full potential</Text>
+                </View>
+              </Pressable>
+            )}
 
             {unlocked && delta != null && (
               <Text style={[styles.delta, { color: delta >= 0 ? '#2E9E5B' : '#D97742' }]}>
@@ -530,6 +559,20 @@ const styles = StyleSheet.create({
   ringOutOf: { fontSize: 15, color: C.textSoft, fontWeight: '700', marginBottom: 6 },
   ringLabel: { fontSize: 11, fontWeight: '700', color: C.textSoft, marginTop: 2 },
   heroUnlock: { fontSize: 15, fontWeight: '700', color: C.text, marginTop: 2, textAlign: 'center' },
+
+  // Maxed-Out Self teaser
+  teaserCard: { borderRadius: 22, overflow: 'hidden', marginBottom: 12, backgroundColor: C.card },
+  teaserImg: { width: '100%', height: 220 },
+  teaserOverlay: {
+    ...StyleSheet.absoluteFillObject, alignItems: 'center', justifyContent: 'center',
+    backgroundColor: 'rgba(45,35,48,0.30)', gap: 6,
+  },
+  teaserLock: {
+    width: 44, height: 44, borderRadius: 22, backgroundColor: 'rgba(224,83,122,0.92)',
+    alignItems: 'center', justifyContent: 'center', marginBottom: 4,
+  },
+  teaserTitle: { color: '#fff', fontSize: 17, fontWeight: '900', textShadowColor: 'rgba(0,0,0,0.4)', textShadowRadius: 6 },
+  teaserSub: { color: 'rgba(255,255,255,0.92)', fontSize: 13, fontWeight: '600' },
 
   delta: { fontSize: 14, fontWeight: '800', textAlign: 'center', marginBottom: 8 },
   rationale: { color: C.textSoft, fontSize: 13, textAlign: 'center', lineHeight: 19, marginBottom: 10, paddingHorizontal: 6 },

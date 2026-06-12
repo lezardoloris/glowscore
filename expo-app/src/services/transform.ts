@@ -59,3 +59,40 @@ export async function transformHD(
 // HARD PAYWALL: the on-device "preview" tier was removed — it only resized the
 // original (before == after) and undermined the paywall. Every transformation
 // now goes through transformHD with an active subscription.
+
+/**
+ * Maxed-Out Self teaser (EPIC 4.4): generates the glow_max at STANDARD quality
+ * without auth (worker free standard path, IP rate-limited) so the locked
+ * reveal can show the user's blurred potential right before the paywall.
+ * Returns null on any failure — the teaser is best-effort, never blocking.
+ */
+export async function transformTeaser(imageUri: string): Promise<string | null> {
+  try {
+    if (isWeb) {
+      await new Promise(r => setTimeout(r, 1200));
+      return imageUri; // web preview: reuse the selfie (blurred by the UI)
+    }
+    const ImageManipulator = await import('expo-image-manipulator');
+    const manipulated = await ImageManipulator.manipulateAsync(
+      imageUri,
+      [{ resize: { width: CONFIG.PREVIEW_SIZE, height: CONFIG.PREVIEW_SIZE } }],
+      { compress: 0.85, format: ImageManipulator.SaveFormat.JPEG, base64: true }
+    );
+    if (!manipulated.base64) return null;
+    const response = await fetch(`${CONFIG.WORKER_BASE_URL}/api/transform`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({
+        image: manipulated.base64,
+        style_id: 'glow_max',
+        width: CONFIG.PREVIEW_SIZE,
+        height: CONFIG.PREVIEW_SIZE,
+      }),
+    });
+    if (!response.ok) return null;
+    const data = await response.json();
+    return data.image_url || null;
+  } catch {
+    return null;
+  }
+}

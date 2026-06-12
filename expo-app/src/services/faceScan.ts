@@ -85,7 +85,7 @@ function normalizeScore(data: any): GlowScore {
  * Scan a selfie and return a GlowScore. Passing a subscriber token raises the
  * daily scan limit. Mirrors the upload pattern in featureService.ts.
  */
-export async function faceScan(imageUri: string, token?: string): Promise<GlowScore> {
+export async function faceScan(imageUri: string, token?: string, focus?: string): Promise<GlowScore> {
   if (isWeb) {
     // Web preview — believable mock so the reveal UI is demo-able without a backend
     await new Promise((r) => setTimeout(r, 1800));
@@ -122,7 +122,7 @@ export async function faceScan(imageUri: string, token?: string): Promise<GlowSc
   const response = await fetch(`${CONFIG.WORKER_BASE_URL}/api/face-scan`, {
     method: 'POST',
     headers,
-    body: JSON.stringify({ image: manipulated.base64 }),
+    body: JSON.stringify({ image: manipulated.base64, ...(focus ? { focus } : {}) }),
   });
 
   if (response.status === 429) throw new Error('Daily scan limit reached. Try again tomorrow!');
