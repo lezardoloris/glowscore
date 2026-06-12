@@ -43,7 +43,12 @@ export async function resetSubscriber(): Promise<void> {
 }
 
 export async function checkSubscription(): Promise<boolean> {
-  if (isWeb || !Purchases) return false;
+  if (isWeb) {
+    // Local/web preview: treat as premium so every paid screen is reachable.
+    // Flip it off from the /admin console (sets dev_premium = 'off') to test the locked state.
+    try { return (await AsyncStorage.getItem('dev_premium')) !== 'off'; } catch { return true; }
+  }
+  if (!Purchases) return false;
   try {
     const info = await Purchases.getCustomerInfo();
     const isActive = info.entitlements.active[CONFIG.ENTITLEMENT_ID] !== undefined;

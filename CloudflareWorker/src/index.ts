@@ -7,6 +7,9 @@ export interface Env {
   LLM_API_KEY: string;
   LLM_BASE_URL?: string; // default https://openrouter.ai/api/v1
   LLM_MODEL?: string;    // default openai/gpt-4o-mini (vision-capable)
+  // Optional: Gemini "Nano Banana" image model for the Maxed-Out Self glow-up
+  // (better identity preservation than fal IP-adapter). If unset, falls back to fal.
+  GEMINI_API_KEY?: string;
 }
 
 // ─── Style presets for Glow Up transforms ───────────────────────────────────
@@ -421,6 +424,82 @@ async function callFalAi(
   return { result };
 }
 
+/** Maxed-Out Self via Gemini image model (Nano Banana). img→img glow-up that
+ *  preserves identity, then caches the result PNG in R2. Returns a stable URL
+ *  or an error Response (with rate-limit rollback on failure). */
+async function callGeminiGlowup(
+  env: Env,
+  base64Image: string,
+  mime: string,
+  request: Request,
+  headers: Record<string, string>,
+  rateLimitKey: string,
+  currentCount: number,
+  timeoutMs: number = 30000
+): Promise<{ url: string } | Response> {
+  const prompt =
+    "Perform a clean, high-end, studio-quality photographic glow-up of this person's face. " +
+    "Perfect the skin texture (smooth, radiant, even tone, no blemishes), subtly balance facial symmetry, " +
+    "elevate cheek contours and gently define the jawline, brighten the eyes. " +
+    "Keep it strictly photorealistic and fully preserve the core identity, ethnicity, gender, eye color, " +
+    "face shape and unique features of the original person. Flattering professional portrait lighting, 4K raw photo.";
+
+  const url = `https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-flash-image:generateContent?key=${env.GEMINI_API_KEY}`;
+  const controller = new AbortController();
+  const timeoutId = setTimeout(() => controller.abort(), timeoutMs);
+
+  let resp: Response;
+  try {
+    resp = await fetch(url, {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({
+        contents: [{ parts: [{ inline_data: { mime_type: mime, data: base64Image } }, { text: prompt }] }],
+      }),
+      signal: controller.signal,
+    });
+    clearTimeout(timeoutId);
+  } catch (e: any) {
+    clearTimeout(timeoutId);
+    await rollbackRateLimit(env, rateLimitKey, currentCount);
+    return Response.json({ error: "AI processing timed out. Please try again." }, { status: 504, headers });
+  }
+
+  if (!resp.ok) {
+    await rollbackRateLimit(env, rateLimitKey, currentCount);
+    return Response.json({ error: "AI processing failed. Please try again." }, { status: 502, headers });
+  }
+
+  let json: any;
+  try { json = await resp.json(); } catch {
+    await rollbackRateLimit(env, rateLimitKey, currentCount);
+    return Response.json({ error: "AI processing failed" }, { status: 502, headers });
+  }
+
+  let imgB64: string | null = null;
+  const parts = json?.candidates?.[0]?.content?.parts || [];
+  for (const p of parts) {
+    const d = p?.inlineData?.data || p?.inline_data?.data;
+    if (d) { imgB64 = d; break; }
+  }
+  if (!imgB64) {
+    await rollbackRateLimit(env, rateLimitKey, currentCount);
+    return Response.json({ error: "No image generated" }, { status: 500, headers });
+  }
+
+  try {
+    const binary = atob(imgB64);
+    const bytes = new Uint8Array(binary.length);
+    for (let i = 0; i < binary.length; i++) bytes[i] = binary.charCodeAt(i);
+    const key = `transformations/${Date.now()}-${crypto.randomUUID().slice(0, 16)}.png`;
+    await env.IMAGES_BUCKET.put(key, bytes, { httpMetadata: { contentType: "image/png" } });
+    return { url: `${new URL(request.url).origin}/images/${key}` };
+  } catch {
+    await rollbackRateLimit(env, rateLimitKey, currentCount);
+    return Response.json({ error: "Failed to store image" }, { status: 500, headers });
+  }
+}
+
 /** Extract image URL from fal.ai response (various response shapes) */
 function extractImageUrl(result: any): string | null {
   return result.images?.[0]?.url || result.image?.url || result.output?.url || null;
@@ -643,6 +722,16 @@ async function handleTransform(request: Request, env: Env, headers: Record<strin
   const rlResult = await checkRateLimit(request, env, headers, "transform", dailyLimit, isHd, subscriberToken);
   if (rlResult instanceof Response) return rlResult;
   const { currentCount, rateLimitKey } = rlResult;
+
+  // Maxed-Out Self via Gemini Nano Banana (best identity preservation). Falls back to fal.ai if no key.
+  if (body.style_id === "glow_max" && env.GEMINI_API_KEY) {
+    const g = await callGeminiGlowup(env, body.image, "image/jpeg", request, headers, rateLimitKey, currentCount);
+    if (g instanceof Response) return g;
+    return Response.json(
+      { image_url: g.url, quality, feature: "glow_up", style_id: body.style_id, remaining_today: dailyLimit - (currentCount + 1) },
+      { headers }
+    );
+  }
 
   const falResult = await callFalAi(
     env,
