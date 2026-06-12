@@ -1,6 +1,8 @@
 import { View, Text, Pressable, Image, ScrollView, StyleSheet } from 'react-native';
 import { useLocalSearchParams, router } from 'expo-router';
 import { useEffect, useState } from 'react';
+import { Ionicons } from '@expo/vector-icons';
+import { theme as C } from '../src/theme';
 import { trackScreen, trackEvent } from '../src/services/analytics';
 import { headshot } from '../src/services/featureService';
 import { checkSubscription } from '../src/services/subscription';
@@ -33,7 +35,8 @@ export default function HeadshotScreen() {
   async function generate() {
     if (!imageUri || !selectedBg) return;
 
-    if (!isSubscribed) {
+    const sub = await checkSubscription();
+    if (!sub) {
       router.push('/pricing');
       return;
     }
@@ -57,8 +60,8 @@ export default function HeadshotScreen() {
 
   return (
     <ScrollView style={styles.container} contentContainerStyle={styles.content}>
-      <Pressable style={styles.backBtn} onPress={() => router.back()}>
-        <Text style={styles.backText}>{'<'} Back</Text>
+      <Pressable style={styles.backBtn} onPress={() => router.back()} hitSlop={8}>
+        <Ionicons name="chevron-back" size={26} color={C.text} />
       </Pressable>
 
       <Text style={styles.title}>AI Headshot</Text>
@@ -108,50 +111,49 @@ export default function HeadshotScreen() {
 }
 
 const styles = StyleSheet.create({
-  container: { flex: 1, backgroundColor: '#000' },
+  container: { flex: 1, backgroundColor: C.bg },
   content: { paddingTop: 60, paddingHorizontal: 16, paddingBottom: 100, alignItems: 'center' },
   backBtn: { alignSelf: 'flex-start', marginBottom: 16 },
-  backText: { color: 'rgba(255,255,255,0.6)', fontSize: 16 },
-  title: { fontSize: 24, fontWeight: '700', color: '#fff', marginBottom: 4 },
-  subtitle: { fontSize: 14, color: 'rgba(255,255,255,0.4)', marginBottom: 20 },
-  preview: { width: 120, height: 120, borderRadius: 60, borderWidth: 2, borderColor: 'rgba(255,255,255,0.15)', marginBottom: 24 },
+  title: { fontSize: 24, fontWeight: '900', color: C.text, marginBottom: 4 },
+  subtitle: { fontSize: 14, color: C.textSoft, marginBottom: 20 },
+  preview: { width: 120, height: 120, borderRadius: 60, borderWidth: 2, borderColor: C.border, marginBottom: 24 },
   premiumBanner: {
     width: '100%',
-    backgroundColor: 'rgba(236,72,153,0.1)',
+    backgroundColor: C.pinkSoft,
     borderRadius: 16,
     padding: 20,
     alignItems: 'center',
     borderWidth: 1,
-    borderColor: 'rgba(236,72,153,0.2)',
+    borderColor: C.border,
     marginBottom: 24,
   },
   premiumIcon: { fontSize: 32, marginBottom: 8 },
-  premiumText: { fontSize: 16, fontWeight: '700', color: '#ec4899', marginBottom: 4 },
-  premiumSub: { fontSize: 12, color: 'rgba(255,255,255,0.4)', textAlign: 'center' },
-  sectionTitle: { fontSize: 16, fontWeight: '600', color: '#fff', marginBottom: 12, alignSelf: 'flex-start' },
+  premiumText: { fontSize: 16, fontWeight: '700', color: C.pink, marginBottom: 4 },
+  premiumSub: { fontSize: 12, color: C.textSoft, textAlign: 'center' },
+  sectionTitle: { fontSize: 16, fontWeight: '600', color: C.text, marginBottom: 12, alignSelf: 'flex-start' },
   bgRow: { flexDirection: 'row', width: '100%', justifyContent: 'space-between', marginBottom: 32 },
   bgCard: {
     flex: 1,
-    backgroundColor: 'rgba(255,255,255,0.05)',
+    backgroundColor: C.card,
     borderRadius: 14,
     padding: 16,
     alignItems: 'center',
     marginHorizontal: 4,
     borderWidth: 1,
-    borderColor: 'rgba(255,255,255,0.08)',
+    borderColor: C.border,
   },
-  bgCardActive: { backgroundColor: 'rgba(236,72,153,0.2)', borderColor: 'rgba(236,72,153,0.5)' },
+  bgCardActive: { backgroundColor: C.pinkSoft, borderColor: C.pink },
   bgIcon: { fontSize: 24, marginBottom: 6 },
-  bgName: { fontSize: 11, fontWeight: '500', color: 'rgba(255,255,255,0.6)' },
-  bgNameActive: { color: '#ec4899' },
-  errorText: { fontSize: 14, color: '#f87171', marginBottom: 12 },
+  bgName: { fontSize: 11, fontWeight: '500', color: C.textSoft },
+  bgNameActive: { color: C.pink },
+  errorText: { fontSize: 14, color: '#D14343', marginBottom: 12 },
   cta: {
     width: '100%',
-    backgroundColor: '#ec4899',
-    borderRadius: 16,
+    backgroundColor: C.pink,
+    borderRadius: 24,
     paddingVertical: 18,
     alignItems: 'center',
   },
   ctaDisabled: { opacity: 0.4 },
-  ctaText: { color: '#fff', fontSize: 16, fontWeight: '700' },
+  ctaText: { color: '#fff', fontSize: 16, fontWeight: '800' },
 });

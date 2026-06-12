@@ -48,16 +48,11 @@ export default function RootLayout() {
         <Stack.Screen name="paywall" options={{ animation: 'fade' }} />
         <Stack.Screen name="onboarding" options={{ animation: 'fade', gestureEnabled: false }} />
         <Stack.Screen name="demo" options={{ animation: 'slide_from_right' }} />
-        <Stack.Screen name="hd-compare" options={{ animation: 'slide_from_right' }} />
-        <Stack.Screen name="face-swap" options={{ animation: 'slide_from_right' }} />
-        <Stack.Screen name="instant-style" options={{ animation: 'slide_from_right' }} />
         <Stack.Screen name="headshot" options={{ animation: 'slide_from_right' }} />
         <Stack.Screen name="hair-change" options={{ animation: 'slide_from_right' }} />
         <Stack.Screen name="relight" options={{ animation: 'slide_from_right' }} />
         <Stack.Screen name="age-transform" options={{ animation: 'slide_from_right' }} />
-        <Stack.Screen name="try-on" options={{ animation: 'slide_from_right' }} />
-        <Stack.Screen name="couple-glowup" options={{ animation: 'slide_from_right' }} />
-        <Stack.Screen name="beauty-filter" options={{ animation: 'slide_from_right' }} />
+        <Stack.Screen name="fitness-transform" options={{ animation: 'slide_from_right' }} />
         <Stack.Screen name="virtual-makeup" options={{ animation: 'slide_from_right' }} />
       </Stack>
         </View>

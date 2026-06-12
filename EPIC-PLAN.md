@@ -75,5 +75,15 @@ Art Style · Face Swap · Pet Portrait · Caricature · Couple Glow Up · Talkin
 **Sprint 3 (P1 rétention):** EPIC 5 (blueprint + timeline) + EPIC 4.2/4.3 (makeup/skin réels) + 7.2.
 **Sprint 4 (P2 croissance):** EPIC 7.
 
-## Décision ouverte (à trancher)
-- **Story 1.3 invite-3-friends** : le garder (viral, modèle Umax) ou le couper (paywall pur) ? Défaut proposé : **couper** pour coller à "tout en paywall", quitte à le réactiver en A/B plus tard.
+## Décision (tranchée 2026-06-11)
+- **Story 1.3 invite-3-friends : GARDÉ** (décision user) — seul levier non-payant, modèle Umax.
+
+## Avancement (2026-06-11, Sprint 1)
+- ✅ 1.1 Trial retiré (pricing sans "free trial", CTA Unlock; RevenueCat dashboard à aligner manuellement)
+- ✅ 1.2/1.4 Hard gate: processing redirige non-abonnés → /pricing; transformPreview supprimé; quota preview usageMeter supprimé; UsageBanner + Compare HD retirés de result
+- ✅ 1.3 invite-3-friends conservé
+- ✅ 2.1 14 écrans supprimés (art-style, face-swap, pet, caricature, couple, talking, animate, bg-removal, upscale, try-on, beauty-filter, hd-compare, video-result, photo-restore) + videoExport.ts + routes _layout nettoyées
+- ✅ 2.2 Hub rebrandé "Glow-Up Studio" (8 cartes, vignettes générées, rose)
+- ✅ 2.3 Worker /api/features aligné (6 features serveur, toutes premium)
+- ✅ 3.1 (partiel) processing/result/history re-thémés; styles/hair/relight/makeup/headshot/age/fitness en cours (agents)
+- ✅ 5.2 History → timeline GlowScore (score + delta + streak)

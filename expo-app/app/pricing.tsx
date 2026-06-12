@@ -135,7 +135,7 @@ export default function PricingScreen() {
           <View style={styles.planContent}>
             <Text style={styles.planName}>Weekly</Text>
             <Text style={styles.planPrice}>$12.99/week</Text>
-            <Text style={styles.planDetail}>3-day free trial included</Text>
+            <Text style={styles.planDetail}>Most flexible, cancel anytime</Text>
           </View>
           <View style={[styles.radio, selectedPlan === 'weekly' && styles.radioSelected]}>
             {selectedPlan === 'weekly' && <Ionicons name="checkmark" size={15} color="#fff" />}

@@ -1,7 +1,10 @@
 import { View, Text, Pressable, Image, ScrollView, StyleSheet, Platform } from 'react-native';
 import { useLocalSearchParams, router } from 'expo-router';
 import { useEffect, useState } from 'react';
+import { Ionicons } from '@expo/vector-icons';
+import { theme as C } from '../src/theme';
 import { trackScreen, trackEvent } from '../src/services/analytics';
+import { checkSubscription } from '../src/services/subscription';
 import * as MediaLibrary from 'expo-media-library';
 import { notificationSuccess } from '../src/services/haptics';
 
@@ -80,6 +83,8 @@ export default function VirtualMakeupScreen() {
   }
 
   async function savePhoto() {
+    const sub = await checkSubscription();
+    if (!sub) { router.push('/pricing'); return; }
     if (!imageUri) return;
 
     if (Platform.OS === 'web') {
@@ -137,8 +142,8 @@ export default function VirtualMakeupScreen() {
 
   return (
     <ScrollView style={styles.container} contentContainerStyle={styles.content}>
-      <Pressable style={styles.backBtn} onPress={() => router.back()}>
-        <Text style={styles.backText}>{'<'} Back</Text>
+      <Pressable style={styles.backBtn} onPress={() => router.back()} hitSlop={8}>
+        <Ionicons name="chevron-back" size={26} color={C.text} />
       </Pressable>
 
       <Text style={styles.title}>Virtual Makeup</Text>
@@ -247,14 +252,13 @@ export default function VirtualMakeupScreen() {
 }
 
 const styles = StyleSheet.create({
-  container: { flex: 1, backgroundColor: '#000' },
+  container: { flex: 1, backgroundColor: C.bg },
   content: { paddingTop: 60, paddingHorizontal: 16, paddingBottom: 100, alignItems: 'center' },
   backBtn: { alignSelf: 'flex-start', marginBottom: 16 },
-  backText: { color: 'rgba(255,255,255,0.6)', fontSize: 16 },
-  title: { fontSize: 24, fontWeight: '700', color: '#fff', marginBottom: 4 },
-  subtitle: { fontSize: 14, color: 'rgba(255,255,255,0.4)', marginBottom: 20 },
+  title: { fontSize: 24, fontWeight: '700', color: C.text, marginBottom: 4 },
+  subtitle: { fontSize: 14, color: C.textSoft, marginBottom: 20 },
   imageContainer: { position: 'relative', marginBottom: 16 },
-  mainImage: { width: 260, height: 260, borderRadius: 20, borderWidth: 1, borderColor: 'rgba(255,255,255,0.1)' },
+  mainImage: { width: 260, height: 260, borderRadius: 20, borderWidth: 1, borderColor: C.border },
   makeupOverlay: { position: 'absolute', top: 0, left: 0, right: 0, bottom: 0, borderRadius: 20, overflow: 'hidden' },
   lipOverlay: {
     position: 'absolute',
@@ -296,75 +300,75 @@ const styles = StyleSheet.create({
     height: '12%',
     borderRadius: 30,
   },
-  beforeLabel: { position: 'absolute', top: 10, left: 10, backgroundColor: 'rgba(0,0,0,0.6)', borderRadius: 8, paddingHorizontal: 8, paddingVertical: 4 },
-  beforeLabelText: { fontSize: 10, fontWeight: '700', color: 'rgba(255,255,255,0.7)' },
+  beforeLabel: { position: 'absolute', top: 10, left: 10, backgroundColor: 'rgba(45,35,48,0.7)', borderRadius: 8, paddingHorizontal: 8, paddingVertical: 4 },
+  beforeLabelText: { fontSize: 10, fontWeight: '700', color: '#fff' },
   toggleBtn: {
-    backgroundColor: 'rgba(255,255,255,0.08)',
+    backgroundColor: C.card,
     borderRadius: 10,
     paddingVertical: 8,
     paddingHorizontal: 20,
     marginBottom: 24,
     borderWidth: 1,
-    borderColor: 'rgba(255,255,255,0.1)',
+    borderColor: C.border,
   },
-  toggleText: { color: 'rgba(255,255,255,0.5)', fontSize: 12 },
-  sectionTitle: { fontSize: 16, fontWeight: '600', color: '#fff', marginBottom: 12, alignSelf: 'flex-start' },
+  toggleText: { color: C.textSoft, fontSize: 12 },
+  sectionTitle: { fontSize: 16, fontWeight: '600', color: C.text, marginBottom: 12, alignSelf: 'flex-start' },
   presetScroll: { width: '100%', marginBottom: 24 },
   presetContainer: { flexDirection: 'row', gap: 10 },
   presetPill: {
     flexDirection: 'row',
     alignItems: 'center',
-    backgroundColor: 'rgba(255,255,255,0.05)',
+    backgroundColor: C.card,
     borderRadius: 20,
     paddingVertical: 10,
     paddingHorizontal: 16,
     borderWidth: 1,
-    borderColor: 'rgba(255,255,255,0.08)',
+    borderColor: C.border,
     gap: 6,
   },
-  presetPillActive: { backgroundColor: 'rgba(236,72,153,0.2)', borderColor: 'rgba(236,72,153,0.5)' },
+  presetPillActive: { backgroundColor: C.pinkSoft, borderColor: C.pink },
   presetIcon: { fontSize: 16 },
-  presetText: { fontSize: 13, fontWeight: '500', color: 'rgba(255,255,255,0.6)' },
-  presetTextActive: { color: '#ec4899' },
+  presetText: { fontSize: 13, fontWeight: '500', color: C.textSoft },
+  presetTextActive: { color: C.pink },
   pickerSection: { width: '100%', marginBottom: 16 },
-  pickerLabel: { fontSize: 14, fontWeight: '500', color: 'rgba(255,255,255,0.6)', marginBottom: 8 },
+  pickerLabel: { fontSize: 14, fontWeight: '500', color: C.textSoft, marginBottom: 8 },
   colorRow: { flexDirection: 'row', gap: 10, flexWrap: 'wrap' },
   colorCircle: {
     width: 38,
     height: 38,
     borderRadius: 19,
     borderWidth: 2,
-    borderColor: 'rgba(255,255,255,0.1)',
+    borderColor: C.border,
     alignItems: 'center',
     justifyContent: 'center',
     overflow: 'hidden',
   },
   colorCircleEmpty: { borderStyle: 'dashed' },
-  colorCircleActive: { borderColor: '#ec4899', borderWidth: 3 },
+  colorCircleActive: { borderColor: C.pink, borderWidth: 3 },
   colorFill: { width: '100%', height: '100%', borderRadius: 19 },
-  noneText: { color: 'rgba(255,255,255,0.3)', fontSize: 12, fontWeight: '600' },
+  noneText: { color: C.textSoft, fontSize: 12, fontWeight: '600' },
   toggleRow: {
     width: '100%',
     flexDirection: 'row',
     alignItems: 'center',
     justifyContent: 'space-between',
     marginBottom: 24,
-    backgroundColor: 'rgba(255,255,255,0.03)',
+    backgroundColor: C.card,
     borderRadius: 10,
     padding: 12,
   },
   toggleSwitch: {
-    backgroundColor: 'rgba(255,255,255,0.1)',
+    backgroundColor: C.track,
     borderRadius: 14,
     paddingVertical: 6,
     paddingHorizontal: 16,
   },
-  toggleSwitchActive: { backgroundColor: 'rgba(236,72,153,0.3)' },
-  toggleSwitchText: { color: '#fff', fontSize: 12, fontWeight: '600' },
+  toggleSwitchActive: { backgroundColor: C.pink },
+  toggleSwitchText: { color: C.text, fontSize: 12, fontWeight: '700' },
   saveBtn: {
     width: '100%',
-    backgroundColor: '#ec4899',
-    borderRadius: 16,
+    backgroundColor: C.pink,
+    borderRadius: 24,
     paddingVertical: 18,
     alignItems: 'center',
   },

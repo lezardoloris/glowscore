@@ -5,13 +5,10 @@ import { useWindowDimensions } from 'react-native';
 import { theme as C } from '../src/theme';
 import { impactMedium, notificationSuccess } from '../src/services/haptics';
 import { trackScreen, trackShare } from '../src/services/analytics';
-import { checkSubscription } from '../src/services/subscription';
-import { remainingHD, canGeneratePreview } from '../src/services/usageMeter';
 import { generateShareImage } from '../src/services/shareGenerator';
-import { CONFIG, STYLE_PRESETS } from '../src/config';
+import { STYLE_PRESETS } from '../src/config';
 import * as Sharing from 'expo-sharing';
 import * as MediaLibrary from 'expo-media-library';
-import UsageBanner from '../src/components/UsageBanner';
 
 export default function ResultScreen() {
   const { imageUri, resultUri, styleId, isHD } = useLocalSearchParams<{
@@ -19,9 +16,6 @@ export default function ResultScreen() {
   }>();
   const [sliderPos, setSliderPos] = useState(0.5);
   const sliderPosRef = useRef(0.5);
-
-  const [isSubscribed, setIsSubscribed] = useState(false);
-  const [hdRemaining, setHdRemaining] = useState(0);
 
   const { width: screenWidth } = useWindowDimensions();
   const sliderSize = Math.min(screenWidth - 32, 440);
@@ -40,19 +34,6 @@ export default function ResultScreen() {
   const isHDResult = isHD === 'true';
 
   useEffect(() => { trackScreen('result'); }, []);
-
-  useEffect(() => {
-    (async () => {
-      const sub = await checkSubscription();
-      setIsSubscribed(sub);
-      if (sub) {
-        setHdRemaining(await remainingHD());
-      } else {
-        const canPreview = await canGeneratePreview();
-        setHdRemaining(canPreview ? 1 : 0);
-      }
-    })();
-  }, []);
 
   const updateSlider = useCallback((pos: number) => {
     setSliderPos(pos);
@@ -123,12 +104,8 @@ export default function ResultScreen() {
     } catch (e) { console.log('Save failed:', e); }
   }
 
-  const hdTotal = isSubscribed ? CONFIG.MAX_HD_TRANSFORMS_PER_DAY : CONFIG.MAX_FREE_STANDARD_PER_DAY;
-
   return (
     <View style={styles.container}>
-      <UsageBanner isSubscribed={isSubscribed} remaining={hdRemaining} total={hdTotal} onUpgrade={() => router.push('/pricing')} />
-
       {/* Before/After slider */}
       <View
         ref={containerRef}
@@ -159,12 +136,6 @@ export default function ResultScreen() {
       <Text style={styles.disclaimer}>
         AI-generated artistic visualization for entertainment purposes only.{'\n'}Results do not represent real-world outcomes.
       </Text>
-
-      {!isHDResult && (
-        <Pressable style={styles.compareBtn} onPress={() => router.push({ pathname: '/hd-compare', params: { imageUri, resultUri, styleId } })}>
-          <Text style={styles.compareBtnText}>Compare HD</Text>
-        </Pressable>
-      )}
 
       <View style={styles.row}>
         <Pressable style={styles.glassBtn} onPress={shareResult}><Text style={styles.glassBtnText}>Share</Text></Pressable>

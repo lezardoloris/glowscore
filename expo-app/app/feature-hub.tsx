@@ -1,128 +1,115 @@
-import { View, Text, Pressable, Image, ScrollView, StyleSheet } from 'react-native';
+import { View, Text, Pressable, ScrollView, StyleSheet, Image, Platform } from 'react-native';
 import { useLocalSearchParams, router } from 'expo-router';
 import { useEffect } from 'react';
+import { Ionicons } from '@expo/vector-icons';
+import { theme as C } from '../src/theme';
 import { trackScreen, trackEvent } from '../src/services/analytics';
+import { impactMedium } from '../src/services/haptics';
 
-interface FeatureCard {
-  id: string;
-  name: string;
-  icon: string;
-  description: string;
-  route: string;
-  isPremium: boolean;
-}
-
-const FEATURES: FeatureCard[] = [
-  { id: 'glowup', name: 'Glow Up', icon: '✨', description: 'Transform your look with AI styles', route: '/styles', isPremium: false },
-  { id: 'face-swap', name: 'Face Swap', icon: '🎭', description: 'Swap your face onto anyone', route: '/face-swap', isPremium: false },
-  { id: 'instant-style', name: 'Art Style', icon: '🎨', description: 'Turn your photo into art', route: '/instant-style', isPremium: false },
-  { id: 'headshot', name: 'AI Headshot', icon: '💼', description: 'Professional headshots instantly', route: '/headshot', isPremium: true },
-  { id: 'hair-change', name: 'Hair Change', icon: '💇', description: 'Try any hairstyle on you', route: '/hair-change', isPremium: false },
-  { id: 'relight', name: 'Relight', icon: '💡', description: 'Change lighting dramatically', route: '/relight', isPremium: false },
-  { id: 'age-transform', name: 'Age Machine', icon: '⏳', description: 'See yourself at any age', route: '/age-transform', isPremium: false },
-  { id: 'try-on', name: 'Try On', icon: '👗', description: 'Virtual clothing try-on', route: '/try-on', isPremium: true },
-  { id: 'virtual-makeup', name: 'Makeup', icon: '💄', description: 'Virtual makeup application', route: '/virtual-makeup', isPremium: false },
-  { id: 'beauty-filter', name: 'Beauty Filter', icon: '🪞', description: 'Enhance with beauty filters', route: '/beauty-filter', isPremium: false },
-  { id: 'couple-glowup', name: 'Couple Glow Up', icon: '💑', description: 'Glow up together as a couple', route: '/couple-glowup', isPremium: false },
-  { id: 'animate-portrait', name: 'Animate', icon: '🎬', description: 'Bring your photo to life', route: '/animate-portrait', isPremium: false },
-  { id: 'talking-photo', name: 'Talking Photo', icon: '🗣️', description: 'Make your photo talk', route: '/talking-photo', isPremium: true },
-  { id: 'background-removal', name: 'Remove BG', icon: '✂️', description: 'Instant background removal', route: '/background-removal', isPremium: false },
-  { id: 'caricature', name: 'Caricature', icon: '🎪', description: '3D cartoon portrait of you', route: '/caricature', isPremium: false },
-  { id: 'photo-restore', name: 'Restore', icon: '🕰️', description: 'Fix old or damaged photos', route: '/photo-restore', isPremium: false },
-  { id: 'pet-portrait', name: 'Pet Portrait', icon: '🐾', description: 'Style your pet as a hero', route: '/pet-portrait', isPremium: false },
-  { id: 'fitness-transform', name: 'Fitness', icon: '💪', description: 'Visualize your fit self', route: '/fitness-transform', isPremium: false },
-  { id: 'upscale', name: '4K Upscale', icon: '🔍', description: 'Enhance to crisp 4K', route: '/upscale', isPremium: false },
-];
+/**
+ * Glow-Up Studio: the focused premium tool suite (female clinical-luxury
+ * positioning). The old 19-feature grab-bag was pruned per EPIC-PLAN — every
+ * tool here serves the face glow-up loop and is premium (hard paywall
+ * enforced downstream at processing / feature submit).
+ */
+const TOOLS = [
+  {
+    id: 'glow_up', title: 'Glow Up Styles', subtitle: 'Clear skin, model look & more',
+    img: require('../assets/components/options/symmetry_1.png'),
+    route: (uri?: string) => router.push({ pathname: '/styles', params: { imageUri: uri } }),
+  },
+  {
+    id: 'glow_max', title: 'Maxed-Out Self', subtitle: 'Your full glow-up potential',
+    img: require('../assets/components/options/skin_2.png'),
+    route: (uri?: string) => router.push({ pathname: '/processing', params: { imageUri: uri, styleId: 'glow_max' } }),
+  },
+  {
+    id: 'makeup', title: 'Makeup', subtitle: 'Virtual makeup looks',
+    img: require('../assets/components/features/makeup.png'),
+    route: (uri?: string) => router.push({ pathname: '/virtual-makeup', params: { imageUri: uri } }),
+  },
+  {
+    id: 'hair', title: 'Hair Makeover', subtitle: 'Try any hairstyle or color',
+    img: require('../assets/components/features/hair.png'),
+    route: (uri?: string) => router.push({ pathname: '/hair-change', params: { imageUri: uri } }),
+  },
+  {
+    id: 'relight', title: 'Relight', subtitle: 'Flattering studio lighting',
+    img: require('../assets/components/features/relight.png'),
+    route: (uri?: string) => router.push({ pathname: '/relight', params: { imageUri: uri } }),
+  },
+  {
+    id: 'headshot', title: 'AI Headshot', subtitle: 'Polished professional photos',
+    img: require('../assets/components/features/headshot.png'),
+    route: (uri?: string) => router.push({ pathname: '/headshot', params: { imageUri: uri } }),
+  },
+  {
+    id: 'age', title: 'Age Rewind', subtitle: 'See yourself younger',
+    img: require('../assets/components/eyes.png'),
+    route: (uri?: string) => router.push({ pathname: '/age-transform', params: { imageUri: uri } }),
+  },
+  {
+    id: 'fit', title: 'Fit Version', subtitle: 'Visualize your fit self',
+    img: require('../assets/components/jawline.png'),
+    route: (uri?: string) => router.push({ pathname: '/fitness-transform', params: { imageUri: uri } }),
+  },
+] as const;
 
 export default function FeatureHubScreen() {
-  const { imageUri } = useLocalSearchParams<{ imageUri: string }>();
+  const { imageUri } = useLocalSearchParams<{ imageUri?: string }>();
 
-  useEffect(() => {
-    trackScreen('feature_hub');
-  }, []);
-
-  function navigateToFeature(feature: FeatureCard) {
-    trackEvent('feature_selected', { featureId: feature.id });
-    router.push({ pathname: feature.route as any, params: { imageUri } });
-  }
+  useEffect(() => { trackScreen('feature_hub'); }, []);
 
   return (
-    <ScrollView style={styles.container} contentContainerStyle={styles.content}>
-      {/* Back button */}
-      <Pressable style={styles.backBtn} onPress={() => router.back()}>
-        <Text style={styles.backText}>{'<'} Back</Text>
+    <ScrollView style={styles.container} contentContainerStyle={styles.content} showsVerticalScrollIndicator={false}>
+      <Pressable style={styles.back} onPress={() => router.back()} hitSlop={8}>
+        <Ionicons name="chevron-back" size={26} color={C.text} />
       </Pressable>
 
-      {imageUri && (
-        <Image source={{ uri: imageUri }} style={styles.preview} />
-      )}
-      <Text style={styles.title}>Choose a Feature</Text>
-      <Text style={styles.subtitle}>What do you want to do with your photo?</Text>
+      <Text style={styles.title}>Glow-Up Studio</Text>
+      <Text style={styles.subtitle}>Premium tools for your transformation</Text>
 
       <View style={styles.grid}>
-        {FEATURES.map((feature) => (
+        {TOOLS.map((t) => (
           <Pressable
-            key={feature.id}
+            key={t.id}
             style={styles.card}
-            onPress={() => navigateToFeature(feature)}
+            onPress={() => {
+              impactMedium();
+              trackEvent('studio_tool_tapped', { tool: t.id });
+              t.route(typeof imageUri === 'string' ? imageUri : undefined);
+            }}
           >
-            {feature.isPremium && (
-              <View style={styles.premiumBadge}>
-                <Text style={styles.premiumBadgeText}>PRO</Text>
-              </View>
-            )}
-            <View style={styles.iconCircle}>
-              <Text style={styles.icon}>{feature.icon}</Text>
+            <Image source={t.img} style={styles.cardImg} />
+            <View style={styles.cardBody}>
+              <Text style={styles.cardTitle}>{t.title}</Text>
+              <Text style={styles.cardSubtitle}>{t.subtitle}</Text>
             </View>
-            <Text style={styles.featureName}>{feature.name}</Text>
-            <Text style={styles.featureDesc}>{feature.description}</Text>
           </Pressable>
         ))}
       </View>
+
+      <Text style={styles.disclaimer}>AI-generated artistic visualization for entertainment only.</Text>
     </ScrollView>
   );
 }
 
 const styles = StyleSheet.create({
-  container: { flex: 1, backgroundColor: '#000' },
-  content: { paddingTop: 60, paddingHorizontal: 16, paddingBottom: 100, alignItems: 'center' },
-  backBtn: { alignSelf: 'flex-start', marginBottom: 16 },
-  backText: { color: 'rgba(255,255,255,0.6)', fontSize: 16 },
-  preview: { width: 80, height: 80, borderRadius: 40, borderWidth: 2, borderColor: 'rgba(255,255,255,0.15)', marginBottom: 12 },
-  title: { fontSize: 24, fontWeight: '700', color: '#fff', marginBottom: 4 },
-  subtitle: { fontSize: 14, color: 'rgba(255,255,255,0.4)', marginBottom: 24 },
-  grid: { flexDirection: 'row', flexWrap: 'wrap', justifyContent: 'space-between', width: '100%' },
+  container: { flex: 1, backgroundColor: C.bg },
+  content: { paddingTop: Platform.OS === 'ios' ? 64 : 44, paddingHorizontal: 18, paddingBottom: 50 },
+  back: { alignSelf: 'flex-start', marginBottom: 6 },
+  title: { fontSize: 30, fontWeight: '900', color: C.text },
+  subtitle: { fontSize: 15, color: C.textSoft, marginTop: 2, marginBottom: 18 },
+  grid: { flexDirection: 'row', flexWrap: 'wrap', gap: 12 },
   card: {
-    width: '48%',
-    backgroundColor: 'rgba(255,255,255,0.05)',
-    borderRadius: 16,
-    padding: 16,
-    alignItems: 'center',
-    marginBottom: 12,
-    borderWidth: 1,
-    borderColor: 'rgba(255,255,255,0.08)',
-    position: 'relative',
+    width: '47.5%',
+    backgroundColor: C.card,
+    borderRadius: 18,
+    overflow: 'hidden',
   },
-  premiumBadge: {
-    position: 'absolute',
-    top: 8,
-    right: 8,
-    backgroundColor: 'rgba(236,72,153,0.25)',
-    borderRadius: 6,
-    paddingHorizontal: 6,
-    paddingVertical: 2,
-  },
-  premiumBadgeText: { fontSize: 9, fontWeight: '700', color: '#ec4899' },
-  iconCircle: {
-    width: 48,
-    height: 48,
-    borderRadius: 24,
-    backgroundColor: 'rgba(236,72,153,0.15)',
-    alignItems: 'center',
-    justifyContent: 'center',
-    marginBottom: 8,
-  },
-  icon: { fontSize: 20 },
-  featureName: { fontSize: 13, fontWeight: '600', color: '#fff', marginBottom: 3 },
-  featureDesc: { fontSize: 10, color: 'rgba(255,255,255,0.4)', textAlign: 'center' },
+  cardImg: { width: '100%', height: 120 },
+  cardBody: { padding: 12 },
+  cardTitle: { fontSize: 15, fontWeight: '800', color: C.text },
+  cardSubtitle: { fontSize: 11.5, color: C.textSoft, marginTop: 2, lineHeight: 15 },
+  disclaimer: { fontSize: 10, color: C.textSoft, textAlign: 'center', marginTop: 22, opacity: 0.8 },
 });

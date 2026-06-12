@@ -56,22 +56,6 @@ export async function transformHD(
   return { imageUrl: data.image_url, isHD: true, remainingToday: data.remaining_today };
 }
 
-// On-device preview (free tier)
-export async function transformPreview(
-  imageUri: string,
-  styleId: string
-): Promise<string> {
-  if (isWeb) {
-    // Web preview — simulate with delay, return same image
-    await new Promise(r => setTimeout(r, 1500));
-    return imageUri;
-  }
-
-  const ImageManipulator = await import('expo-image-manipulator');
-  const result = await ImageManipulator.manipulateAsync(
-    imageUri,
-    [{ resize: { width: CONFIG.PREVIEW_SIZE, height: CONFIG.PREVIEW_SIZE } }],
-    { compress: 0.8, format: ImageManipulator.SaveFormat.JPEG }
-  );
-  return result.uri;
-}
+// HARD PAYWALL: the on-device "preview" tier was removed — it only resized the
+// original (before == after) and undermined the paywall. Every transformation
+// now goes through transformHD with an active subscription.

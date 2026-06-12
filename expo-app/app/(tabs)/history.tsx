@@ -1,297 +1,155 @@
-import {
-  View,
-  Text,
-  Pressable,
-  Image,
-  FlatList,
-  StyleSheet,
-  Dimensions,
-  Alert,
-  Platform,
-} from 'react-native';
-import { router } from 'expo-router';
-import { useState, useCallback, useEffect } from 'react';
-import { useFocusEffect } from 'expo-router';
-import {
-  getHistory,
-  deleteFromHistory,
-  TransformationRecord,
-} from '../../src/services/history';
+import { View, Text, Pressable, ScrollView, StyleSheet, Platform } from 'react-native';
+import { useState, useCallback } from 'react';
+import { useFocusEffect, router } from 'expo-router';
+import { Ionicons } from '@expo/vector-icons';
+import { theme as C } from '../../src/theme';
+import { getScanHistory, ScanRecord } from '../../src/services/history';
+import { getStreak } from '../../src/services/glowPlan';
 import { trackScreen } from '../../src/services/analytics';
 
-const { width: SCREEN_WIDTH } = Dimensions.get('window');
-const NUM_COLUMNS = 3;
-const TILE_GAP = 4;
-const TILE_SIZE = (SCREEN_WIDTH - 32 - TILE_GAP * (NUM_COLUMNS - 1)) / NUM_COLUMNS;
-
-export default function HistoryScreen() {
-  const [records, setRecords] = useState<TransformationRecord[]>([]);
-  const [loading, setLoading] = useState(true);
-
-  // M11: Track screen view
-  useEffect(() => { trackScreen('history'); }, []);
+/**
+ * Progress tab: the GlowScore timeline (EPIC 5.2). Shows the scan-over-time
+ * story — score, delta vs previous scan, streak — instead of the legacy
+ * transformation grid. This is the retention loop made visible.
+ */
+export default function ProgressScreen() {
+  const [scans, setScans] = useState<ScanRecord[]>([]);
+  const [streak, setStreak] = useState(0);
 
   useFocusEffect(
     useCallback(() => {
-      loadHistory();
+      trackScreen('progress');
+      let active = true;
+      (async () => {
+        const [s, st] = await Promise.all([getScanHistory(), getStreak()]);
+        if (active) { setScans(s); setStreak(st); }
+      })();
+      return () => { active = false; };
     }, [])
   );
 
-  async function loadHistory() {
-    setLoading(true);
-    const data = await getHistory();
-    setRecords(data);
-    setLoading(false);
-  }
-
-  function confirmDelete(id: string) {
-    if (Platform.OS === 'web') {
-      if (confirm('Delete this transformation?')) {
-        handleDelete(id);
-      }
-      return;
-    }
-    Alert.alert('Delete', 'Delete this transformation?', [
-      { text: 'Cancel', style: 'cancel' },
-      {
-        text: 'Delete',
-        style: 'destructive',
-        onPress: () => handleDelete(id),
-      },
-    ]);
-  }
-
-  async function handleDelete(id: string) {
-    await deleteFromHistory(id);
-    setRecords((prev) => prev.filter((r) => r.id !== id));
-  }
-
-  function openResult(record: TransformationRecord) {
-    router.push({
-      pathname: '/result',
-      params: {
-        imageUri: record.originalUri,
-        resultUri: record.resultUri,
-        styleId: record.styleId,
-        isHD: String(record.isHD),
-      },
-    });
-  }
-
-  function formatDate(iso: string): string {
-    const d = new Date(iso);
-    const month = d.toLocaleString('en', { month: 'short' });
-    const day = d.getDate();
-    return `${month} ${day}`;
-  }
-
-  if (!loading && records.length === 0) {
+  if (scans.length === 0) {
     return (
-      <View style={styles.emptyContainer}>
-        <View style={styles.emptyIconCircle}>
-          <Text style={styles.emptyIconText}>🔄</Text>
+      <View style={styles.empty}>
+        <View style={styles.emptyIcon}>
+          <Ionicons name="trending-up" size={40} color={C.pink} />
         </View>
-        <Text style={styles.emptyTitle}>No transformations yet</Text>
-        <Text style={styles.emptySubtitle}>
-          Your glow ups will appear here
-        </Text>
-        <Pressable
-          style={styles.ctaButton}
-          onPress={() => router.push('/')}
-        >
-          <Text style={styles.ctaButtonText}>Start Your First Glow Up</Text>
+        <Text style={styles.emptyTitle}>No scans yet</Text>
+        <Text style={styles.emptySub}>Scan your face to start tracking your glow-up over time.</Text>
+        <Pressable style={styles.cta} onPress={() => router.push('/(tabs)')}>
+          <Text style={styles.ctaText}>Take Your First Scan</Text>
         </Pressable>
       </View>
     );
   }
 
-  function renderItem({ item }: { item: TransformationRecord }) {
-    return (
-      <Pressable
-        style={styles.tile}
-        onPress={() => openResult(item)}
-        onLongPress={() => confirmDelete(item.id)}
-      >
-        <Image source={{ uri: item.resultUri }} style={styles.tileImage} />
-        {/* Delete button (top-right corner) */}
-        <Pressable
-          style={styles.deleteButton}
-          onPress={() => confirmDelete(item.id)}
-          hitSlop={8}
-        >
-          <Text style={styles.deleteButtonText}>✕</Text>
-        </Pressable>
-        <View style={styles.tileOverlay}>
-          <Text style={styles.tileStyleName} numberOfLines={1}>
-            {item.styleName}
-          </Text>
-          <View style={styles.tileMeta}>
-            {item.isHD && (
-              <View style={styles.hdBadge}>
-                <Text style={styles.hdBadgeText}>HD</Text>
-              </View>
-            )}
-            <Text style={styles.tileDate}>{formatDate(item.createdAt)}</Text>
-          </View>
-        </View>
-      </Pressable>
-    );
-  }
+  const latest = scans[0];
+  const first = scans[scans.length - 1];
+  const totalDelta = latest.overall - first.overall;
 
   return (
-    <View style={styles.container}>
-      <Text style={styles.header}>History</Text>
-      <Text style={styles.hint}>Tap ✕ or long press to delete</Text>
-      <FlatList
-        data={records}
-        keyExtractor={(item) => item.id}
-        renderItem={renderItem}
-        numColumns={NUM_COLUMNS}
-        columnWrapperStyle={styles.row}
-        contentContainerStyle={styles.listContent}
-        showsVerticalScrollIndicator={false}
-      />
-    </View>
+    <ScrollView style={styles.container} contentContainerStyle={styles.content} showsVerticalScrollIndicator={false}>
+      <Text style={styles.header}>Your Progress</Text>
+
+      {/* Summary card */}
+      <View style={styles.summaryCard}>
+        <View style={styles.summaryItem}>
+          <Text style={styles.summaryNum}>{latest.overall}</Text>
+          <Text style={styles.summaryLabel}>Current</Text>
+        </View>
+        <View style={styles.summaryDivider} />
+        <View style={styles.summaryItem}>
+          <Text style={[styles.summaryNum, { color: totalDelta >= 0 ? C.good : '#D97742' }]}>
+            {totalDelta >= 0 ? '+' : ''}{totalDelta}
+          </Text>
+          <Text style={styles.summaryLabel}>All time</Text>
+        </View>
+        <View style={styles.summaryDivider} />
+        <View style={styles.summaryItem}>
+          <Text style={styles.summaryNum}>🔥{streak}</Text>
+          <Text style={styles.summaryLabel}>Streak</Text>
+        </View>
+      </View>
+
+      {/* Timeline */}
+      {scans.map((scan, i) => {
+        const prev = scans[i + 1];
+        const delta = prev ? scan.overall - prev.overall : null;
+        return (
+          <View key={scan.id} style={styles.scanRow}>
+            <View style={styles.scanRing}>
+              <Text style={styles.scanScore}>{scan.overall}</Text>
+            </View>
+            <View style={{ flex: 1 }}>
+              <Text style={styles.scanDate}>{formatDate(scan.createdAt)}</Text>
+              <Text style={styles.scanDetail}>
+                Skin {scan.skin} · Symmetry {scan.symmetry} · Eyes {scan.eyes}
+              </Text>
+            </View>
+            {delta != null && (
+              <View style={[styles.deltaChip, { backgroundColor: delta >= 0 ? '#DDF3E4' : '#FBE9DC' }]}>
+                <Text style={[styles.deltaText, { color: delta >= 0 ? C.good : '#D97742' }]}>
+                  {delta >= 0 ? '+' : ''}{delta}
+                </Text>
+              </View>
+            )}
+          </View>
+        );
+      })}
+
+      <Pressable style={styles.cta} onPress={() => router.push('/(tabs)')}>
+        <Ionicons name="scan" size={18} color="#fff" />
+        <Text style={styles.ctaText}>Re-scan now</Text>
+      </Pressable>
+    </ScrollView>
   );
 }
 
+function formatDate(iso: string): string {
+  const d = new Date(iso);
+  return d.toLocaleDateString(undefined, { month: 'short', day: 'numeric', year: 'numeric' });
+}
+
 const styles = StyleSheet.create({
-  container: {
-    flex: 1,
-    backgroundColor: '#000',
-    paddingTop: 60,
+  container: { flex: 1, backgroundColor: C.bg },
+  content: { paddingTop: Platform.OS === 'ios' ? 70 : 48, paddingHorizontal: 18, paddingBottom: 110 },
+  header: { fontSize: 30, fontWeight: '900', color: C.text, marginBottom: 16 },
+
+  summaryCard: {
+    flexDirection: 'row', backgroundColor: C.card, borderRadius: 20, padding: 18,
+    marginBottom: 18, alignItems: 'center',
   },
-  header: {
-    fontSize: 28,
-    fontWeight: '800',
-    color: '#fff',
-    paddingHorizontal: 16,
-    marginBottom: 4,
+  summaryItem: { flex: 1, alignItems: 'center' },
+  summaryNum: { fontSize: 24, fontWeight: '900', color: C.text },
+  summaryLabel: { fontSize: 11, color: C.textSoft, fontWeight: '700', marginTop: 2 },
+  summaryDivider: { width: 1, height: 34, backgroundColor: C.bg },
+
+  scanRow: {
+    flexDirection: 'row', alignItems: 'center', gap: 12,
+    backgroundColor: C.card, borderRadius: 16, padding: 14, marginBottom: 10,
   },
-  hint: {
-    fontSize: 11,
-    color: 'rgba(255,255,255,0.3)',
-    paddingHorizontal: 16,
-    marginBottom: 16,
+  scanRing: {
+    width: 52, height: 52, borderRadius: 26, borderWidth: 4, borderColor: C.pink,
+    alignItems: 'center', justifyContent: 'center',
   },
-  listContent: {
-    paddingHorizontal: 16,
-    paddingBottom: 100,
+  scanScore: { fontSize: 16, fontWeight: '900', color: C.text },
+  scanDate: { fontSize: 14, fontWeight: '800', color: C.text },
+  scanDetail: { fontSize: 12, color: C.textSoft, marginTop: 2 },
+  deltaChip: { borderRadius: 10, paddingHorizontal: 9, paddingVertical: 4 },
+  deltaText: { fontSize: 13, fontWeight: '900' },
+
+  empty: { flex: 1, backgroundColor: C.bg, alignItems: 'center', justifyContent: 'center', padding: 28 },
+  emptyIcon: {
+    width: 88, height: 88, borderRadius: 44, backgroundColor: C.pinkSoft,
+    alignItems: 'center', justifyContent: 'center', marginBottom: 18,
   },
-  row: {
-    gap: TILE_GAP,
-    marginBottom: TILE_GAP,
+  emptyTitle: { fontSize: 22, fontWeight: '900', color: C.text, marginBottom: 8 },
+  emptySub: { fontSize: 14, color: C.textSoft, textAlign: 'center', lineHeight: 20, marginBottom: 24 },
+
+  cta: {
+    flexDirection: 'row', alignItems: 'center', justifyContent: 'center', gap: 8,
+    backgroundColor: C.pink, borderRadius: 28, paddingVertical: 16, paddingHorizontal: 28, marginTop: 8,
+    shadowColor: '#D98CA4', shadowOpacity: 0.4, shadowRadius: 10, shadowOffset: { width: 0, height: 4 }, elevation: 4,
   },
-  tile: {
-    width: TILE_SIZE,
-    height: TILE_SIZE * 1.25,
-    borderRadius: 12,
-    overflow: 'hidden',
-    backgroundColor: 'rgba(255,255,255,0.05)',
-  },
-  tileImage: {
-    width: '100%',
-    height: '100%',
-    position: 'absolute',
-  },
-  tileOverlay: {
-    position: 'absolute',
-    bottom: 0,
-    left: 0,
-    right: 0,
-    paddingHorizontal: 6,
-    paddingVertical: 6,
-    backgroundColor: 'rgba(0,0,0,0.65)',
-  },
-  tileStyleName: {
-    fontSize: 10,
-    fontWeight: '600',
-    color: '#fff',
-  },
-  tileMeta: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    gap: 4,
-    marginTop: 2,
-  },
-  hdBadge: {
-    backgroundColor: 'rgba(74,222,128,0.25)',
-    borderRadius: 4,
-    paddingHorizontal: 4,
-    paddingVertical: 1,
-  },
-  hdBadgeText: {
-    fontSize: 8,
-    fontWeight: '700',
-    color: '#4ade80',
-  },
-  tileDate: {
-    fontSize: 9,
-    color: 'rgba(255,255,255,0.45)',
-  },
-  // Delete button on tiles
-  deleteButton: {
-    position: 'absolute',
-    top: 6,
-    right: 6,
-    width: 22,
-    height: 22,
-    borderRadius: 11,
-    backgroundColor: 'rgba(0,0,0,0.6)',
-    justifyContent: 'center',
-    alignItems: 'center',
-    zIndex: 10,
-  },
-  deleteButtonText: {
-    color: 'rgba(255,255,255,0.7)',
-    fontSize: 11,
-    fontWeight: '700',
-    lineHeight: 13,
-  },
-  // Empty state
-  emptyContainer: {
-    flex: 1,
-    backgroundColor: '#000',
-    justifyContent: 'center',
-    alignItems: 'center',
-    padding: 32,
-  },
-  emptyIconCircle: {
-    width: 96,
-    height: 96,
-    borderRadius: 48,
-    backgroundColor: 'rgba(168,85,247,0.1)',
-    borderWidth: 1,
-    borderColor: 'rgba(168,85,247,0.2)',
-    justifyContent: 'center',
-    alignItems: 'center',
-    marginBottom: 20,
-  },
-  emptyIconText: {
-    fontSize: 40,
-  },
-  emptyTitle: {
-    fontSize: 22,
-    fontWeight: '800',
-    color: '#fff',
-    marginBottom: 8,
-  },
-  emptySubtitle: {
-    fontSize: 14,
-    color: 'rgba(255,255,255,0.4)',
-    textAlign: 'center',
-    marginBottom: 32,
-    lineHeight: 20,
-  },
-  ctaButton: {
-    borderRadius: 999,
-    paddingVertical: 16,
-    paddingHorizontal: 32,
-    backgroundColor: '#a855f7',
-  },
-  ctaButtonText: {
-    color: '#fff',
-    fontSize: 15,
-    fontWeight: '700',
-  },
+  ctaText: { color: '#fff', fontSize: 16, fontWeight: '900' },
 });

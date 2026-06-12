@@ -1,8 +1,11 @@
 import { View, Text, Pressable, Image, ScrollView, StyleSheet } from 'react-native';
 import { useLocalSearchParams, router } from 'expo-router';
 import { useEffect, useState } from 'react';
+import { Ionicons } from '@expo/vector-icons';
+import { theme as C } from '../src/theme';
 import { trackScreen, trackEvent } from '../src/services/analytics';
 import { relight as relightApi } from '../src/services/featureService';
+import { checkSubscription } from '../src/services/subscription';
 
 interface LightPreset {
   id: string;
@@ -39,6 +42,8 @@ export default function RelightScreen() {
   }, []);
 
   async function generate() {
+    const sub = await checkSubscription();
+    if (!sub) { router.push('/pricing'); return; }
     if (!imageUri || !selectedPreset) return;
     const preset = LIGHT_PRESETS.find(p => p.id === selectedPreset);
     if (!preset) return;
@@ -62,8 +67,8 @@ export default function RelightScreen() {
 
   return (
     <ScrollView style={styles.container} contentContainerStyle={styles.content}>
-      <Pressable style={styles.backBtn} onPress={() => router.back()}>
-        <Text style={styles.backText}>{'<'} Back</Text>
+      <Pressable style={styles.backBtn} onPress={() => router.back()} hitSlop={8}>
+        <Ionicons name="chevron-back" size={26} color={C.text} />
       </Pressable>
 
       <Text style={styles.title}>Relight</Text>
@@ -119,51 +124,50 @@ export default function RelightScreen() {
 }
 
 const styles = StyleSheet.create({
-  container: { flex: 1, backgroundColor: '#000' },
+  container: { flex: 1, backgroundColor: C.bg },
   content: { paddingTop: 60, paddingHorizontal: 16, paddingBottom: 100, alignItems: 'center' },
   backBtn: { alignSelf: 'flex-start', marginBottom: 16 },
-  backText: { color: 'rgba(255,255,255,0.6)', fontSize: 16 },
-  title: { fontSize: 24, fontWeight: '700', color: '#fff', marginBottom: 4 },
-  subtitle: { fontSize: 14, color: 'rgba(255,255,255,0.4)', marginBottom: 20 },
-  preview: { width: 120, height: 120, borderRadius: 60, borderWidth: 2, borderColor: 'rgba(255,255,255,0.15)', marginBottom: 24 },
-  sectionTitle: { fontSize: 16, fontWeight: '600', color: '#fff', marginBottom: 12, alignSelf: 'flex-start' },
+  title: { fontSize: 24, fontWeight: '700', color: C.text, marginBottom: 4 },
+  subtitle: { fontSize: 14, color: C.textSoft, marginBottom: 20 },
+  preview: { width: 120, height: 120, borderRadius: 60, borderWidth: 2, borderColor: C.border, marginBottom: 24 },
+  sectionTitle: { fontSize: 16, fontWeight: '600', color: C.text, marginBottom: 12, alignSelf: 'flex-start' },
   pillScroll: { width: '100%', marginBottom: 24 },
   pillContainer: { flexDirection: 'row', gap: 10 },
   pill: {
     flexDirection: 'row',
     alignItems: 'center',
-    backgroundColor: 'rgba(255,255,255,0.05)',
+    backgroundColor: C.card,
     borderRadius: 20,
     paddingVertical: 10,
     paddingHorizontal: 16,
     borderWidth: 1,
-    borderColor: 'rgba(255,255,255,0.08)',
+    borderColor: C.border,
     gap: 6,
   },
-  pillActive: { backgroundColor: 'rgba(236,72,153,0.2)', borderColor: 'rgba(236,72,153,0.5)' },
+  pillActive: { backgroundColor: C.pinkSoft, borderColor: C.pink },
   pillIcon: { fontSize: 16 },
-  pillText: { fontSize: 13, fontWeight: '500', color: 'rgba(255,255,255,0.6)' },
-  pillTextActive: { color: '#ec4899' },
+  pillText: { fontSize: 13, fontWeight: '500', color: C.textSoft },
+  pillTextActive: { color: C.pink },
   dirRow: { flexDirection: 'row', width: '100%', justifyContent: 'space-between', marginBottom: 32 },
   dirBtn: {
     flex: 1,
-    backgroundColor: 'rgba(255,255,255,0.05)',
+    backgroundColor: C.card,
     borderRadius: 14,
     padding: 14,
     alignItems: 'center',
     marginHorizontal: 4,
     borderWidth: 1,
-    borderColor: 'rgba(255,255,255,0.08)',
+    borderColor: C.border,
   },
-  dirBtnActive: { backgroundColor: 'rgba(168,85,247,0.2)', borderColor: 'rgba(168,85,247,0.5)' },
-  dirIcon: { fontSize: 18, marginBottom: 4, color: '#fff' },
-  dirText: { fontSize: 11, fontWeight: '500', color: 'rgba(255,255,255,0.6)' },
-  dirTextActive: { color: '#a855f7' },
-  errorText: { fontSize: 14, color: '#f87171', marginBottom: 12 },
+  dirBtnActive: { backgroundColor: C.pinkSoft, borderColor: C.pink },
+  dirIcon: { fontSize: 18, marginBottom: 4, color: C.text },
+  dirText: { fontSize: 11, fontWeight: '500', color: C.textSoft },
+  dirTextActive: { color: C.pink },
+  errorText: { fontSize: 14, color: '#DC2626', marginBottom: 12 },
   cta: {
     width: '100%',
-    backgroundColor: '#ec4899',
-    borderRadius: 16,
+    backgroundColor: C.pink,
+    borderRadius: 24,
     paddingVertical: 18,
     alignItems: 'center',
   },

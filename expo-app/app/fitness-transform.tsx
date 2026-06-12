@@ -1,8 +1,11 @@
 import { View, Text, Pressable, Image, ScrollView, StyleSheet } from 'react-native';
 import { useLocalSearchParams, router } from 'expo-router';
 import { useEffect, useState } from 'react';
+import { Ionicons } from '@expo/vector-icons';
+import { theme as C } from '../src/theme';
 import { trackScreen, trackEvent } from '../src/services/analytics';
 import { fitnessTransform } from '../src/services/featureService';
+import { checkSubscription } from '../src/services/subscription';
 
 interface Intensity {
   id: string;
@@ -29,6 +32,13 @@ export default function FitnessTransformScreen() {
 
   async function generate() {
     if (!imageUri || !selectedIntensity) return;
+
+    const sub = await checkSubscription();
+    if (!sub) {
+      router.push('/pricing');
+      return;
+    }
+
     setLoading(true);
     setError(null);
 
@@ -48,8 +58,8 @@ export default function FitnessTransformScreen() {
 
   return (
     <ScrollView style={styles.container} contentContainerStyle={styles.content}>
-      <Pressable style={styles.backBtn} onPress={() => router.back()}>
-        <Text style={styles.backText}>{'<'} Back</Text>
+      <Pressable style={styles.backBtn} onPress={() => router.back()} hitSlop={8}>
+        <Ionicons name="chevron-back" size={26} color={C.text} />
       </Pressable>
 
       <Text style={styles.title}>Fitness Transform</Text>
@@ -96,13 +106,12 @@ export default function FitnessTransformScreen() {
 }
 
 const styles = StyleSheet.create({
-  container: { flex: 1, backgroundColor: '#000' },
+  container: { flex: 1, backgroundColor: C.bg },
   content: { paddingTop: 60, paddingHorizontal: 16, paddingBottom: 100, alignItems: 'center' },
   backBtn: { alignSelf: 'flex-start', marginBottom: 16 },
-  backText: { color: 'rgba(255,255,255,0.6)', fontSize: 16 },
-  title: { fontSize: 24, fontWeight: '700', color: '#fff', marginBottom: 4 },
-  subtitle: { fontSize: 14, color: 'rgba(255,255,255,0.4)', marginBottom: 20 },
-  preview: { width: 120, height: 120, borderRadius: 60, borderWidth: 2, borderColor: 'rgba(255,255,255,0.15)', marginBottom: 32 },
+  title: { fontSize: 24, fontWeight: '900', color: C.text, marginBottom: 4 },
+  subtitle: { fontSize: 14, color: C.textSoft, marginBottom: 20 },
+  preview: { width: 120, height: 120, borderRadius: 60, borderWidth: 2, borderColor: C.border, marginBottom: 32 },
   intensityRow: {
     flexDirection: 'row',
     width: '100%',
@@ -111,30 +120,30 @@ const styles = StyleSheet.create({
   },
   intensityCard: {
     flex: 1,
-    backgroundColor: 'rgba(255,255,255,0.05)',
+    backgroundColor: C.card,
     borderRadius: 14,
     padding: 14,
     alignItems: 'center',
     marginHorizontal: 4,
     borderWidth: 1,
-    borderColor: 'rgba(255,255,255,0.08)',
+    borderColor: C.border,
   },
-  intensityCardActive: { backgroundColor: 'rgba(236,72,153,0.2)', borderColor: 'rgba(236,72,153,0.5)' },
+  intensityCardActive: { backgroundColor: C.pinkSoft, borderColor: C.pink },
   intensityIcon: { fontSize: 24, marginBottom: 6 },
-  intensityName: { fontSize: 14, fontWeight: '600', color: 'rgba(255,255,255,0.7)', marginBottom: 2 },
-  intensityNameActive: { color: '#ec4899' },
-  intensityDesc: { fontSize: 10, color: 'rgba(255,255,255,0.4)', textAlign: 'center' },
-  intensityDescActive: { color: 'rgba(236,72,153,0.7)' },
-  errorText: { fontSize: 14, color: '#f87171', marginBottom: 12 },
+  intensityName: { fontSize: 14, fontWeight: '600', color: C.text, marginBottom: 2 },
+  intensityNameActive: { color: C.pink },
+  intensityDesc: { fontSize: 10, color: C.textSoft, textAlign: 'center' },
+  intensityDescActive: { color: C.pink },
+  errorText: { fontSize: 14, color: '#D14343', marginBottom: 12 },
   cta: {
     width: '100%',
-    backgroundColor: '#ec4899',
-    borderRadius: 16,
+    backgroundColor: C.pink,
+    borderRadius: 24,
     paddingVertical: 18,
     alignItems: 'center',
     marginBottom: 16,
   },
   ctaDisabled: { opacity: 0.4 },
-  ctaText: { color: '#fff', fontSize: 16, fontWeight: '700' },
-  disclaimer: { fontSize: 10, color: 'rgba(255,255,255,0.2)', textAlign: 'center' },
+  ctaText: { color: '#fff', fontSize: 16, fontWeight: '800' },
+  disclaimer: { fontSize: 10, color: C.textSoft, textAlign: 'center' },
 });

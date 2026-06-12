@@ -483,23 +483,15 @@ async function cacheVideoInR2(
 
 // ─── Features list ──────────────────────────────────────────────────────────
 
+// Focused premium suite (EPIC-PLAN: female clinical-luxury glow-up app,
+// hard paywall — every tool is premium). The old 19-feature grab-bag was cut.
 const FEATURES_LIST = [
-  { id: "glow_up", name: "Glow Up", description: "AI transformation styles", icon: "sparkles", isPremium: false },
-  { id: "face_swap", name: "Face Swap", description: "Put your face anywhere", icon: "person.2.crop.square.stack", isPremium: false },
-  { id: "instant_style", name: "Art Style", description: "Your face as anime, painting, 3D", icon: "paintbrush", isPremium: false },
+  { id: "glow_up", name: "Glow Up", description: "AI transformation styles", icon: "sparkles", isPremium: true },
   { id: "headshot", name: "AI Headshot", description: "Professional photos from selfie", icon: "briefcase", isPremium: true },
-  { id: "hair_change", name: "Hair Change", description: "Try any hairstyle", icon: "scissors", isPremium: false },
-  { id: "relight", name: "Relight", description: "Studio-quality lighting", icon: "light.max", isPremium: false },
-  { id: "age_transform", name: "Age Machine", description: "See yourself at any age", icon: "hourglass", isPremium: false },
-  { id: "try_on", name: "Try On", description: "Virtual clothing try-on", icon: "tshirt", isPremium: true },
-  { id: "animate_portrait", name: "Animate Portrait", description: "Bring your photo to life", icon: "play.circle.fill", isPremium: false },
-  { id: "talking_photo", name: "Talking Photo", description: "Make your photo talk", icon: "waveform.circle.fill", isPremium: true },
-  { id: "background_removal", name: "Background Removal", description: "Remove background instantly", icon: "person.crop.rectangle", isPremium: false },
-  { id: "caricature", name: "AI Caricature", description: "Cartoon portrait of you", icon: "face.smiling", isPremium: false },
-  { id: "photo_restore", name: "Photo Restore", description: "Fix old or damaged photos", icon: "clock.arrow.circlepath", isPremium: false },
-  { id: "pet_portrait", name: "Pet Portrait", description: "Style your pet as a hero", icon: "pawprint.fill", isPremium: false },
-  { id: "fitness_transform", name: "Fitness Transform", description: "Visualize your fit self", icon: "figure.run", isPremium: false },
-  { id: "upscale", name: "4K Upscale", description: "Enhance to crisp 4K", icon: "arrow.up.forward.square", isPremium: false },
+  { id: "hair_change", name: "Hair Makeover", description: "Try any hairstyle", icon: "scissors", isPremium: true },
+  { id: "relight", name: "Relight", description: "Studio-quality lighting", icon: "light.max", isPremium: true },
+  { id: "age_transform", name: "Age Rewind", description: "See yourself younger", icon: "hourglass", isPremium: true },
+  { id: "fitness_transform", name: "Fit Version", description: "Visualize your fit self", icon: "figure.run", isPremium: true },
 ];
 
 // ─── Main fetch handler ─────────────────────────────────────────────────────

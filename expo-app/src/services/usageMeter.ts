@@ -29,20 +29,9 @@ export async function canGenerateHD(): Promise<boolean> {
   return count < CONFIG.MAX_HD_TRANSFORMS_PER_DAY;
 }
 
-export async function canGeneratePreview(): Promise<boolean> {
-  if (isWeb) return true; // Web preview — no limits
-  const count = await resetIfNewDay(STANDARD_COUNT_KEY, STANDARD_DATE_KEY);
-  return count < CONFIG.MAX_FREE_STANDARD_PER_DAY;
-}
-
 export async function recordHDGeneration(): Promise<void> {
   const count = await resetIfNewDay(HD_COUNT_KEY, HD_DATE_KEY);
   await AsyncStorage.setItem(HD_COUNT_KEY, String(count + 1));
-}
-
-export async function recordPreviewGeneration(): Promise<void> {
-  const count = await resetIfNewDay(STANDARD_COUNT_KEY, STANDARD_DATE_KEY);
-  await AsyncStorage.setItem(STANDARD_COUNT_KEY, String(count + 1));
 }
 
 export async function remainingHD(): Promise<number> {
@@ -50,7 +39,4 @@ export async function remainingHD(): Promise<number> {
   return Math.max(0, CONFIG.MAX_HD_TRANSFORMS_PER_DAY - count);
 }
 
-export async function remainingStandard(): Promise<number> {
-  const count = await resetIfNewDay(STANDARD_COUNT_KEY, STANDARD_DATE_KEY);
-  return Math.max(0, CONFIG.MAX_FREE_STANDARD_PER_DAY - count);
-}
+// HARD PAYWALL: the free "preview" quota helpers were removed with the free tier.
