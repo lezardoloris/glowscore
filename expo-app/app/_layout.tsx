@@ -54,6 +54,8 @@ export default function RootLayout() {
         <Stack.Screen name="age-transform" options={{ animation: 'slide_from_right' }} />
         <Stack.Screen name="fitness-transform" options={{ animation: 'slide_from_right' }} />
         <Stack.Screen name="virtual-makeup" options={{ animation: 'slide_from_right' }} />
+        <Stack.Screen name="camera-scan" options={{ animation: 'fade' }} />
+        <Stack.Screen name="component-detail" options={{ animation: 'slide_from_right' }} />
       </Stack>
         </View>
       </View>

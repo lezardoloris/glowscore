@@ -46,6 +46,7 @@ export default function ProgressScreen() {
   const latest = scans[0];
   const first = scans[scans.length - 1];
   const totalDelta = latest.overall - first.overall;
+  const skinDelta = latest.skin - first.skin; // skin tracker: fastest-moving component
 
   return (
     <ScrollView style={styles.container} contentContainerStyle={styles.content} showsVerticalScrollIndicator={false}>
@@ -63,6 +64,13 @@ export default function ProgressScreen() {
             {totalDelta >= 0 ? '+' : ''}{totalDelta}
           </Text>
           <Text style={styles.summaryLabel}>All time</Text>
+        </View>
+        <View style={styles.summaryDivider} />
+        <View style={styles.summaryItem}>
+          <Text style={[styles.summaryNum, { color: skinDelta >= 0 ? C.good : '#D97742' }]}>
+            {skinDelta >= 0 ? '+' : ''}{skinDelta}
+          </Text>
+          <Text style={styles.summaryLabel}>Skin</Text>
         </View>
         <View style={styles.summaryDivider} />
         <View style={styles.summaryItem}>

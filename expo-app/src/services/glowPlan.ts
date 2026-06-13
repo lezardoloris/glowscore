@@ -75,6 +75,20 @@ export async function toggleTaskToday(taskId: string): Promise<GlowPlan | null> 
   return plan;
 }
 
+/** 12-week blueprint (EPIC 5.1): which program week the plan is in (1..12). */
+export function getPlanWeek(plan: GlowPlan): number {
+  const days = Math.floor((Date.now() - new Date(plan.createdAt).getTime()) / 86400000);
+  return Math.min(12, Math.max(1, Math.floor(days / 7) + 1));
+}
+
+/** Weekly focus rotation across the 6 diagnostic components. */
+const WEEK_FOCUS = [
+  'Skin Clarity', 'Eye Area', 'Jawline Definition', 'Facial Symmetry', 'Lips & Smile', 'Nose & Profile',
+];
+export function getWeekFocus(week: number): string {
+  return WEEK_FOCUS[(week - 1) % WEEK_FOCUS.length];
+}
+
 /** Consecutive days (ending today or yesterday) with at least one task done. */
 export async function getStreak(): Promise<number> {
   const plan = await getPlan();

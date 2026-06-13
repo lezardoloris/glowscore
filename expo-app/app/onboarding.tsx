@@ -132,6 +132,7 @@ export default function OnboardingScreen() {
   const [diet, setDiet] = useState<string | null>(null);
   const [workouts, setWorkouts] = useState<string | null>(null);
   const [requestingCamera, setRequestingCamera] = useState(false);
+  const [ageConfirmed, setAgeConfirmed] = useState(false);
 
   useEffect(() => {
     trackOnboardingStarted();
@@ -340,6 +341,14 @@ export default function OnboardingScreen() {
               <Text style={styles.consentText}>Never sold or used to train other models</Text>
             </View>
 
+            {/* Age gate 17+ (body-image safety, App Store rating alignment) */}
+            <Pressable style={styles.ageRow} onPress={() => { impactMedium(); setAgeConfirmed(!ageConfirmed); }}>
+              <View style={[styles.ageBox, ageConfirmed && styles.ageBoxOn]}>
+                {ageConfirmed && <Ionicons name="checkmark" size={15} color="#fff" />}
+              </View>
+              <Text style={styles.ageText}>I confirm I am 17 or older</Text>
+            </Pressable>
+
             <Text style={styles.consentLegal}>
               By tapping "I Agree" you consent to your photo being analyzed by AI for entertainment
               purposes.{' '}
@@ -378,7 +387,11 @@ export default function OnboardingScreen() {
             <Text style={styles.ctaText}>{step === 0 ? 'Get Started' : 'Continue'}</Text>
           </Pressable>
         ) : step === 5 ? (
-          <Pressable onPress={agreeAndContinue} style={styles.cta}>
+          <Pressable
+            onPress={agreeAndContinue}
+            disabled={!ageConfirmed}
+            style={[styles.cta, !ageConfirmed && styles.ctaDisabled]}
+          >
             <Text style={styles.ctaText}>I Agree &amp; Continue</Text>
           </Pressable>
         ) : (
@@ -600,6 +613,13 @@ const styles = StyleSheet.create({
     marginBottom: 10,
   },
   consentText: { flex: 1, fontSize: 15, fontWeight: '600', color: C.text },
+  ageRow: { flexDirection: 'row', alignItems: 'center', gap: 10, marginTop: 14 },
+  ageBox: {
+    width: 24, height: 24, borderRadius: 7, borderWidth: 2, borderColor: C.border,
+    backgroundColor: C.card, alignItems: 'center', justifyContent: 'center',
+  },
+  ageBoxOn: { backgroundColor: C.pink, borderColor: C.pink },
+  ageText: { fontSize: 14, fontWeight: '700', color: C.text },
   consentLegal: {
     fontSize: 12,
     color: C.textSoft,

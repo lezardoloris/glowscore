@@ -3,7 +3,7 @@ import { router } from 'expo-router';
 import { useEffect, useState } from 'react';
 import { Ionicons } from '@expo/vector-icons';
 import { theme as C } from '../src/theme';
-import { getPlan, toggleTaskToday, isDoneToday, getStreak, GlowPlan } from '../src/services/glowPlan';
+import { getPlan, toggleTaskToday, isDoneToday, getStreak, getPlanWeek, getWeekFocus, GlowPlan } from '../src/services/glowPlan';
 import { impactMedium, notificationSuccess } from '../src/services/haptics';
 import { trackScreen, trackEvent } from '../src/services/analytics';
 
@@ -55,6 +55,9 @@ export default function GlowPlanScreen() {
       </Pressable>
 
       <Text style={styles.title}>Your Glow-Up Plan</Text>
+      <View style={styles.weekChip}>
+        <Text style={styles.weekText}>Week {getPlanWeek(plan)} of 12 · Focus: {getWeekFocus(getPlanWeek(plan))}</Text>
+      </View>
 
       <View style={styles.streakCard}>
         <Text style={styles.streakNum}>🔥 {streak}</Text>
@@ -93,6 +96,8 @@ const styles = StyleSheet.create({
   back: { alignSelf: 'flex-start', marginBottom: 6 },
   title: { color: C.text, fontSize: 26, fontWeight: '900', marginBottom: 16 },
 
+  weekChip: { alignSelf: 'flex-start', backgroundColor: C.pinkSoft, borderRadius: 12, paddingHorizontal: 12, paddingVertical: 6, marginTop: -8, marginBottom: 14 },
+  weekText: { fontSize: 12.5, fontWeight: '800', color: C.pink },
   streakCard: { alignSelf: 'center', alignItems: 'center', backgroundColor: C.card, borderRadius: 18, paddingVertical: 16, paddingHorizontal: 40, marginBottom: 8 },
   streakNum: { color: C.text, fontSize: 34, fontWeight: '900' },
   streakLabel: { color: C.textSoft, fontSize: 13, marginTop: 2 },

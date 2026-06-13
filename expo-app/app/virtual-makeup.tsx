@@ -1,376 +1,139 @@
-import { View, Text, Pressable, Image, ScrollView, StyleSheet, Platform } from 'react-native';
+import { View, Text, Pressable, Image, ScrollView, StyleSheet, ActivityIndicator } from 'react-native';
 import { useLocalSearchParams, router } from 'expo-router';
 import { useEffect, useState } from 'react';
 import { Ionicons } from '@expo/vector-icons';
 import { theme as C } from '../src/theme';
 import { trackScreen, trackEvent } from '../src/services/analytics';
-import { checkSubscription } from '../src/services/subscription';
-import * as MediaLibrary from 'expo-media-library';
-import { notificationSuccess } from '../src/services/haptics';
+import { checkSubscription, getSubscriberToken } from '../src/services/subscription';
+import { applyMakeup } from '../src/services/featureService';
 
-interface ColorOption {
+interface MakeupLook {
   id: string;
   name: string;
-  color: string;
+  icon: keyof typeof Ionicons.glyphMap;
+  desc: string;
 }
 
-const LIP_COLORS: ColorOption[] = [
-  { id: 'none', name: 'None', color: 'transparent' },
-  { id: 'red', name: 'Red', color: '#DC2626' },
-  { id: 'pink', name: 'Pink', color: '#EC4899' },
-  { id: 'berry', name: 'Berry', color: '#9333EA' },
-  { id: 'nude', name: 'Nude', color: '#D4A574' },
-  { id: 'coral', name: 'Coral', color: '#FB923C' },
-  { id: 'wine', name: 'Wine', color: '#7F1D1D' },
-];
-
-const EYE_SHADOW_COLORS: ColorOption[] = [
-  { id: 'none', name: 'None', color: 'transparent' },
-  { id: 'gold', name: 'Gold', color: '#F59E0B' },
-  { id: 'smoky', name: 'Smoky', color: '#374151' },
-  { id: 'bronze', name: 'Bronze', color: '#92400E' },
-  { id: 'purple', name: 'Purple', color: '#7C3AED' },
-  { id: 'blue', name: 'Blue', color: '#3B82F6' },
-  { id: 'rose', name: 'Rose', color: '#F472B6' },
-];
-
-const BLUSH_COLORS: ColorOption[] = [
-  { id: 'none', name: 'None', color: 'transparent' },
-  { id: 'peach', name: 'Peach', color: '#FDBA74' },
-  { id: 'pink', name: 'Pink', color: '#F9A8D4' },
-  { id: 'berry', name: 'Berry', color: '#C084FC' },
-  { id: 'coral', name: 'Coral', color: '#FB7185' },
-];
-
-interface MakeupPreset {
-  id: string;
-  name: string;
-  icon: string;
-  lip: string;
-  eyeShadow: string;
-  blush: string;
-  eyeliner: boolean;
-}
-
-const MAKEUP_PRESETS: MakeupPreset[] = [
-  { id: 'natural_day', name: 'Natural Day', icon: '🌤️', lip: 'nude', eyeShadow: 'gold', blush: 'peach', eyeliner: false },
-  { id: 'date_night', name: 'Date Night', icon: '🌙', lip: 'red', eyeShadow: 'smoky', blush: 'pink', eyeliner: true },
-  { id: 'glam', name: 'Glam', icon: '💎', lip: 'berry', eyeShadow: 'gold', blush: 'berry', eyeliner: true },
-  { id: 'bold', name: 'Bold', icon: '🔥', lip: 'wine', eyeShadow: 'purple', blush: 'coral', eyeliner: true },
-  { id: 'minimal', name: 'Minimal', icon: '🌿', lip: 'nude', eyeShadow: 'none', blush: 'peach', eyeliner: false },
+const LOOKS: MakeupLook[] = [
+  { id: 'natural', name: 'Natural', icon: 'leaf-outline', desc: 'Fresh, barely-there glow' },
+  { id: 'soft_glam', name: 'Soft Glam', icon: 'sparkles-outline', desc: 'Soft shimmer and warm tones' },
+  { id: 'glam', name: 'Full Glam', icon: 'diamond-outline', desc: 'Bold eyes, sculpted finish' },
+  { id: 'bold_lip', name: 'Bold Lip', icon: 'heart-outline', desc: 'Statement lip, clean base' },
 ];
 
 export default function VirtualMakeupScreen() {
   const { imageUri } = useLocalSearchParams<{ imageUri: string }>();
-  const [selectedLip, setSelectedLip] = useState('none');
-  const [selectedEyeShadow, setSelectedEyeShadow] = useState('none');
-  const [selectedBlush, setSelectedBlush] = useState('none');
-  const [eyeliner, setEyeliner] = useState(false);
-  const [showBefore, setShowBefore] = useState(false);
-  const [activePreset, setActivePreset] = useState<string | null>(null);
+  const [look, setLook] = useState('natural');
+  const [loading, setLoading] = useState(false);
+  const [error, setError] = useState<string | null>(null);
 
   useEffect(() => {
     trackScreen('virtual_makeup');
   }, []);
 
-  function applyPreset(preset: MakeupPreset) {
-    setSelectedLip(preset.lip);
-    setSelectedEyeShadow(preset.eyeShadow);
-    setSelectedBlush(preset.blush);
-    setEyeliner(preset.eyeliner);
-    setActivePreset(preset.id);
-    trackEvent('virtual_makeup_preset', { preset: preset.id });
-  }
+  async function onApply() {
+    if (!imageUri || loading) return;
+    setError(null);
 
-  async function savePhoto() {
     const sub = await checkSubscription();
     if (!sub) { router.push('/pricing'); return; }
-    if (!imageUri) return;
-
-    if (Platform.OS === 'web') {
-      window.open(imageUri, '_blank');
-      return;
-    }
 
     try {
-      const { status } = await MediaLibrary.requestPermissionsAsync();
-      if (status === 'granted') {
-        await MediaLibrary.saveToLibraryAsync(imageUri);
-        notificationSuccess();
-        trackEvent('virtual_makeup_saved');
-      }
-    } catch (e) {
-      console.log('Save failed:', e);
+      setLoading(true);
+      trackEvent('makeup_apply', { look });
+      const token = await getSubscriberToken();
+      const url = await applyMakeup(imageUri, look, token);
+      router.replace({
+        pathname: '/result',
+        params: { imageUri, resultUri: url, styleId: 'clear_skin', isHD: 'true' },
+      });
+    } catch (e: any) {
+      setError(e?.message || 'Something went wrong. Try again.');
+    } finally {
+      setLoading(false);
     }
-  }
-
-  // Build makeup overlay info
-  const hasAnyMakeup = selectedLip !== 'none' || selectedEyeShadow !== 'none' || selectedBlush !== 'none' || eyeliner;
-
-  function ColorPicker({ label, options, selected, onSelect }: {
-    label: string;
-    options: ColorOption[];
-    selected: string;
-    onSelect: (id: string) => void;
-  }) {
-    return (
-      <View style={styles.pickerSection}>
-        <Text style={styles.pickerLabel}>{label}</Text>
-        <View style={styles.colorRow}>
-          {options.map((opt) => (
-            <Pressable
-              key={opt.id}
-              style={[
-                styles.colorCircle,
-                opt.color === 'transparent' && styles.colorCircleEmpty,
-                selected === opt.id && styles.colorCircleActive,
-              ]}
-              onPress={() => { onSelect(opt.id); setActivePreset(null); }}
-            >
-              {opt.color !== 'transparent' && (
-                <View style={[styles.colorFill, { backgroundColor: opt.color }]} />
-              )}
-              {opt.color === 'transparent' && (
-                <Text style={styles.noneText}>X</Text>
-              )}
-            </Pressable>
-          ))}
-        </View>
-      </View>
-    );
   }
 
   return (
     <ScrollView style={styles.container} contentContainerStyle={styles.content}>
-      <Pressable style={styles.backBtn} onPress={() => router.back()} hitSlop={8}>
+      <Pressable style={styles.back} onPress={() => router.back()} hitSlop={8}>
         <Ionicons name="chevron-back" size={26} color={C.text} />
       </Pressable>
 
-      <Text style={styles.title}>Virtual Makeup</Text>
-      <Text style={styles.subtitle}>Try different makeup looks</Text>
+      <Text style={styles.title}>Makeup</Text>
+      <Text style={styles.subtitle}>Pick a look, our AI applies it to your photo</Text>
 
-      {/* Photo with overlay */}
-      {imageUri && (
-        <View style={styles.imageContainer}>
-          <Image source={{ uri: imageUri }} style={styles.mainImage} />
+      {imageUri ? (
+        <Image source={{ uri: imageUri }} style={styles.preview} />
+      ) : null}
 
-          {/* Simulated makeup overlay using colored semi-transparent views */}
-          {!showBefore && hasAnyMakeup && (
-            <View style={styles.makeupOverlay}>
-              {/* Lip color overlay (bottom center of face region) */}
-              {selectedLip !== 'none' && (
-                <View style={[
-                  styles.lipOverlay,
-                  { backgroundColor: LIP_COLORS.find(c => c.id === selectedLip)?.color + '40' },
-                ]} />
-              )}
-              {/* Eye shadow overlay (upper region) */}
-              {selectedEyeShadow !== 'none' && (
-                <>
-                  <View style={[
-                    styles.eyeOverlayLeft,
-                    { backgroundColor: EYE_SHADOW_COLORS.find(c => c.id === selectedEyeShadow)?.color + '30' },
-                  ]} />
-                  <View style={[
-                    styles.eyeOverlayRight,
-                    { backgroundColor: EYE_SHADOW_COLORS.find(c => c.id === selectedEyeShadow)?.color + '30' },
-                  ]} />
-                </>
-              )}
-              {/* Blush overlay (cheek regions) */}
-              {selectedBlush !== 'none' && (
-                <>
-                  <View style={[
-                    styles.blushLeft,
-                    { backgroundColor: BLUSH_COLORS.find(c => c.id === selectedBlush)?.color + '25' },
-                  ]} />
-                  <View style={[
-                    styles.blushRight,
-                    { backgroundColor: BLUSH_COLORS.find(c => c.id === selectedBlush)?.color + '25' },
-                  ]} />
-                </>
-              )}
-            </View>
-          )}
-
-          {showBefore && (
-            <View style={styles.beforeLabel}>
-              <Text style={styles.beforeLabelText}>BEFORE</Text>
-            </View>
-          )}
-        </View>
-      )}
-
-      {/* Before/After toggle */}
-      <Pressable
-        style={styles.toggleBtn}
-        onPressIn={() => setShowBefore(true)}
-        onPressOut={() => setShowBefore(false)}
-      >
-        <Text style={styles.toggleText}>Hold to see Before</Text>
-      </Pressable>
-
-      {/* Presets */}
-      <Text style={styles.sectionTitle}>Preset Looks</Text>
-      <ScrollView horizontal showsHorizontalScrollIndicator={false} style={styles.presetScroll} contentContainerStyle={styles.presetContainer}>
-        {MAKEUP_PRESETS.map((preset) => (
-          <Pressable
-            key={preset.id}
-            style={[styles.presetPill, activePreset === preset.id && styles.presetPillActive]}
-            onPress={() => applyPreset(preset)}
-          >
-            <Text style={styles.presetIcon}>{preset.icon}</Text>
-            <Text style={[styles.presetText, activePreset === preset.id && styles.presetTextActive]}>
-              {preset.name}
-            </Text>
-          </Pressable>
-        ))}
-      </ScrollView>
-
-      {/* Color pickers */}
-      <ColorPicker label="Lip Color" options={LIP_COLORS} selected={selectedLip} onSelect={setSelectedLip} />
-      <ColorPicker label="Eye Shadow" options={EYE_SHADOW_COLORS} selected={selectedEyeShadow} onSelect={setSelectedEyeShadow} />
-      <ColorPicker label="Blush" options={BLUSH_COLORS} selected={selectedBlush} onSelect={setSelectedBlush} />
-
-      {/* Eyeliner toggle */}
-      <View style={styles.toggleRow}>
-        <Text style={styles.pickerLabel}>Eyeliner</Text>
-        <Pressable
-          style={[styles.toggleSwitch, eyeliner && styles.toggleSwitchActive]}
-          onPress={() => { setEyeliner(!eyeliner); setActivePreset(null); }}
-        >
-          <Text style={styles.toggleSwitchText}>{eyeliner ? 'ON' : 'OFF'}</Text>
-        </Pressable>
+      <View style={styles.grid}>
+        {LOOKS.map((l) => {
+          const active = look === l.id;
+          return (
+            <Pressable
+              key={l.id}
+              style={[styles.lookCard, active && styles.lookCardActive]}
+              onPress={() => setLook(l.id)}
+            >
+              <View style={[styles.lookIcon, active && styles.lookIconActive]}>
+                <Ionicons name={l.icon} size={22} color={active ? '#fff' : C.pink} />
+              </View>
+              <Text style={[styles.lookName, active && styles.lookNameActive]}>{l.name}</Text>
+              <Text style={styles.lookDesc}>{l.desc}</Text>
+            </Pressable>
+          );
+        })}
       </View>
 
-      {/* Save */}
-      <Pressable style={styles.saveBtn} onPress={savePhoto}>
-        <Text style={styles.saveBtnText}>Save Photo</Text>
+      <Pressable style={[styles.cta, loading && styles.ctaDisabled]} onPress={onApply} disabled={loading}>
+        {loading ? (
+          <ActivityIndicator color="#fff" />
+        ) : (
+          <>
+            <Ionicons name="color-wand" size={20} color="#fff" />
+            <Text style={styles.ctaText}>Apply Makeup</Text>
+          </>
+        )}
       </Pressable>
+
+      {error ? <Text style={styles.error}>{error}</Text> : null}
     </ScrollView>
   );
 }
 
 const styles = StyleSheet.create({
   container: { flex: 1, backgroundColor: C.bg },
-  content: { paddingTop: 60, paddingHorizontal: 16, paddingBottom: 100, alignItems: 'center' },
-  backBtn: { alignSelf: 'flex-start', marginBottom: 16 },
-  title: { fontSize: 24, fontWeight: '700', color: C.text, marginBottom: 4 },
-  subtitle: { fontSize: 14, color: C.textSoft, marginBottom: 20 },
-  imageContainer: { position: 'relative', marginBottom: 16 },
-  mainImage: { width: 260, height: 260, borderRadius: 20, borderWidth: 1, borderColor: C.border },
-  makeupOverlay: { position: 'absolute', top: 0, left: 0, right: 0, bottom: 0, borderRadius: 20, overflow: 'hidden' },
-  lipOverlay: {
-    position: 'absolute',
-    bottom: '25%',
-    left: '30%',
-    width: '40%',
-    height: '8%',
-    borderRadius: 20,
+  content: { paddingTop: 56, paddingHorizontal: 20, paddingBottom: 80 },
+  back: { alignSelf: 'flex-start', marginBottom: 6 },
+  title: { color: C.text, fontSize: 26, fontWeight: '900', marginBottom: 4 },
+  subtitle: { color: C.textSoft, fontSize: 14, marginBottom: 18 },
+
+  preview: {
+    width: '100%', height: 260, borderRadius: 20, marginBottom: 18,
+    borderWidth: 1, borderColor: C.border, backgroundColor: C.card,
   },
-  eyeOverlayLeft: {
-    position: 'absolute',
-    top: '30%',
-    left: '15%',
-    width: '25%',
-    height: '8%',
-    borderRadius: 12,
+
+  grid: { flexDirection: 'row', flexWrap: 'wrap', gap: 12, marginBottom: 24 },
+  lookCard: {
+    width: '47%', flexGrow: 1, backgroundColor: C.card, borderRadius: 18,
+    padding: 14, borderWidth: 2, borderColor: C.border,
   },
-  eyeOverlayRight: {
-    position: 'absolute',
-    top: '30%',
-    right: '15%',
-    width: '25%',
-    height: '8%',
-    borderRadius: 12,
+  lookCardActive: { borderColor: C.pink, backgroundColor: '#FDF4F7' },
+  lookIcon: {
+    width: 42, height: 42, borderRadius: 21, backgroundColor: C.pinkSoft,
+    alignItems: 'center', justifyContent: 'center', marginBottom: 10,
   },
-  blushLeft: {
-    position: 'absolute',
-    top: '45%',
-    left: '10%',
-    width: '22%',
-    height: '12%',
-    borderRadius: 30,
+  lookIconActive: { backgroundColor: C.pink },
+  lookName: { color: C.text, fontSize: 15, fontWeight: '800', marginBottom: 2 },
+  lookNameActive: { color: C.pink },
+  lookDesc: { color: C.textSoft, fontSize: 12, lineHeight: 16 },
+
+  cta: {
+    flexDirection: 'row', alignItems: 'center', justifyContent: 'center', gap: 10,
+    backgroundColor: C.pink, borderRadius: 24, paddingVertical: 18,
   },
-  blushRight: {
-    position: 'absolute',
-    top: '45%',
-    right: '10%',
-    width: '22%',
-    height: '12%',
-    borderRadius: 30,
-  },
-  beforeLabel: { position: 'absolute', top: 10, left: 10, backgroundColor: 'rgba(45,35,48,0.7)', borderRadius: 8, paddingHorizontal: 8, paddingVertical: 4 },
-  beforeLabelText: { fontSize: 10, fontWeight: '700', color: '#fff' },
-  toggleBtn: {
-    backgroundColor: C.card,
-    borderRadius: 10,
-    paddingVertical: 8,
-    paddingHorizontal: 20,
-    marginBottom: 24,
-    borderWidth: 1,
-    borderColor: C.border,
-  },
-  toggleText: { color: C.textSoft, fontSize: 12 },
-  sectionTitle: { fontSize: 16, fontWeight: '600', color: C.text, marginBottom: 12, alignSelf: 'flex-start' },
-  presetScroll: { width: '100%', marginBottom: 24 },
-  presetContainer: { flexDirection: 'row', gap: 10 },
-  presetPill: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    backgroundColor: C.card,
-    borderRadius: 20,
-    paddingVertical: 10,
-    paddingHorizontal: 16,
-    borderWidth: 1,
-    borderColor: C.border,
-    gap: 6,
-  },
-  presetPillActive: { backgroundColor: C.pinkSoft, borderColor: C.pink },
-  presetIcon: { fontSize: 16 },
-  presetText: { fontSize: 13, fontWeight: '500', color: C.textSoft },
-  presetTextActive: { color: C.pink },
-  pickerSection: { width: '100%', marginBottom: 16 },
-  pickerLabel: { fontSize: 14, fontWeight: '500', color: C.textSoft, marginBottom: 8 },
-  colorRow: { flexDirection: 'row', gap: 10, flexWrap: 'wrap' },
-  colorCircle: {
-    width: 38,
-    height: 38,
-    borderRadius: 19,
-    borderWidth: 2,
-    borderColor: C.border,
-    alignItems: 'center',
-    justifyContent: 'center',
-    overflow: 'hidden',
-  },
-  colorCircleEmpty: { borderStyle: 'dashed' },
-  colorCircleActive: { borderColor: C.pink, borderWidth: 3 },
-  colorFill: { width: '100%', height: '100%', borderRadius: 19 },
-  noneText: { color: C.textSoft, fontSize: 12, fontWeight: '600' },
-  toggleRow: {
-    width: '100%',
-    flexDirection: 'row',
-    alignItems: 'center',
-    justifyContent: 'space-between',
-    marginBottom: 24,
-    backgroundColor: C.card,
-    borderRadius: 10,
-    padding: 12,
-  },
-  toggleSwitch: {
-    backgroundColor: C.track,
-    borderRadius: 14,
-    paddingVertical: 6,
-    paddingHorizontal: 16,
-  },
-  toggleSwitchActive: { backgroundColor: C.pink },
-  toggleSwitchText: { color: C.text, fontSize: 12, fontWeight: '700' },
-  saveBtn: {
-    width: '100%',
-    backgroundColor: C.pink,
-    borderRadius: 24,
-    paddingVertical: 18,
-    alignItems: 'center',
-  },
-  saveBtnText: { color: '#fff', fontSize: 16, fontWeight: '700' },
+  ctaDisabled: { opacity: 0.7 },
+  ctaText: { color: '#fff', fontSize: 16, fontWeight: '800' },
+  error: { color: '#C0334D', fontSize: 13, textAlign: 'center', marginTop: 12, fontWeight: '600' },
 });

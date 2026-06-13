@@ -1,0 +1,304 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>GlowScore. Reveal your Facial Harmony</title>
+<meta name="description" content="Take the 60-second quiz and get your personal facial harmony analysis. Clinical-grade insights, made for you.">
+<style>
+  :root{
+    --pink:#E0537A;
+    --blush:#F9E0E8;
+    --ink:#2B2228;
+    --muted:#8A7A82;
+    --bg:#FFFCFD;
+    --radius:18px;
+  }
+  *{box-sizing:border-box;margin:0;padding:0}
+  body{
+    font-family:-apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,Helvetica,Arial,sans-serif;
+    background:var(--bg);color:var(--ink);line-height:1.55;
+    -webkit-font-smoothing:antialiased;
+  }
+  .wrap{max-width:480px;margin:0 auto;padding:0 24px}
+  /* HERO */
+  .hero{padding:72px 0 56px;text-align:center}
+  .logo{font-size:14px;letter-spacing:.22em;text-transform:uppercase;color:var(--pink);font-weight:600;margin-bottom:36px}
+  h1{font-size:34px;line-height:1.18;font-weight:700;letter-spacing:-.01em;margin-bottom:18px}
+  h1 em{font-style:normal;color:var(--pink)}
+  .sub{font-size:17px;color:var(--muted);margin-bottom:36px;max-width:340px;margin-left:auto;margin-right:auto}
+  .btn{
+    display:inline-block;width:100%;max-width:340px;padding:17px 28px;
+    background:var(--pink);color:#fff;border:none;border-radius:999px;
+    font-size:17px;font-weight:600;cursor:pointer;text-decoration:none;text-align:center;
+    transition:transform .15s ease,box-shadow .15s ease;
+    box-shadow:0 8px 24px rgba(224,83,122,.28);
+  }
+  .btn:active{transform:scale(.98)}
+  .btn.secondary{background:#fff;color:var(--pink);border:1.5px solid var(--blush);box-shadow:none}
+  .btn:disabled{background:var(--blush);color:#C99AAB;cursor:not-allowed;box-shadow:none}
+  .trust{margin-top:20px;font-size:13px;color:var(--muted)}
+  /* QUIZ */
+  .quiz{display:none;padding:48px 0 64px}
+  .progress-track{height:6px;background:var(--blush);border-radius:999px;margin-bottom:40px;overflow:hidden}
+  .progress-fill{height:100%;width:0;background:var(--pink);border-radius:999px;transition:width .35s ease}
+  .step{display:none;animation:fade .3s ease}
+  .step.active{display:block}
+  @keyframes fade{from{opacity:0;transform:translateY(8px)}to{opacity:1;transform:none}}
+  .step-label{font-size:12px;letter-spacing:.18em;text-transform:uppercase;color:var(--pink);font-weight:600;margin-bottom:10px}
+  .step h2{font-size:24px;font-weight:700;margin-bottom:8px}
+  .step p{color:var(--muted);font-size:15px;margin-bottom:28px}
+  .options{display:flex;flex-direction:column;gap:12px;margin-bottom:32px}
+  .opt{
+    padding:16px 20px;border:1.5px solid var(--blush);border-radius:var(--radius);
+    background:#fff;font-size:16px;cursor:pointer;text-align:left;color:var(--ink);
+    transition:border-color .15s,background .15s;width:100%;
+  }
+  .opt.selected{border-color:var(--pink);background:var(--blush)}
+  input[type=email]{
+    width:100%;padding:16px 20px;border:1.5px solid var(--blush);border-radius:var(--radius);
+    font-size:16px;background:#fff;outline:none;margin-bottom:28px;color:var(--ink);
+  }
+  input[type=email]:focus{border-color:var(--pink)}
+  .nav{display:flex;gap:12px}
+  .nav .btn{max-width:none}
+  .back{background:none;border:none;color:var(--muted);font-size:15px;cursor:pointer;padding:14px 8px}
+  /* RESULT */
+  .result{display:none;padding:56px 0 72px;text-align:center}
+  .result h2{font-size:28px;font-weight:700;margin-bottom:10px}
+  .result .sub{margin-bottom:32px}
+  .card{
+    position:relative;background:#fff;border:1.5px solid var(--blush);border-radius:24px;
+    padding:32px 24px;margin-bottom:36px;overflow:hidden;
+    box-shadow:0 12px 36px rgba(224,83,122,.10);
+  }
+  .blurred{filter:blur(7px);user-select:none;pointer-events:none}
+  .score-num{font-size:52px;font-weight:800;color:var(--pink)}
+  .score-label{font-size:14px;letter-spacing:.16em;text-transform:uppercase;color:var(--muted);margin-bottom:18px}
+  .bars{display:flex;flex-direction:column;gap:10px;text-align:left}
+  .bar-row{display:flex;align-items:center;gap:12px;font-size:14px;color:var(--ink)}
+  .bar-row span{width:110px;flex-shrink:0}
+  .bar{flex:1;height:8px;background:var(--blush);border-radius:999px;overflow:hidden}
+  .bar i{display:block;height:100%;background:var(--pink);border-radius:999px}
+  .lock{
+    position:absolute;inset:0;display:flex;flex-direction:column;align-items:center;justify-content:center;
+    background:rgba(255,252,253,.45);font-weight:600;color:var(--ink);font-size:15px;gap:6px;
+  }
+  .lock .pill{background:#fff;border:1.5px solid var(--blush);border-radius:999px;padding:10px 20px;box-shadow:0 6px 18px rgba(224,83,122,.16)}
+  .ctas{display:flex;flex-direction:column;gap:14px;align-items:center}
+  .fineprint{margin-top:14px;font-size:12px;color:var(--muted)}
+  /* FOOTER */
+  footer{padding:40px 0 56px;text-align:center;border-top:1px solid var(--blush)}
+  footer p{font-size:12px;color:var(--muted)}
+  footer a{color:var(--muted)}
+</style>
+</head>
+<body>
+
+<!-- HERO -->
+<section class="hero wrap" id="hero">
+  <div class="logo">GlowScore</div>
+  <h1>Reveal your <em>Facial Harmony</em></h1>
+  <p class="sub">A 60-second quiz, then a clinical-grade analysis of your features, glow potential, and the routine made for you.</p>
+  <button class="btn" onclick="startQuiz()">Take the quiz</button>
+  <p class="trust">Private. No photos needed for the quiz. Results in under a minute.</p>
+</section>
+
+<!-- QUIZ -->
+<section class="quiz wrap" id="quiz">
+  <div class="progress-track"><div class="progress-fill" id="progress"></div></div>
+
+  <div class="step" data-step="1">
+    <div class="step-label">Step 1 of 5</div>
+    <h2>What is your glow goal?</h2>
+    <p>Select all that apply.</p>
+    <div class="options" data-key="goals" data-multi="true">
+      <button class="opt">Clearer, brighter skin</button>
+      <button class="opt">A more defined jawline</button>
+      <button class="opt">Better photos and selfies</button>
+      <button class="opt">Confidence for a big event</button>
+      <button class="opt">An honest rating of where I stand</button>
+    </div>
+    <div class="nav"><button class="btn" onclick="next()">Continue</button></div>
+  </div>
+
+  <div class="step" data-step="2">
+    <div class="step-label">Step 2 of 5</div>
+    <h2>How old are you?</h2>
+    <p>Your analysis is calibrated to your age group.</p>
+    <div class="options" data-key="age">
+      <button class="opt">Under 20</button>
+      <button class="opt">20 to 25</button>
+      <button class="opt">26 to 32</button>
+      <button class="opt">33 and over</button>
+    </div>
+    <div class="nav"><button class="back" onclick="back()">Back</button><button class="btn" onclick="next()">Continue</button></div>
+  </div>
+
+  <div class="step" data-step="3">
+    <div class="step-label">Step 3 of 5</div>
+    <h2>Which area do you feel most insecure about?</h2>
+    <p>Be honest, this stays between us.</p>
+    <div class="options" data-key="insecurity">
+      <button class="opt">Skin texture or acne</button>
+      <button class="opt">Jawline and face shape</button>
+      <button class="opt">Eyes and dark circles</button>
+      <button class="opt">Lips and smile</button>
+      <button class="opt">Overall symmetry</button>
+    </div>
+    <div class="nav"><button class="back" onclick="back()">Back</button><button class="btn" onclick="next()">Continue</button></div>
+  </div>
+
+  <div class="step" data-step="4">
+    <div class="step-label">Step 4 of 5</div>
+    <h2>How often do you take selfies?</h2>
+    <p>This helps us tune your photo-readiness score.</p>
+    <div class="options" data-key="selfies">
+      <button class="opt">Every day</button>
+      <button class="opt">A few times a week</button>
+      <button class="opt">Only on good days</button>
+      <button class="opt">Almost never</button>
+    </div>
+    <div class="nav"><button class="back" onclick="back()">Back</button><button class="btn" onclick="next()">Continue</button></div>
+  </div>
+
+  <div class="step" data-step="5">
+    <div class="step-label">Step 5 of 5</div>
+    <h2>Where should we send your analysis?</h2>
+    <p>We will email your full report and glow plan.</p>
+    <input type="email" id="email" placeholder="you@email.com" autocomplete="email">
+    <div class="nav"><button class="back" onclick="back()">Back</button><button class="btn" onclick="finish()">See my results</button></div>
+  </div>
+</section>
+
+<!-- RESULT TEASER -->
+<section class="result wrap" id="result">
+  <h2>Your analysis is ready</h2>
+  <p class="sub">Here is a preview. Unlock the full breakdown, your glow score, and your personal routine in the app.</p>
+
+  <div class="card">
+    <div class="blurred">
+      <div class="score-num">8.4</div>
+      <div class="score-label">Harmony Score</div>
+      <div class="bars">
+        <div class="bar-row"><span>Symmetry</span><div class="bar"><i style="width:82%"></i></div></div>
+        <div class="bar-row"><span>Skin quality</span><div class="bar"><i style="width:64%"></i></div></div>
+        <div class="bar-row"><span>Jawline</span><div class="bar"><i style="width:71%"></i></div></div>
+        <div class="bar-row"><span>Eye area</span><div class="bar"><i style="width:77%"></i></div></div>
+        <div class="bar-row"><span>Glow potential</span><div class="bar"><i style="width:90%"></i></div></div>
+      </div>
+    </div>
+    <div class="lock"><div class="pill">🔒 Unlock your full analysis</div></div>
+  </div>
+
+  <div class="ctas">
+    <a class="btn" href="https://apps.apple.com/" id="cta-app">Continue in the app</a>
+    <!--
+      TODO: Stripe web checkout integration (Cal AI web-to-app model)
+      1. Create Stripe Products + Prices mirroring app pricing: $12.99/week, $59.99/year.
+      2. On click: POST to backend (Cloudflare Worker) /create-checkout-session with
+         { email: localStorage glowquiz email, price_id }, redirect to session.url.
+      3. Stripe webhook checkout.session.completed -> backend calls RevenueCat
+         POST /v1/receipts (or Web Billing) with app_user_id = email (or generated UUID
+         stored in localStorage and passed via Checkout client_reference_id) so the
+         purchase syncs as an active entitlement when she logs into the iOS app.
+      4. Success URL: this page with ?paid=1 -> show App Store deep link + "your access
+         is active, sign in with the same email" instructions.
+      5. Remove the disabled attribute and data-todo markers when live.
+    -->
+    <button class="btn secondary" disabled
+      data-todo="stripe-checkout"
+      data-todo-steps="create-prices;checkout-session-endpoint;webhook-to-revenuecat;success-deeplink">
+      Pay on web (Stripe, coming soon)
+    </button>
+    <p class="fineprint">$12.99 per week or $59.99 per year. Cancel anytime.</p>
+  </div>
+</section>
+
+<footer>
+  <div class="wrap">
+    <p>© 2026 GlowScore · <a href="https://glowupai.app/terms">Terms</a> · <a href="https://glowupai.app/privacy">Privacy</a></p>
+  </div>
+</footer>
+
+<script>
+(function(){
+  var STORE_KEY = "glowquiz";
+  var total = 5, current = 1;
+  var answers = {};
+  try { answers = JSON.parse(localStorage.getItem(STORE_KEY) || "{}"); } catch(e){ answers = {}; }
+
+  function save(){ try{ localStorage.setItem(STORE_KEY, JSON.stringify(answers)); }catch(e){} }
+  function $(s){ return document.querySelector(s); }
+  function $all(s){ return Array.prototype.slice.call(document.querySelectorAll(s)); }
+
+  function showStep(n){
+    current = n;
+    $all(".step").forEach(function(el){
+      el.classList.toggle("active", parseInt(el.dataset.step,10) === n);
+    });
+    $("#progress").style.width = ((n-1)/total*100 + 20) + "%";
+    window.scrollTo({top:0, behavior:"smooth"});
+  }
+
+  window.startQuiz = function(){
+    $("#hero").style.display = "none";
+    $("#quiz").style.display = "block";
+    showStep(1);
+  };
+
+  window.next = function(){
+    if (current < total) showStep(current + 1);
+  };
+  window.back = function(){
+    if (current > 1) showStep(current - 1);
+  };
+
+  window.finish = function(){
+    var email = $("#email").value.trim();
+    if (!/^[^@\s]+@[^@\s]+\.[^@\s]+$/.test(email)) {
+      $("#email").style.borderColor = "#E0537A";
+      $("#email").focus();
+      return;
+    }
+    answers.email = email;
+    save();
+    $("#quiz").style.display = "none";
+    $("#result").style.display = "block";
+    window.scrollTo({top:0, behavior:"smooth"});
+  };
+
+  // Option selection (single + multi)
+  $all(".options").forEach(function(group){
+    var key = group.dataset.key;
+    var multi = group.dataset.multi === "true";
+    var buttons = $all(".opt").filter(function(b){ return b.parentNode === group; });
+
+    // restore saved answers
+    var saved = answers[key];
+    buttons.forEach(function(btn){
+      var val = btn.textContent.trim();
+      if (multi ? (saved||[]).indexOf(val) > -1 : saved === val) btn.classList.add("selected");
+      btn.addEventListener("click", function(){
+        if (multi) {
+          btn.classList.toggle("selected");
+          answers[key] = buttons.filter(function(b){ return b.classList.contains("selected"); })
+                                .map(function(b){ return b.textContent.trim(); });
+          save();
+        } else {
+          buttons.forEach(function(b){ b.classList.remove("selected"); });
+          btn.classList.add("selected");
+          answers[key] = val;
+          save();
+          setTimeout(window.next, 250); // auto-advance feels snappier
+        }
+      });
+    });
+  });
+
+  // restore email
+  if (answers.email) $("#email").value = answers.email;
+})();
+</script>
+</body>
+</html>

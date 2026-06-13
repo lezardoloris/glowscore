@@ -350,7 +350,12 @@ export default function ScanResultScreen() {
             {METRIC_DEFS.map((m) => {
               const value = (score as any)[m.key] as number;
               return (
-                <View key={m.key} style={styles.metricCard}>
+                <Pressable
+                  key={m.key}
+                  style={styles.metricCard}
+                  disabled={!unlocked}
+                  onPress={() => router.push({ pathname: '/component-detail', params: { key: m.key } })}
+                >
                   <View style={styles.metricHeader}>
                     <Image source={m.img} style={styles.metricThumb} />
                     <View style={styles.metricHeaderText}>
@@ -375,7 +380,7 @@ export default function ScanResultScreen() {
                       ]}
                     />
                   </View>
-                </View>
+                </Pressable>
               );
             })}
           </View>

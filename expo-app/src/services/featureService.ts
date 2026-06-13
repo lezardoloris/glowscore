@@ -174,6 +174,45 @@ export async function tryOn(
   );
 }
 
+/** Apply an AI makeup look. Premium only. Returns image URL. */
+export async function applyMakeup(
+  imageUri: string,
+  look: string,
+  token: string
+): Promise<string> {
+  if (isWeb) {
+    await new Promise(r => setTimeout(r, 1500));
+    return imageUri;
+  }
+
+  const ImageManipulator = await import('expo-image-manipulator');
+  const manipulated = await ImageManipulator.manipulateAsync(
+    imageUri,
+    [{ resize: { width: 1024, height: 1024 } }],
+    { compress: 0.85, format: ImageManipulator.SaveFormat.JPEG, base64: true }
+  );
+  if (!manipulated.base64) throw new Error('Could not encode image');
+
+  const response = await fetch(`${CONFIG.WORKER_BASE_URL}/api/makeup`, {
+    method: 'POST',
+    headers: {
+      'Content-Type': 'application/json',
+      'Authorization': `Bearer ${token}`,
+    },
+    body: JSON.stringify({ image: manipulated.base64, look }),
+  });
+
+  if (response.status === 401) throw new Error('Subscribe to unlock');
+  if (response.status === 429) throw new Error('Daily limit reached');
+  if (!response.ok) {
+    const err = await response.json().catch(() => ({ error: 'Unknown error' }));
+    throw new Error(err.error || 'Makeup failed');
+  }
+
+  const data = await response.json();
+  return data.image_url;
+}
+
 // ─── Video Features ──────────────────────────────────────────────────────────
 
 /** Upload image + video for animate portrait. Returns video URL. */

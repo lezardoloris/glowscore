@@ -136,6 +136,11 @@ export default function HomeScreen() {
           <Pressable style={styles.secondary} onPress={pickImage}>
             <Text style={styles.secondaryText}>Choose a photo</Text>
           </Pressable>
+          {Platform.OS !== 'web' && (
+            <Pressable style={styles.liveScanLink} onPress={() => router.push('/camera-scan')}>
+              <Text style={styles.liveScanText}>Try live scan (beta)</Text>
+            </Pressable>
+          )}
         </>
       ) : (
         <>
@@ -214,6 +219,8 @@ const styles = StyleSheet.create({
   ctaText: { color: '#fff', fontSize: 17, fontWeight: '900' },
   secondary: { alignItems: 'center', paddingVertical: 16, marginTop: 4 },
   secondaryText: { color: C.pink, fontSize: 15, fontWeight: '700' },
+  liveScanLink: { alignItems: 'center', paddingVertical: 8 },
+  liveScanText: { color: C.textSoft, fontSize: 13, fontWeight: '600' },
 
   permCard: { width: '100%', backgroundColor: C.card, borderRadius: 24, padding: 24, alignItems: 'center' },
   iconCircle: { width: 84, height: 84, borderRadius: 42, backgroundColor: C.pinkSoft, alignItems: 'center', justifyContent: 'center', marginBottom: 18 },

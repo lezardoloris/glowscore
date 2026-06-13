@@ -474,9 +474,10 @@ async function callGeminiGlowup(
   headers: Record<string, string>,
   rateLimitKey: string,
   currentCount: number,
-  timeoutMs: number = 30000
+  timeoutMs: number = 30000,
+  promptOverride?: string
 ): Promise<{ url: string } | Response> {
-  const prompt =
+  const prompt = promptOverride ||
     "Perform a clean, high-end, studio-quality photographic glow-up of this person's face. " +
     "Perfect the skin texture (smooth, radiant, even tone, no blemishes), subtly balance facial symmetry, " +
     "elevate cheek contours and gently define the jawline, brighten the eyes. " +
@@ -640,6 +641,8 @@ export default {
           return handleGetFeatures(corsHeaders);
         case "/api/transform":
           return await handleTransform(request, env, corsHeaders);
+        case "/api/makeup":
+          return await handleMakeup(request, env, corsHeaders);
         case "/api/face-scan":
           return await handleFaceScan(request, env, corsHeaders);
         case "/api/face-swap":
@@ -804,6 +807,77 @@ async function handleTransform(request: Request, env: Env, headers: Record<strin
     { image_url: finalImageUrl, quality, feature: "glow_up", style_id: body.style_id, remaining_today: dailyLimit - (currentCount + 1) },
     { headers }
   );
+}
+
+// ─── POST /api/makeup (EPIC 4.2: real AI makeup, premium) ───────────────────
+
+const MAKEUP_PRESETS: Record<string, string> = {
+  natural: "subtle natural 'no-makeup' makeup: even skin tint, groomed brows, soft blush, nude glossy lips",
+  soft_glam: "soft glam makeup: luminous base, sculpted soft contour, warm shimmer eyeshadow, fluttery lashes, satin pink lips",
+  glam: "full glam evening makeup: flawless matte base, defined winged eyeliner, dramatic lashes, sculpted contour and highlight, bold elegant lips",
+  bold_lip: "clean minimal makeup with a bold statement lip: even luminous skin, groomed brows, subtle eyes, vivid classic red lips",
+};
+
+async function handleMakeup(request: Request, env: Env, headers: Record<string, string>): Promise<Response> {
+  const methodErr = requirePost(request, headers);
+  if (methodErr) return methodErr;
+
+  // Premium only — hard paywall
+  const authResult = await validatePremiumAuth(request, env, headers);
+  if (authResult instanceof Response) return authResult;
+  const subscriberToken = authResult.subscriberToken;
+
+  const bodyOrErr = await parseBody<{ image: string; look?: string }>(request, headers);
+  if (bodyOrErr instanceof Response) return bodyOrErr;
+  const body = bodyOrErr;
+
+  if (!body.image || body.image.length > 14_000_000) {
+    return Response.json({ error: "Image too large (max 10MB)" }, { status: 400, headers });
+  }
+  if (!isValidImageBase64(body.image)) {
+    return Response.json({ error: "Invalid image format" }, { status: 400, headers });
+  }
+  const look = MAKEUP_PRESETS[body.look || "natural"] ? (body.look || "natural") : "natural";
+
+  const rlResult = await checkRateLimit(request, env, headers, "makeup", 10, true, subscriberToken);
+  if (rlResult instanceof Response) return rlResult;
+  const { currentCount, rateLimitKey } = rlResult;
+
+  const makeupPrompt =
+    `Apply professional ${MAKEUP_PRESETS[look]} to this person's face. ` +
+    "Keep it strictly photorealistic; fully preserve the identity, ethnicity, gender, face shape, hair and background. " +
+    "Only the makeup changes. High-end beauty editorial finish.";
+
+  if (env.GEMINI_API_KEY) {
+    const g = await callGeminiGlowup(env, body.image, "image/jpeg", request, headers, rateLimitKey, currentCount, 30000, makeupPrompt);
+    if (g instanceof Response) return g;
+    return Response.json({ image_url: g.url, feature: "makeup", look, remaining_today: 10 - (currentCount + 1) }, { headers });
+  }
+
+  // Fallback: fal flux/dev with identity adapter
+  const falResult = await callFalAi(
+    env,
+    "fal-ai/flux/dev",
+    {
+      prompt: `beautiful portrait with ${MAKEUP_PRESETS[look]}, photorealistic, same person, high quality`,
+      negative_prompt: "different person, cartoon, deformed, low quality",
+      image: `data:image/jpeg;base64,${body.image}`,
+      image_size: { width: 1024, height: 1024 },
+      num_inference_steps: 28,
+      guidance_scale: 7.5,
+      ip_adapter_scale: 0.85,
+      seed: Math.floor(Math.random() * 2147483647),
+    },
+    headers, rateLimitKey, currentCount
+  );
+  if (falResult instanceof Response) return falResult;
+  const imageUrl = extractImageUrl(falResult.result);
+  if (!imageUrl) {
+    await rollbackRateLimit(env, rateLimitKey, currentCount);
+    return Response.json({ error: "No image generated" }, { status: 500, headers });
+  }
+  const finalUrl = await cacheImageInR2(imageUrl, request, env, "makeup");
+  return Response.json({ image_url: finalUrl, feature: "makeup", look, remaining_today: 10 - (currentCount + 1) }, { headers });
 }
 
 // ─── Vision LLM helper (GlowScore) ──────────────────────────────────────────
