@@ -20,6 +20,7 @@ import { hasAiConsent, setAiConsent } from '../src/services/aiConsent';
 import { getQuizProfile } from '../src/services/quizProfile';
 import { transformTeaser } from '../src/services/transform';
 import ShareCard from '../src/components/ShareCard';
+import AnimatedBar from '../src/components/AnimatedBar';
 import { AnimatedCircularProgress } from 'react-native-circular-progress';
 import AnimatedNumbers from 'react-native-animated-numbers';
 
@@ -347,7 +348,7 @@ export default function ScanResultScreen() {
             )}
 
             {/* Metric cards */}
-            {METRIC_DEFS.map((m) => {
+            {METRIC_DEFS.map((m, i) => {
               const value = (score as any)[m.key] as number;
               return (
                 <Pressable
@@ -370,16 +371,7 @@ export default function ScanResultScreen() {
                       </View>
                     )}
                   </View>
-                  <View style={styles.metricTrack}>
-                    <View
-                      style={[
-                        styles.metricFill,
-                        unlocked
-                          ? { width: `${value}%`, backgroundColor: C.pink }
-                          : { width: '30%', backgroundColor: C.trackLocked },
-                      ]}
-                    />
-                  </View>
+                  <AnimatedBar value={value} unlocked={unlocked} delay={i * 90} />
                 </Pressable>
               );
             })}
