@@ -152,7 +152,9 @@ export default function OnboardingScreen() {
   }
 
   async function agreeAndContinue() {
+    if (!ageConfirmed) return;
     await setAiConsent(true);
+    try { await AsyncStorage.setItem('age_confirmed', 'true'); } catch {}
     trackEvent('ai_consent_granted', { source: 'onboarding' });
     next();
   }

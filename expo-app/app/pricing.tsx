@@ -162,7 +162,7 @@ export default function PricingScreen() {
       <Pressable style={styles.cta} onPress={purchase} disabled={purchasing}>
         <Text style={styles.ctaText}>{getCTAText()}</Text>
       </Pressable>
-      <Text style={styles.socialProof}>Join 10,000+ members ✨</Text>
+      <Text style={styles.socialProof}>Cancel anytime · Join 10,000+ members</Text>
 
       {error && <Text style={styles.error}>{error}</Text>}
 

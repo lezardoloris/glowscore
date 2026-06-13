@@ -515,9 +515,10 @@ const styles = StyleSheet.create({
   panel: {
     backgroundColor: C.panel,
     borderRadius: 28,
-    borderWidth: 3,
+    borderWidth: 1,
     borderColor: C.border,
     padding: 16,
+    shadowColor: '#C77E97', shadowOpacity: 0.18, shadowRadius: 24, shadowOffset: { width: 0, height: 10 }, elevation: 3,
   },
   panelTitle: {
     fontSize: 32,

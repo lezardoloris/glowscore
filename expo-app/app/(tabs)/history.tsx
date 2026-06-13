@@ -74,7 +74,10 @@ export default function ProgressScreen() {
         </View>
         <View style={styles.summaryDivider} />
         <View style={styles.summaryItem}>
-          <Text style={styles.summaryNum}>🔥{streak}</Text>
+          <View style={{ flexDirection: 'row', alignItems: 'center', gap: 3 }}>
+            <Ionicons name="flame" size={17} color={C.pink} />
+            <Text style={styles.summaryNum}>{streak}</Text>
+          </View>
           <Text style={styles.summaryLabel}>Streak</Text>
         </View>
       </View>

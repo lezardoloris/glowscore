@@ -60,7 +60,10 @@ export default function GlowPlanScreen() {
       </View>
 
       <View style={styles.streakCard}>
-        <Text style={styles.streakNum}>🔥 {streak}</Text>
+        <View style={{ flexDirection: 'row', alignItems: 'center', gap: 5 }}>
+          <Ionicons name="flame" size={26} color={C.pink} />
+          <Text style={styles.streakNum}>{streak}</Text>
+        </View>
         <Text style={styles.streakLabel}>day streak</Text>
       </View>
 

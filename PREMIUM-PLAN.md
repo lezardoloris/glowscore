@@ -104,4 +104,16 @@ Déjà fait et commité (GitHub `lezardoloris/glowscore`): EPIC 1-3, 4.1/4.4, 5.
 **Phase Croissance:** EPIC 16 (affilié → private-label → POD).
 
 ## Comment exécuter avec Fable
+## Review 3 agents (2026-06-11) — à traiter
+**P0 sécurité/coût (avant tout spend UA):**
+- **Hard paywall NON appliqué côté Worker:** `/api/face-scan` et toutes les transfos en quality "standard" ne requièrent pas d'abo (auth seulement pour HD). N'importe qui avec l'URL du Worker a 3 scans/j + transfos standard gratuites. → exiger l'entitlement server-side sur face-scan + transform (sauf le teaser glow_max standard volontaire). `index.ts:1028,747`.
+- **validateSubscriber = appUserID en bearer non signé:** un ID d'abonné connu/deviné = premium. → passer à un token signé/JWT. `index.ts:2068`.
+- **Rate-limit free par IP = DoS coût** (rotation d'IP → appels payants illimités). → cap global / token par install. `index.ts:386`.
+- **R2 public si SIGNING_SECRET absent** (photos de visages énumérables) + HMAC sans expiry. → signer par défaut + TTL. `index.ts:285,2043`.
+- **Age gate + consentement local-only** (reset au reinstall, jamais vérifiés server-side) sur du contenu body-image = risque rejet Apple. → persister (age fait) + enforcement.
+**Quick-fixes APPLIQUÉS ce jour:** emojis 🔥 → Ionicons flame (history/glow-plan), age gate persisté + requis, panneau reveal en ombre douce (border 3→1), réassurance "Cancel anytime" sur le paywall.
+**Quick-fixes restants (codables):** pricing anchoring (lifetime $39.99 < annual $59.99 cannibalise l'ancre; strikethrough annual), teaser Maxed-Out aussi sur l'écran paywall, magic-byte avant le gate de taille + cap base64 vidéo/audio.
+**Design premium (roadmap, cf EPIC 9/10):** halo/gradient derrière le ring, vraie hiérarchie typo (un display face + corps léger, pas tout en 800-900), skeletons + animation de scan au lieu du spinner, retirer les hex one-off hors palette dans scan-result.
+
+## Comment exécuter avec Fable
 Donner à Fable: ce `PREMIUM-PLAN.md` + `EPIC-PLAN.md` + `GlowScore-Code-Bundle.md` + screenshots. Lui demander d'attaquer une story précise (ex: "EPIC 9.2 reveal séquencé") en sortant: specs design + code RN, critères d'acceptation cochés, tsc clean. Une story = un commit.
