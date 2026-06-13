@@ -3,439 +3,622 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-<title>GlowUp AI — Preview</title>
+<title>GlowScore — App Preview</title>
 <style>
   :root {
-    --pink: #ec4899; --purple: #a855f7; --blue: #3b82f6;
-    --bg: #000; --surface: rgba(255,255,255,0.05); --border: rgba(255,255,255,0.1);
-    --text: #fff; --text2: rgba(255,255,255,0.7); --text3: rgba(255,255,255,0.4);
+    --bg: #F9E0E8; --panel: #FBEAF0; --card: #FFFFFF; --cardSoft: #FFF6F9;
+    --border: #F2C4D2; --pink: #E0537A; --pinkSoft: #F8D4DF;
+    --text: #2D2330; --textSoft: #8A7B85; --track: #F4E6EB; --trackLocked: #D9CCD2;
+    --good: #2E9E5B; --warn: #D97742; --lockBg: #EFEAEC; --lockIcon: #9B8F96;
   }
-  * { margin: 0; padding: 0; box-sizing: border-box; }
-  body { font-family: -apple-system, BlinkMacSystemFont, 'SF Pro', sans-serif; background: #111; display: flex; justify-content: center; align-items: center; min-height: 100vh; }
+  * { margin: 0; padding: 0; box-sizing: border-box; -webkit-tap-highlight-color: transparent; }
+  body { font-family: -apple-system, BlinkMacSystemFont, 'SF Pro Display', 'Segoe UI', sans-serif;
+         background: #ece6ea; display: flex; flex-wrap: wrap; gap: 28px; justify-content: center;
+         align-items: flex-start; padding: 40px 16px; min-height: 100vh; }
+
+  .stage { display: flex; flex-direction: column; align-items: center; gap: 14px; }
+  .stage-hint { font-size: 13px; color: #8a7b85; max-width: 393px; text-align: center; line-height: 1.5; }
+  .stage-hint b { color: #E0537A; }
 
   /* Phone frame */
-  .phone { width: 393px; height: 852px; background: var(--bg); border-radius: 48px; overflow: hidden; position: relative; border: 3px solid #333; box-shadow: 0 0 60px rgba(168,85,247,0.2); }
-  .notch { position: absolute; top: 0; left: 50%; transform: translateX(-50%); width: 126px; height: 34px; background: #000; border-radius: 0 0 20px 20px; z-index: 100; }
+  .phone { width: 393px; height: 852px; background: var(--bg); border-radius: 52px; overflow: hidden;
+           position: relative; border: 11px solid #1c1418; box-shadow: 0 30px 80px rgba(180,90,120,0.35); }
+  .notch { position: absolute; top: 12px; left: 50%; transform: translateX(-50%); width: 120px; height: 30px;
+           background: #1c1418; border-radius: 18px; z-index: 200; }
   .screen { width: 100%; height: 100%; overflow: hidden; position: relative; }
 
-  /* Screens */
-  .view { position: absolute; inset: 0; display: flex; flex-direction: column; transition: transform 0.4s cubic-bezier(0.32, 0.72, 0, 1), opacity 0.3s; }
-  .view.hidden { transform: translateX(100%); opacity: 0; pointer-events: none; }
-  .view.hidden-left { transform: translateX(-30%); opacity: 0.5; pointer-events: none; }
+  /* Views */
+  .view { position: absolute; inset: 0; overflow-y: auto; overflow-x: hidden;
+          opacity: 0; pointer-events: none; transform: translateX(24px);
+          transition: transform .38s cubic-bezier(.32,.72,0,1), opacity .28s; -webkit-overflow-scrolling: touch; }
+  .view.active { opacity: 1; pointer-events: auto; transform: none; }
+  .view::-webkit-scrollbar { width: 0; }
 
-  /* Common */
-  .gradient-text { background: linear-gradient(135deg, var(--pink), var(--purple), var(--blue)); -webkit-background-clip: text; -webkit-text-fill-color: transparent; }
-  .gradient-bg { background: linear-gradient(135deg, var(--pink), var(--purple)); }
-  .glass { background: rgba(255,255,255,0.08); backdrop-filter: blur(20px); border: 1px solid var(--border); }
-  .btn { border: none; cursor: pointer; font-family: inherit; font-weight: 600; border-radius: 16px; padding: 18px 24px; width: 100%; font-size: 16px; color: white; transition: transform 0.15s, opacity 0.15s; }
-  .btn:active { transform: scale(0.97); opacity: 0.9; }
-  .btn-primary { background: linear-gradient(135deg, var(--pink), var(--purple)); }
-  .btn-glass { background: rgba(255,255,255,0.08); backdrop-filter: blur(10px); border: 1px solid var(--border); }
-  .btn-small { padding: 14px 20px; font-size: 14px; border-radius: 12px; }
+  .pad { padding: 64px 22px 96px; }
+  .pad-sm { padding: 56px 18px 96px; }
+
+  /* Type */
+  h1.brand { font-size: 30px; font-weight: 900; color: var(--text); letter-spacing: -.5px; }
+  .tagline { font-size: 15px; color: var(--textSoft); margin-top: 2px; }
+  .h-title { font-size: 30px; font-weight: 900; color: var(--text); line-height: 1.15; }
+  .h-sub { font-size: 15px; color: var(--textSoft); line-height: 1.5; }
+  .pink { color: var(--pink); }
+
+  /* Buttons */
+  .cta { width: 100%; border: none; cursor: pointer; font-family: inherit; background: var(--pink); color: #fff;
+         font-weight: 900; font-size: 17px; border-radius: 30px; padding: 17px; display: flex; align-items: center;
+         justify-content: center; gap: 9px; box-shadow: 0 6px 18px rgba(217,140,164,.5); transition: transform .12s; }
+  .cta:active { transform: scale(.97); }
+  .cta.white { background: #fff; color: var(--text); box-shadow: 0 6px 18px rgba(217,140,164,.4); }
+  .cta.disabled { opacity: .45; }
+  .link { display: block; text-align: center; color: var(--pink); font-weight: 700; font-size: 14px;
+          padding: 14px; cursor: pointer; text-decoration: underline; }
+  .link.soft { color: var(--textSoft); text-decoration: none; }
+
+  .card { background: var(--card); border-radius: 20px; padding: 16px; }
+  .chip { display: inline-flex; align-items: center; gap: 5px; background: var(--pink); color: #fff;
+          font-size: 12px; font-weight: 800; border-radius: 12px; padding: 4px 10px; }
 
   /* Tab bar */
-  .tab-bar { position: absolute; bottom: 0; left: 0; right: 0; display: flex; justify-content: space-around; padding: 8px 0 28px; background: rgba(0,0,0,0.85); backdrop-filter: blur(20px); border-top: 1px solid var(--border); z-index: 50; }
-  .tab { display: flex; flex-direction: column; align-items: center; gap: 4px; font-size: 10px; color: var(--text3); cursor: pointer; padding: 4px 16px; transition: color 0.2s; }
-  .tab.active { color: var(--pink); }
-  .tab svg { width: 24px; height: 24px; fill: currentColor; }
+  .tabbar { position: absolute; bottom: 0; left: 0; right: 0; height: 84px; background: var(--card);
+            border-top: 1px solid var(--border); display: flex; padding-bottom: 22px; z-index: 80; }
+  .tab { flex: 1; display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 3px;
+         color: var(--textSoft); font-size: 11px; font-weight: 600; cursor: pointer; }
+  .tab.on { color: var(--pink); }
+  .tab .ic { font-size: 22px; line-height: 1; }
 
-  /* === SCREEN 1: HOME === */
-  .home-bg { background: linear-gradient(180deg, #000 0%, #0f0520 100%); padding: 60px 24px 100px; align-items: center; justify-content: center; gap: 32px; }
-  .home-bg h1 { font-size: 36px; font-weight: 300; color: var(--text2); text-align: center; }
-  .home-bg h2 { font-size: 48px; font-weight: 800; text-align: center; line-height: 1.1; }
-  .home-bg p { font-size: 15px; color: var(--text3); text-align: center; line-height: 1.5; }
-  .home-actions { width: 100%; display: flex; flex-direction: column; gap: 12px; padding: 0 24px; }
+  /* Admin floating btn */
+  .admin-fab { position: absolute; top: 50px; right: 14px; z-index: 150; width: 38px; height: 38px;
+               border-radius: 19px; background: rgba(45,35,48,.82); color: #fff; border: none; cursor: pointer;
+               font-size: 16px; display: flex; align-items: center; justify-content: center; }
 
-  /* === SCREEN 2: STYLE SELECTION === */
-  .style-screen { background: var(--bg); padding: 60px 16px 100px; }
-  .style-screen .photo-preview { width: 100px; height: 100px; border-radius: 50%; margin: 16px auto; object-fit: cover; border: 2px solid var(--border); box-shadow: 0 0 30px rgba(168,85,247,0.4); }
-  .style-screen h2 { text-align: center; color: var(--text); font-size: 22px; margin: 12px 0 20px; }
-  .style-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 12px; }
-  .style-card { display: flex; flex-direction: column; align-items: center; gap: 10px; padding: 20px 12px; border-radius: 16px; cursor: pointer; transition: all 0.2s; text-align: center; }
-  .style-card:hover { background: rgba(255,255,255,0.08); }
-  .style-card .icon-circle { width: 52px; height: 52px; border-radius: 50%; display: flex; align-items: center; justify-content: center; font-size: 22px; position: relative; }
-  .style-card .name { font-size: 14px; font-weight: 600; color: var(--text); }
-  .style-card .desc { font-size: 11px; color: var(--text3); line-height: 1.3; }
-  .style-card .lock { position: absolute; bottom: -2px; right: -2px; font-size: 10px; background: rgba(0,0,0,0.7); border-radius: 50%; padding: 3px; }
-  .style-card.free .icon-circle { background: linear-gradient(135deg, rgba(236,72,153,0.2), rgba(168,85,247,0.2)); }
-  .style-card.locked .icon-circle { background: rgba(255,255,255,0.05); }
-  .hint { font-size: 12px; color: var(--text3); text-align: center; margin-top: 16px; }
-  .hint span { color: var(--pink); }
+  .disclaimer { font-size: 10px; color: var(--textSoft); text-align: center; opacity: .8; margin-top: 18px; line-height: 1.5; }
 
-  /* === SCREEN 3: PROCESSING === */
-  .processing-screen { background: var(--bg); align-items: center; justify-content: center; gap: 28px; }
-  .processing-photo { width: 180px; height: 180px; border-radius: 50%; object-fit: cover; border: 3px solid transparent; background-image: linear-gradient(var(--bg), var(--bg)), linear-gradient(135deg, var(--pink), var(--purple), var(--blue)); background-origin: border-box; background-clip: content-box, border-box; animation: pulse 2s ease-in-out infinite; box-shadow: 0 0 40px rgba(168,85,247,0.4); }
-  @keyframes pulse { 0%,100% { transform: scale(1); box-shadow: 0 0 40px rgba(168,85,247,0.3); } 50% { transform: scale(1.03); box-shadow: 0 0 60px rgba(168,85,247,0.5); } }
-  .progress-bar { width: 200px; height: 4px; background: var(--surface); border-radius: 2px; overflow: hidden; }
-  .progress-fill { height: 100%; background: linear-gradient(90deg, var(--pink), var(--purple)); border-radius: 2px; transition: width 0.3s; animation: progress 3s ease-in-out forwards; }
-  @keyframes progress { 0% { width: 0%; } 30% { width: 30%; } 60% { width: 65%; } 85% { width: 88%; } 100% { width: 100%; } }
-  .status-text { font-size: 16px; font-weight: 600; color: var(--text); }
-  .status-sub { font-size: 13px; color: var(--text3); }
+  /* ---------- ADMIN ---------- */
+  #screen-admin .pad { padding: 60px 18px 40px; }
+  .ad-title { font-size: 28px; font-weight: 900; color: var(--text); }
+  .ad-warn { font-size: 12px; font-weight: 700; color: var(--pink); margin: 2px 0 4px; }
+  .ad-section { font-size: 12px; font-weight: 800; color: var(--textSoft); letter-spacing: 1px; margin: 22px 0 8px; }
+  .flag-row { display: flex; align-items: center; gap: 12px; padding: 10px 0; }
+  .flag-row .lbl { flex: 1; }
+  .flag-row .lbl b { font-size: 15px; color: var(--text); font-weight: 700; display: block; }
+  .flag-row .lbl span { font-size: 12px; color: var(--textSoft); }
+  .sw { width: 48px; height: 28px; border-radius: 16px; background: var(--trackLocked); position: relative;
+        cursor: pointer; transition: background .2s; flex-shrink: 0; }
+  .sw::after { content: ''; position: absolute; top: 3px; left: 3px; width: 22px; height: 22px; border-radius: 50%;
+               background: #fff; transition: left .2s; box-shadow: 0 1px 3px rgba(0,0,0,.2); }
+  .sw.on { background: var(--pink); }
+  .sw.on::after { left: 23px; }
+  .nav-btn { display: flex; align-items: center; justify-content: space-between; background: var(--card);
+             border-radius: 12px; padding: 14px 16px; margin-bottom: 8px; cursor: pointer; }
+  .nav-btn .t { font-size: 15px; font-weight: 700; color: var(--text); }
+  .nav-btn .a { color: var(--pink); font-weight: 900; }
+  .reset-btn { margin-top: 10px; padding: 11px; text-align: center; background: #FCE2E2; color: #C2415B;
+               border-radius: 12px; font-size: 13px; font-weight: 800; cursor: pointer; }
+  .tech-row { display: flex; gap: 10px; padding: 8px 0; align-items: flex-start; }
+  .tech-row .dot { width: 7px; height: 7px; border-radius: 4px; background: var(--pink); margin-top: 6px; flex-shrink: 0; }
+  .tech-row b { font-size: 13.5px; color: var(--text); font-weight: 800; }
+  .tech-row p { font-size: 12px; color: var(--textSoft); margin-top: 1px; line-height: 1.4; }
 
-  /* === SCREEN 4: RESULT === */
-  .result-screen { background: var(--bg); padding: 50px 16px 100px; gap: 16px; }
-  .slider-container { position: relative; width: 100%; aspect-ratio: 1; border-radius: 20px; overflow: hidden; cursor: grab; touch-action: none; }
-  .slider-container img { position: absolute; inset: 0; width: 100%; height: 100%; object-fit: cover; }
-  .slider-container .before-img { clip-path: inset(0 0 0 0); }
-  .slider-handle { position: absolute; top: 0; bottom: 0; width: 3px; background: white; box-shadow: 0 0 8px rgba(0,0,0,0.5); z-index: 10; }
-  .slider-knob { position: absolute; top: 50%; left: 50%; transform: translate(-50%, -50%); width: 36px; height: 36px; background: white; border-radius: 50%; display: flex; align-items: center; justify-content: center; box-shadow: 0 2px 8px rgba(0,0,0,0.3); font-size: 12px; color: #666; }
-  .slider-label { position: absolute; top: 12px; padding: 4px 10px; font-size: 10px; font-weight: 700; color: var(--text2); background: rgba(0,0,0,0.5); border-radius: 20px; z-index: 5; }
-  .slider-label.before { left: 12px; }
-  .slider-label.after { right: 12px; }
-  .result-info { display: flex; align-items: center; justify-content: center; gap: 8px; font-size: 14px; color: var(--text); font-weight: 500; }
-  .result-info .badge { font-size: 12px; padding: 2px 8px; border-radius: 10px; font-weight: 600; }
-  .badge.preview { background: rgba(251,146,60,0.2); color: #fb923c; }
-  .badge.hd { background: rgba(74,222,128,0.2); color: #4ade80; }
-  .result-actions { display: flex; flex-direction: column; gap: 10px; padding: 0 8px; }
-  .result-row { display: flex; gap: 10px; }
-  .result-row .btn { flex: 1; }
+  /* ---------- ONBOARDING ---------- */
+  .ob-prog { flex: 1; height: 8px; background: #fff; border-radius: 4px; overflow: hidden; }
+  .ob-prog > i { display: block; height: 100%; width: 28%; background: var(--pink); border-radius: 4px; }
+  .ob-card { background: #fff; border: 2px solid var(--border); border-radius: 24px; padding: 26px 20px; text-align: center; }
 
-  /* === SCREEN 5: PAYWALL === */
-  .paywall-screen { background: linear-gradient(180deg, #1a0030 0%, #000 100%); padding: 20px; overflow-y: auto; }
-  .paywall-close { align-self: flex-end; width: 36px; height: 36px; border-radius: 50%; display: flex; align-items: center; justify-content: center; cursor: pointer; font-size: 18px; color: var(--text3); }
-  .paywall-hero { text-align: center; margin: 16px 0 24px; }
-  .paywall-hero .icon { font-size: 48px; margin-bottom: 12px; }
-  .paywall-hero h2 { font-size: 32px; font-weight: 800; color: var(--text); line-height: 1.2; }
-  .features { display: flex; flex-direction: column; gap: 14px; margin: 24px 0; padding: 0 8px; }
-  .feature { display: flex; align-items: center; gap: 12px; font-size: 15px; color: var(--text2); }
-  .feature .fi { color: var(--pink); font-size: 18px; width: 24px; text-align: center; }
-  .plans { display: flex; flex-direction: column; gap: 10px; margin: 20px 0; }
-  .plan { display: flex; align-items: center; padding: 16px; border-radius: 14px; cursor: pointer; transition: all 0.2s; border: 1px solid var(--border); }
-  .plan.selected { border-color: var(--pink); background: rgba(236,72,153,0.1); }
-  .plan .radio { width: 24px; height: 24px; border-radius: 50%; border: 2px solid var(--border); margin-left: auto; display: flex; align-items: center; justify-content: center; transition: all 0.2s; }
-  .plan.selected .radio { border-color: var(--pink); background: var(--pink); }
-  .plan.selected .radio::after { content: '✓'; color: white; font-size: 12px; font-weight: bold; }
-  .plan-info { flex: 1; }
-  .plan-badge { display: inline-block; font-size: 9px; font-weight: 700; color: white; background: var(--pink); padding: 2px 8px; border-radius: 10px; margin-bottom: 4px; }
-  .plan-price { font-size: 16px; font-weight: 700; color: var(--text); }
-  .plan-detail { font-size: 12px; color: var(--text3); }
-  .paywall-legal { text-align: center; margin-top: 16px; }
-  .paywall-legal a, .paywall-legal span { font-size: 12px; color: var(--text3); cursor: pointer; }
-  .paywall-legal p { font-size: 10px; color: var(--text3); margin-top: 8px; opacity: 0.6; }
+  /* ---------- HOME ---------- */
+  .hero-img { width: 100%; height: 280px; object-fit: cover; border-radius: 24px; display: block; }
+  .score-card { display: flex; align-items: center; gap: 16px; background: #fff; border-radius: 22px; padding: 18px; }
+  .score-ring { width: 92px; height: 92px; border-radius: 46px; border: 5px solid var(--pink); flex-shrink: 0;
+                display: flex; flex-direction: column; align-items: center; justify-content: center; }
+  .score-ring b { font-size: 30px; font-weight: 900; color: var(--text); line-height: 1; }
+  .score-ring span { font-size: 11px; color: var(--textSoft); }
+  .plan-row { display: flex; align-items: center; gap: 10px; background: #fff; border-radius: 16px; padding: 16px; cursor: pointer; }
+  .plan-row .t { flex: 1; font-size: 15px; font-weight: 700; color: var(--text); }
+  .plan-row .c { font-size: 15px; font-weight: 900; color: var(--pink); }
 
-  /* === SCREEN 6: SHARE === */
-  .share-screen { background: var(--bg); padding: 50px 20px 100px; align-items: center; gap: 20px; }
-  .share-preview { width: 100%; max-width: 280px; aspect-ratio: 9/16; background: linear-gradient(180deg, #1a0030, #000); border-radius: 16px; padding: 20px; display: flex; flex-direction: column; justify-content: center; align-items: center; gap: 12px; }
-  .share-preview h3 { color: var(--text); font-size: 18px; }
-  .share-preview .comparison { display: flex; gap: 6px; width: 100%; }
-  .share-preview .comparison div { flex: 1; aspect-ratio: 1; border-radius: 8px; overflow: hidden; }
-  .share-preview .comparison img { width: 100%; height: 100%; object-fit: cover; }
-  .share-preview .brand { font-size: 12px; color: var(--text3); margin-top: 8px; }
-  .share-buttons { display: flex; gap: 20px; }
-  .share-btn { display: flex; flex-direction: column; align-items: center; gap: 6px; cursor: pointer; }
-  .share-btn .circle { width: 56px; height: 56px; border-radius: 50%; display: flex; align-items: center; justify-content: center; font-size: 20px; }
-  .share-btn span { font-size: 11px; color: var(--text2); }
+  /* ---------- REVEAL ---------- */
+  .stepper { display: flex; gap: 6px; background: #fff; border-radius: 18px; padding: 9px 13px; }
+  .stepper i { width: 7px; height: 7px; border-radius: 4px; background: var(--trackLocked); }
+  .stepper i.on { width: 22px; background: var(--pink); }
+  .closec { width: 42px; height: 42px; border-radius: 21px; background: #fff; display: flex; align-items: center;
+            justify-content: center; cursor: pointer; font-size: 18px; color: var(--text); }
+  .panel { background: var(--panel); border: 1px solid var(--border); border-radius: 28px; padding: 16px;
+           box-shadow: 0 10px 24px rgba(199,126,151,.18); }
+  .panel-title { font-size: 30px; font-weight: 900; color: var(--text); text-align: center; line-height: 1.15; margin: 14px 0; }
+  .ring-hero { background: #fff; border-radius: 22px; padding: 22px; display: flex; flex-direction: column;
+               align-items: center; gap: 12px; margin-bottom: 12px; }
+  .ring { width: 156px; height: 156px; border-radius: 78px; display: flex; align-items: center; justify-content: center; }
+  .ring-face { width: 130px; height: 130px; border-radius: 65px; background: #fff; display: flex; flex-direction: column;
+               align-items: center; justify-content: center; }
+  .ring-face b { font-size: 40px; font-weight: 900; color: var(--text); line-height: 1; }
+  .ring-face .out { font-size: 15px; color: var(--textSoft); font-weight: 700; }
+  .ring-face .lab { font-size: 11px; font-weight: 700; color: var(--textSoft); margin-top: 2px; }
+  .ring-msg { font-size: 15px; font-weight: 700; color: var(--text); text-align: center; }
+  .metric { background: #fff; border-radius: 20px; padding: 16px; margin-bottom: 12px; }
+  .metric .top { display: flex; align-items: center; gap: 12px; margin-bottom: 10px; }
+  .metric img { width: 54px; height: 54px; border-radius: 14px; object-fit: cover; background: var(--pinkSoft); }
+  .metric .mt { flex: 1; }
+  .metric .mt b { font-size: 16px; font-weight: 800; color: var(--text); display: block; }
+  .metric .mt span { font-size: 13px; color: var(--textSoft); }
+  .metric .val { font-size: 18px; font-weight: 900; color: var(--pink); }
+  .metric .lockc { width: 34px; height: 34px; border-radius: 10px; background: var(--lockBg); display: flex;
+                   align-items: center; justify-content: center; color: var(--lockIcon); font-size: 15px; }
+  .bar { height: 8px; border-radius: 4px; background: var(--track); overflow: hidden; }
+  .bar > i { display: block; height: 100%; border-radius: 4px; background: var(--pink); }
+  .bar.locked > i { background: var(--trackLocked); width: 22% !important; }
+  .teaser { position: relative; border-radius: 22px; overflow: hidden; margin-bottom: 12px; cursor: pointer; height: 220px; }
+  .teaser img { width: 100%; height: 100%; object-fit: cover; filter: blur(14px); transform: scale(1.1); }
+  .teaser .ov { position: absolute; inset: 0; background: rgba(45,35,48,.32); display: flex; flex-direction: column;
+                align-items: center; justify-content: center; gap: 6px; text-align: center; padding: 16px; }
+  .teaser .lk { width: 44px; height: 44px; border-radius: 22px; background: rgba(224,83,122,.92); display: flex;
+                align-items: center; justify-content: center; color: #fff; font-size: 19px; margin-bottom: 4px; }
+  .teaser .ov b { color: #fff; font-size: 17px; font-weight: 900; text-shadow: 0 1px 6px rgba(0,0,0,.4); }
+  .teaser .ov span { color: rgba(255,255,255,.92); font-size: 13px; font-weight: 600; }
 
-  /* Animations */
-  @keyframes fadeIn { from { opacity: 0; transform: translateY(10px); } to { opacity: 1; transform: translateY(0); } }
-  .animate-in { animation: fadeIn 0.5s ease-out forwards; }
-  @keyframes shimmer { 0% { background-position: -200% 0; } 100% { background-position: 200% 0; } }
+  /* ---------- PRICING ---------- */
+  .feat { display: flex; align-items: center; gap: 10px; margin-bottom: 12px; }
+  .feat .ck { width: 22px; height: 22px; border-radius: 11px; background: var(--pink); color: #fff; flex-shrink: 0;
+              display: flex; align-items: center; justify-content: center; font-size: 13px; }
+  .feat span { font-size: 15px; font-weight: 600; color: var(--text); }
+  .plan-card { display: flex; align-items: center; justify-content: space-between; background: #fff; border: 2px solid transparent;
+               border-radius: 18px; padding: 16px; margin-bottom: 10px; cursor: pointer; }
+  .plan-card.sel { border-color: var(--pink); }
+  .plan-card .pn { font-size: 14px; font-weight: 700; color: var(--textSoft); }
+  .plan-card .pp { font-size: 19px; font-weight: 900; color: var(--text); }
+  .plan-card .pd { font-size: 12px; color: var(--textSoft); margin-top: 2px; }
+  .badge-bv { background: var(--pink); color: #fff; font-size: 10px; font-weight: 800; border-radius: 10px;
+              padding: 3px 8px; display: inline-block; margin-bottom: 6px; }
 
-  /* Demo images - CSS generated faces */
-  .demo-face { width: 100%; height: 100%; background: linear-gradient(135deg, #2d1b4e, #1a1a2e); display: flex; align-items: center; justify-content: center; font-size: 64px; }
-  .demo-face.after { background: linear-gradient(135deg, #4a1942, #2d1b69); filter: brightness(1.2) contrast(1.1); }
+  /* ---------- STUDIO ---------- */
+  .grid2 { display: flex; flex-wrap: wrap; gap: 12px; }
+  .tool { width: calc(50% - 6px); background: #fff; border-radius: 18px; overflow: hidden; cursor: pointer; }
+  .tool img { width: 100%; height: 118px; object-fit: cover; display: block; }
+  .tool .b { padding: 12px; }
+  .tool .b b { font-size: 15px; font-weight: 800; color: var(--text); display: block; }
+  .tool .b span { font-size: 11.5px; color: var(--textSoft); }
+
+  /* ---------- PROGRESS ---------- */
+  .summary { display: flex; background: #fff; border-radius: 20px; padding: 18px; margin-bottom: 18px; }
+  .summary .it { flex: 1; text-align: center; }
+  .summary .it b { font-size: 24px; font-weight: 900; color: var(--text); display: block; }
+  .summary .it span { font-size: 11px; color: var(--textSoft); font-weight: 700; }
+  .summary .dv { width: 1px; background: var(--bg); }
+  .scan-row { display: flex; align-items: center; gap: 12px; background: #fff; border-radius: 16px; padding: 14px; margin-bottom: 10px; }
+  .scan-row .r { width: 52px; height: 52px; border-radius: 26px; border: 4px solid var(--pink); display: flex;
+                 align-items: center; justify-content: center; font-size: 16px; font-weight: 900; color: var(--text); flex-shrink: 0; }
+  .scan-row .d b { font-size: 14px; font-weight: 800; color: var(--text); display: block; }
+  .scan-row .d span { font-size: 12px; color: var(--textSoft); }
+  .delta { margin-left: auto; border-radius: 10px; padding: 4px 9px; font-size: 13px; font-weight: 900; }
+  .delta.up { background: #DDF3E4; color: var(--good); }
+
+  /* ---------- SETTINGS ---------- */
+  .sec-h { font-size: 12px; font-weight: 800; color: var(--textSoft); letter-spacing: 1px; margin: 20px 0 8px; }
+  .set-row { display: flex; align-items: center; justify-content: space-between; padding: 13px 0; cursor: pointer; }
+  .set-row .l { font-size: 15px; font-weight: 600; color: var(--text); }
+  .set-row .ch { color: var(--textSoft); }
+  .sep { height: 1px; background: var(--bg); }
+  .status-badge { padding: 5px 12px; border-radius: 12px; font-size: 12px; font-weight: 800; }
+  .status-badge.free { background: var(--pinkSoft); color: var(--textSoft); }
+  .status-badge.prem { background: var(--pink); color: #fff; }
+  .danger { display: flex; align-items: center; justify-content: center; gap: 8px; background: #FCE2E2; color: #C2415B;
+            border-radius: 14px; padding: 14px; font-size: 15px; font-weight: 800; cursor: pointer; }
+
+  .show-unlocked, .show-scan { display: none; }
+  body.unlocked .show-unlocked { display: block; }
+  body.unlocked .show-locked { display: none; }
+  body.has-scan .show-scan { display: block; }
+  body.has-scan .show-noscan { display: none; }
 </style>
 </head>
-<body>
+<body class="unlocked has-scan">
+<div class="stage">
+  <div class="phone">
+    <div class="notch"></div>
+    <div class="screen" id="screen">
 
-<div class="phone">
-  <div class="notch"></div>
-  <div class="screen">
-
-    <!-- SCREEN 1: HOME -->
-    <div class="view home-bg" id="screen-home">
-      <div>
-        <h1>See Your</h1>
-        <h2 class="gradient-text">Best Self</h2>
-      </div>
-      <p>Upload a selfie and transform<br>your look in 30 seconds</p>
-      <div class="home-actions">
-        <button class="btn btn-glass" onclick="goTo('style')">📷 Take a Selfie</button>
-        <button class="btn btn-primary" onclick="goTo('style')">🖼️ Choose Photo</button>
-      </div>
-    </div>
-
-    <!-- SCREEN 2: STYLE SELECTION -->
-    <div class="view hidden" id="screen-style">
-      <div style="background:var(--bg);padding:50px 16px 100px;flex:1;overflow-y:auto;">
-        <div style="text-align:center;">
-          <div style="width:100px;height:100px;border-radius:50%;margin:16px auto;background:linear-gradient(135deg,#2d1b4e,#1a1a2e);display:flex;align-items:center;justify-content:center;font-size:48px;border:2px solid rgba(255,255,255,0.15);box-shadow:0 0 30px rgba(168,85,247,0.4);">👤</div>
-          <h2 style="color:var(--text);font-size:22px;margin:12px 0 20px;">Choose Your Glow Up</h2>
-        </div>
-        <div class="style-grid">
-          <div class="style-card free glass" onclick="startTransform('Clear Skin')">
-            <div class="icon-circle">✨</div>
-            <div class="name">Clear Skin</div>
-            <div class="desc">Flawless, even skin tone</div>
-          </div>
-          <div class="style-card locked glass" onclick="showPaywall()">
-            <div class="icon-circle">⭐<span class="lock">🔒</span></div>
-            <div class="name">Model Look</div>
-            <div class="desc">High-fashion editorial</div>
-          </div>
-          <div class="style-card locked glass" onclick="showPaywall()">
-            <div class="icon-circle">✂️<span class="lock">🔒</span></div>
-            <div class="name">Hair Makeover</div>
-            <div class="desc">Try different hairstyles</div>
-          </div>
-          <div class="style-card locked glass" onclick="showPaywall()">
-            <div class="icon-circle">🔄<span class="lock">🔒</span></div>
-            <div class="name">Age Rewind</div>
-            <div class="desc">See your younger self</div>
-          </div>
-          <div class="style-card locked glass" onclick="showPaywall()">
-            <div class="icon-circle">🏃<span class="lock">🔒</span></div>
-            <div class="name">Fit Version</div>
-            <div class="desc">Visualize fitness goals</div>
-          </div>
-        </div>
-        <div class="hint">✨ First style is free! <span>Unlock all with Premium.</span></div>
-      </div>
-      <div class="tab-bar">
-        <div class="tab active" onclick="goTo('home')"><span>📷</span><span>Glow Up</span></div>
-        <div class="tab" onclick="goTo('history')"><span>🕐</span><span>History</span></div>
-        <div class="tab"><span>⚙️</span><span>Settings</span></div>
-      </div>
-    </div>
-
-    <!-- SCREEN 3: PROCESSING -->
-    <div class="view hidden" id="screen-processing">
-      <div style="background:var(--bg);flex:1;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:28px;">
-        <div class="processing-photo" style="display:flex;align-items:center;justify-content:center;font-size:64px;background-image:linear-gradient(#000,#000),linear-gradient(135deg,var(--pink),var(--purple),var(--blue));background-origin:border-box;background-clip:content-box,border-box;">👤</div>
-        <div class="status-text" id="status-text">Analyzing your face...</div>
-        <div class="progress-bar"><div class="progress-fill" id="progress-fill"></div></div>
-        <div class="status-sub">Clear Skin Transformation</div>
-      </div>
-    </div>
-
-    <!-- SCREEN 4: RESULT -->
-    <div class="view hidden" id="screen-result">
-      <div style="background:var(--bg);padding:50px 16px 100px;flex:1;display:flex;flex-direction:column;gap:16px;">
-        <div class="slider-container" id="slider-container">
-          <!-- After image (background) -->
-          <div style="position:absolute;inset:0;background:linear-gradient(135deg,#3b1d5e,#1a1040);display:flex;align-items:center;justify-content:center;">
-            <div style="font-size:80px;filter:brightness(1.3) saturate(1.2);">👤</div>
-            <div style="position:absolute;bottom:20px;right:20px;font-size:12px;color:rgba(255,255,255,0.3);">✨ AI Enhanced</div>
-          </div>
-          <!-- Before image (clipped) -->
-          <div id="before-layer" style="position:absolute;inset:0;background:linear-gradient(135deg,#1a1a2e,#111);display:flex;align-items:center;justify-content:center;clip-path:inset(0 50% 0 0);">
-            <div style="font-size:80px;filter:grayscale(0.3) brightness(0.8);">👤</div>
-          </div>
-          <!-- Slider handle -->
-          <div class="slider-handle" id="slider-handle" style="left:50%;">
-            <div class="slider-knob">◀▶</div>
-          </div>
-          <div class="slider-label before">BEFORE</div>
-          <div class="slider-label after">AFTER</div>
-        </div>
-
-        <div class="result-info">
-          <span>✨</span> Clear Skin <span class="badge preview">Preview</span>
-        </div>
-
-        <div class="result-actions">
-          <button class="btn btn-primary" onclick="showPaywall()">✨ Unlock HD Version</button>
-          <div class="result-row">
-            <button class="btn btn-glass btn-small" onclick="goTo('share')">↗️ Share</button>
-            <button class="btn btn-glass btn-small" onclick="goTo('style')">🔄 Try Another</button>
-          </div>
-        </div>
-      </div>
-      <div class="tab-bar">
-        <div class="tab active"><span>📷</span><span>Glow Up</span></div>
-        <div class="tab"><span>🕐</span><span>History</span></div>
-        <div class="tab"><span>⚙️</span><span>Settings</span></div>
-      </div>
-    </div>
-
-    <!-- SCREEN 5: PAYWALL -->
-    <div class="view hidden" id="screen-paywall" style="z-index:60;">
-      <div class="paywall-screen">
-        <div class="paywall-close glass" onclick="closePaywall()">✕</div>
-        <div class="paywall-hero">
-          <div class="icon">✨</div>
-          <h2>Unlock Your<br>Full Glow Up</h2>
-        </div>
-        <div class="features">
-          <div class="feature"><span class="fi">🪄</span> HD transformations (1024px)</div>
-          <div class="feature"><span class="fi">🎨</span> All 5+ style presets</div>
-          <div class="feature"><span class="fi">💫</span> New styles every week</div>
-          <div class="feature"><span class="fi">🚫</span> No watermarks</div>
-          <div class="feature"><span class="fi">🔟</span> 10 HD glow-ups per day</div>
-        </div>
-        <div class="plans">
-          <div class="plan" id="plan-weekly" onclick="selectPlan('weekly')">
-            <div class="plan-info">
-              <div class="plan-price">$4.99/week</div>
-              <div class="plan-detail">3-day free trial</div>
+      <!-- ============ ADMIN HUB ============ -->
+      <div class="view active" id="screen-admin">
+        <div class="pad">
+          <div style="display:flex;align-items:center;gap:12px;margin-bottom:2px;">
+            <div style="width:44px;height:44px;border-radius:12px;background:#fff;display:flex;align-items:center;justify-content:center;overflow:hidden;">
+              <img src="https://raw.githubusercontent.com/lezardoloris/glowscore/main/expo-app/assets/logo/logo_mark.png" style="width:100%;height:100%;object-fit:contain;" alt="">
             </div>
-            <div class="radio"></div>
-          </div>
-          <div class="plan selected" id="plan-annual" onclick="selectPlan('annual')">
-            <div class="plan-info">
-              <div class="plan-badge">BEST VALUE</div>
-              <div class="plan-price">$29.99/year</div>
-              <div class="plan-detail">$0.57/week — Save 88%</div>
+            <div>
+              <div class="ad-title">Admin / Debug</div>
+              <div class="ad-warn">Dev console — preview every screen</div>
             </div>
-            <div class="radio"></div>
+          </div>
+
+          <div class="ad-section">STATE (BEFORE / AFTER PAYWALL)</div>
+          <div class="card">
+            <div class="flag-row">
+              <div class="lbl"><b>Unlocked (premium)</b><span>Show real scores, treatments &amp; reveal</span></div>
+              <div class="sw on" id="sw-unlocked" onclick="toggleFlag('unlocked', this)"></div>
+            </div>
+            <div class="flag-row">
+              <div class="lbl"><b>Has a previous scan</b><span>Home shows the dashboard vs first-run hero</span></div>
+              <div class="sw on" id="sw-scan" onclick="toggleFlag('has-scan', this)"></div>
+            </div>
+            <div class="reset-btn" onclick="location.reload()">Reset preview</div>
+          </div>
+
+          <div class="ad-section">SCREENS</div>
+          <div class="nav-btn" onclick="go('onboarding')"><span class="t">Onboarding (quiz)</span><span class="a">›</span></div>
+          <div class="nav-btn" onclick="go('home')"><span class="t">Home (dashboard)</span><span class="a">›</span></div>
+          <div class="nav-btn" onclick="go('reveal')"><span class="t">Reveal — face scan</span><span class="a">›</span></div>
+          <div class="nav-btn" onclick="go('pricing')"><span class="t">Paywall / Pricing</span><span class="a">›</span></div>
+          <div class="nav-btn" onclick="go('plan')"><span class="t">Glow-Up Plan</span><span class="a">›</span></div>
+          <div class="nav-btn" onclick="go('hub')"><span class="t">Glow-Up Studio</span><span class="a">›</span></div>
+          <div class="nav-btn" onclick="go('progress')"><span class="t">Progress / History</span><span class="a">›</span></div>
+          <div class="nav-btn" onclick="go('settings')"><span class="t">Settings</span><span class="a">›</span></div>
+
+          <div class="ad-section">TECH — BEFORE PAYWALL (free)</div>
+          <div class="card">
+            <div class="tech-row"><div class="dot"></div><div><b>Onboarding quiz</b><p>expo-router + reanimated — Pick Your Glow Up, goals, daily basics</p></div></div>
+            <div class="tech-row"><div class="dot"></div><div><b>AI consent</b><p>aiConsent.ts — explicit opt-in before any upload (Apple requirement)</p></div></div>
+            <div class="tech-row"><div class="dot"></div><div><b>Face scan → score</b><p>Cloudflare Worker → vision LLM = Facial Harmony + 6 components</p></div></div>
+            <div class="tech-row"><div class="dot"></div><div><b>Locked reveal</b><p>circular-progress ring + animated count-up + bars</p></div></div>
+            <div class="tech-row"><div class="dot"></div><div><b>Paywall</b><p>react-native-purchases (RevenueCat) — Annual / Weekly / Lifetime</p></div></div>
+            <div class="tech-row"><div class="dot"></div><div><b>Invite-unlock</b><p>native Share — unlock by inviting 3 friends</p></div></div>
+          </div>
+
+          <div class="ad-section">TECH — AFTER PAYWALL (premium)</div>
+          <div class="card">
+            <div class="tech-row"><div class="dot"></div><div><b>Full scores + treatments</b><p>Worker face-scan (6 components + 3 targeted treatments)</p></div></div>
+            <div class="tech-row"><div class="dot"></div><div><b>Maxed-Out Self</b><p>fal.ai (flux + IP-adapter face-id) via Worker — photoreal before/after</p></div></div>
+            <div class="tech-row"><div class="dot"></div><div><b>Plan + retention</b><p>glowPlan.ts (streak) + history.ts (ScanRecord) + re-scan delta</p></div></div>
+            <div class="tech-row"><div class="dot"></div><div><b>Share card 9:16</b><p>Skia + view-shot</p></div></div>
+          </div>
+
+          <div class="disclaimer">Web preview of the GlowScore iOS / Android app (Expo).<br>Tap any screen above. Toggle Unlocked to see free vs premium.</div>
+        </div>
+      </div>
+
+      <!-- ============ ONBOARDING ============ -->
+      <div class="view" id="screen-onboarding">
+        <button class="admin-fab" onclick="go('admin')">≡</button>
+        <div style="padding-top:56px;">
+          <div style="display:flex;align-items:center;gap:10px;padding:0 22px 12px;">
+            <span style="font-size:24px;color:var(--text);cursor:pointer;" onclick="go('admin')">‹</span>
+            <div class="ob-prog"><i></i></div>
+          </div>
+          <div class="pad" style="padding-top:24px;text-align:center;">
+            <div class="ob-card" style="padding:10px 14px 22px;margin-bottom:24px;">
+              <img src="https://raw.githubusercontent.com/lezardoloris/glowscore/main/expo-app/assets/logo/logo_wordmark.png" style="width:82%;max-width:250px;margin:0 auto;display:block;" alt="GlowScore">
+            </div>
+            <div class="h-title" style="font-size:42px;line-height:1.2;">Ready For<br><span class="pink">Glow Up?</span></div>
+            <p class="h-sub" style="margin:16px 6px 28px;font-size:16px;">Discover your facial harmony and unlock your personalized glow-up plan.</p>
+            <div class="ob-card">
+              <div style="font-size:40px;">✨</div>
+              <div style="font-size:15px;font-weight:600;color:var(--text);line-height:1.9;margin-top:8px;">
+                Facial Harmony score<br>6 detailed components<br>Your personal treatment plan
+              </div>
+            </div>
+          </div>
+          <div style="padding:0 24px 30px;">
+            <button class="cta white" onclick="go('home')">Get Started</button>
           </div>
         </div>
-        <button class="btn btn-primary" onclick="subscribeDone()" id="subscribe-btn">Start Free Trial</button>
-        <div class="paywall-legal">
-          <span>Restore Purchases</span>
-          <p>Cancel anytime. Auto-renews unless cancelled 24h before period ends.</p>
-        </div>
       </div>
-    </div>
 
-    <!-- SCREEN 6: SHARE -->
-    <div class="view hidden" id="screen-share">
-      <div class="share-screen">
-        <h2 style="color:var(--text);font-size:22px;">Share Your Glow Up</h2>
-        <div class="share-preview">
-          <h3>My Glow Up ✨</h3>
-          <div style="font-size:12px;color:var(--text3);">Clear Skin</div>
-          <div class="comparison">
-            <div style="background:linear-gradient(135deg,#1a1a2e,#111);display:flex;align-items:center;justify-content:center;"><div style="text-align:center;"><div style="font-size:11px;color:var(--text3);margin-bottom:4px;">Before</div><div style="font-size:36px;filter:grayscale(0.3) brightness(0.8);">👤</div></div></div>
-            <div style="background:linear-gradient(135deg,#3b1d5e,#1a1040);display:flex;align-items:center;justify-content:center;"><div style="text-align:center;"><div style="font-size:11px;color:var(--text3);margin-bottom:4px;">After</div><div style="font-size:36px;filter:brightness(1.3);">👤</div></div></div>
+      <!-- ============ HOME ============ -->
+      <div class="view" id="screen-home">
+        <button class="admin-fab" onclick="go('admin')">≡</button>
+        <div class="pad" style="padding-bottom:110px;min-height:100%;display:flex;flex-direction:column;">
+          <div style="margin-bottom:22px;">
+            <h1 class="brand">GlowScore</h1>
+            <div class="tagline show-scan">Track your glow-up</div>
+            <div class="tagline show-noscan">Reveal your facial harmony</div>
           </div>
-          <div class="brand">Made with GlowUp AI</div>
-        </div>
-        <div class="share-buttons">
-          <div class="share-btn"><div class="circle" style="background:rgba(168,85,247,0.2);">📸</div><span>Stories</span></div>
-          <div class="share-btn"><div class="circle" style="background:rgba(236,72,153,0.2);">🎵</div><span>TikTok</span></div>
-          <div class="share-btn"><div class="circle" style="background:rgba(59,130,246,0.2);">💾</div><span>Save</span></div>
-          <div class="share-btn" onclick="goTo('result')"><div class="circle" style="background:rgba(255,255,255,0.05);">✕</div><span>Close</span></div>
-        </div>
-      </div>
-    </div>
 
-    <!-- SCREEN 7: HISTORY (empty state) -->
-    <div class="view hidden" id="screen-history">
-      <div style="background:var(--bg);flex:1;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:16px;padding-bottom:80px;">
-        <div style="font-size:48px;opacity:0.3;">🕐</div>
-        <div style="font-size:17px;font-weight:600;color:var(--text2);">No transformations yet</div>
-        <div style="font-size:14px;color:var(--text3);">Your glow-ups will appear here</div>
-        <button class="btn btn-primary" style="width:auto;padding:14px 32px;margin-top:16px;" onclick="goTo('home')">Start Your First Glow Up</button>
-      </div>
-      <div class="tab-bar">
-        <div class="tab" onclick="goTo('home')"><span>📷</span><span>Glow Up</span></div>
-        <div class="tab active"><span>🕐</span><span>History</span></div>
-        <div class="tab"><span>⚙️</span><span>Settings</span></div>
-      </div>
-    </div>
+          <div class="show-scan">
+            <div class="score-card" style="margin-bottom:12px;">
+              <div class="score-ring"><b>72</b><span>/100</span></div>
+              <div style="flex:1;">
+                <div style="font-size:17px;font-weight:800;color:var(--text);">Your Facial Harmony</div>
+                <div style="font-size:13px;color:var(--textSoft);margin-top:2px;">Last scan today</div>
+                <div class="chip" style="margin-top:8px;">🔥 5-day streak</div>
+              </div>
+            </div>
+            <div class="plan-row" style="margin-bottom:18px;" onclick="go('plan')">
+              <span style="color:var(--pink);font-size:18px;">◎</span>
+              <span class="t">Today's glow-up plan</span>
+              <span class="c">2/5</span>
+              <span style="color:var(--textSoft);">›</span>
+            </div>
+            <button class="cta" onclick="go('reveal')">⟲ Re-scan to see your progress</button>
+            <div class="link" onclick="go('reveal')">Choose a photo</div>
+          </div>
 
+          <div class="show-noscan">
+            <img class="hero-img" src="https://raw.githubusercontent.com/lezardoloris/glowscore/main/expo-app/assets/components/symmetry.png" alt="">
+            <div class="h-title" style="text-align:center;margin-top:20px;">Scan your face,<br>reveal your potential</div>
+            <p class="h-sub" style="text-align:center;margin:8px 10px 26px;">A clinical-grade analysis of your facial harmony in seconds.</p>
+            <button class="cta" onclick="go('reveal')">📷 Take a Selfie</button>
+            <div class="link" onclick="go('reveal')">Choose a photo</div>
+          </div>
+
+          <div class="disclaimer" style="margin-top:auto;">AI-generated artistic visualization for entertainment only.</div>
+        </div>
+        <div class="tabbar">
+          <div class="tab on"><span class="ic">◎</span>Scan</div>
+          <div class="tab" onclick="go('progress')"><span class="ic">📈</span>Progress</div>
+          <div class="tab" onclick="go('settings')"><span class="ic">⚙</span>Settings</div>
+        </div>
+      </div>
+
+      <!-- ============ REVEAL ============ -->
+      <div class="view" id="screen-reveal">
+        <button class="admin-fab" onclick="go('admin')">≡</button>
+        <div style="padding:54px 16px 130px;">
+          <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:10px;">
+            <div class="stepper"><i class="on"></i><i></i></div>
+            <div class="closec" onclick="go('home')">✕</div>
+          </div>
+
+          <div class="panel">
+            <div class="panel-title">Your Facial<br>Harmony</div>
+
+            <div class="ring-hero">
+              <img src="https://i.pravatar.cc/256?img=5" style="width:64px;height:64px;border-radius:32px;border:2px solid var(--pink);object-fit:cover;" alt="">
+              <div class="show-locked">
+                <div class="ring" style="background:conic-gradient(var(--trackLocked) 0% 100%);">
+                  <div class="ring-face"><b><span class="pink">??</span><span class="out">/100</span></b><span class="lab">Facial Harmony</span></div>
+                </div>
+              </div>
+              <div class="show-unlocked">
+                <div class="ring" style="background:conic-gradient(var(--pink) 0% 72%, var(--track) 72% 100%);">
+                  <div class="ring-face"><b>72<span class="out">/100</span></b><span class="lab">Facial Harmony</span></div>
+                </div>
+              </div>
+              <div class="ring-msg show-locked">Unlock to explore your unique proportions</div>
+              <div class="ring-msg show-unlocked">Top 14% · Potential 88</div>
+            </div>
+
+            <div class="teaser show-locked" onclick="go('pricing')">
+              <img src="https://i.pravatar.cc/512?img=5" alt="">
+              <div class="ov">
+                <div class="lk">🔒</div>
+                <b>Your Maxed-Out Self is ready</b>
+                <span>Unlock to reveal your full potential</span>
+              </div>
+            </div>
+            <div class="show-unlocked" style="text-align:center;color:var(--good);font-weight:800;font-size:14px;margin-bottom:8px;">+4 since your last scan</div>
+
+            <div id="metrics"></div>
+          </div>
+        </div>
+        <div style="position:absolute;bottom:0;left:0;right:0;padding:14px 24px 30px;background:linear-gradient(transparent,var(--bg) 35%);">
+          <div class="show-locked">
+            <button class="cta white" onclick="go('pricing')">Unlock Your Glow Up</button>
+            <div class="link" onclick="go('pricing')">or invite 3 friends</div>
+          </div>
+          <div class="show-unlocked">
+            <button class="cta white" onclick="go('hub')">✨ See Your Maxed-Out Self</button>
+            <div class="link" onclick="go('hub')">↗ Share my results</div>
+          </div>
+        </div>
+      </div>
+
+      <!-- ============ PRICING ============ -->
+      <div class="view" id="screen-pricing">
+        <button class="admin-fab" onclick="go('admin')">≡</button>
+        <div class="pad" style="padding-top:56px;">
+          <div style="text-align:right;"><span class="closec" style="display:inline-flex;" onclick="go('reveal')">✕</span></div>
+          <div style="text-align:center;font-size:44px;">✨</div>
+          <div class="h-title" style="text-align:center;font-size:36px;margin-top:8px;">Unlock Your<br><span class="pink">Glow Up</span></div>
+          <p class="h-sub" style="text-align:center;margin:8px 0 24px;">Your full Facial Harmony report and personalized plan are ready</p>
+
+          <div style="margin-bottom:26px;">
+            <div class="feat"><span class="ck">✓</span><span>Full Facial Harmony report (all 6 components)</span></div>
+            <div class="feat"><span class="ck">✓</span><span>Your personalized treatment plan</span></div>
+            <div class="feat"><span class="ck">✓</span><span>See Your Maxed-Out Self reveal</span></div>
+            <div class="feat"><span class="ck">✓</span><span>HD / 4K transformations</span></div>
+            <div class="feat"><span class="ck">✓</span><span>Weekly progress re-scans</span></div>
+          </div>
+
+          <div class="plan-card sel" data-plan="annual" onclick="selPlan(this)">
+            <div><span class="badge-bv">BEST VALUE 🔥</span><div class="pn">Annual</div><div class="pp">$59.99/year</div><div class="pd">$1.15/week · Save 91%</div></div>
+            <div class="radio" style="width:26px;height:26px;border-radius:13px;border:2px solid var(--pink);background:var(--pink);color:#fff;display:flex;align-items:center;justify-content:center;font-size:14px;">✓</div>
+          </div>
+          <div class="plan-card" data-plan="weekly" onclick="selPlan(this)">
+            <div><div class="pn">Weekly</div><div class="pp">$12.99/week</div><div class="pd">Most flexible, cancel anytime</div></div>
+            <div class="radio" style="width:26px;height:26px;border-radius:13px;border:2px solid var(--border);"></div>
+          </div>
+          <div class="plan-card" data-plan="lifetime" onclick="selPlan(this)">
+            <div><div class="pn">Lifetime</div><div class="pp">$39.99</div><div class="pd">One-time purchase, forever</div></div>
+            <div class="radio" style="width:26px;height:26px;border-radius:13px;border:2px solid var(--border);"></div>
+          </div>
+
+          <button class="cta" style="margin-top:6px;" onclick="subscribe()">Unlock Your Glow Up</button>
+          <p style="text-align:center;font-size:13px;color:var(--textSoft);font-weight:600;margin-top:12px;">Cancel anytime · Join 10,000+ members</p>
+          <div class="link soft">Restore Purchases</div>
+          <p style="text-align:center;font-size:10px;color:var(--textSoft);opacity:.8;">Cancel anytime. Auto-renews unless cancelled 24h before period ends.</p>
+        </div>
+      </div>
+
+      <!-- ============ GLOW PLAN ============ -->
+      <div class="view" id="screen-plan">
+        <button class="admin-fab" onclick="go('admin')">≡</button>
+        <div class="pad-sm">
+          <div style="font-size:24px;color:var(--text);cursor:pointer;margin-bottom:6px;" onclick="go('home')">‹</div>
+          <div class="h-title" style="font-size:26px;margin-bottom:14px;">Your Glow-Up Plan</div>
+          <div style="display:inline-block;background:var(--pinkSoft);color:var(--pink);font-size:12.5px;font-weight:800;border-radius:12px;padding:6px 12px;margin-bottom:16px;">Week 1 of 12 · Focus: Skin &amp; Glow</div>
+
+          <div style="background:#fff;border-radius:18px;padding:16px 40px;text-align:center;width:fit-content;margin:0 auto 8px;">
+            <div style="font-size:34px;font-weight:900;color:var(--text);">🔥 5</div>
+            <div style="font-size:13px;color:var(--textSoft);">day streak</div>
+          </div>
+          <p style="text-align:center;font-size:13px;color:var(--textSoft);font-weight:600;margin-bottom:18px;">2/5 done today</p>
+
+          <div id="tasks"></div>
+          <p style="text-align:center;font-size:12px;color:var(--textSoft);line-height:1.5;margin-top:16px;">Complete a task each day to keep your streak. Re-scan weekly to watch your GlowScore climb.</p>
+        </div>
+      </div>
+
+      <!-- ============ STUDIO ============ -->
+      <div class="view" id="screen-hub">
+        <button class="admin-fab" onclick="go('admin')">≡</button>
+        <div class="pad-sm">
+          <div style="font-size:24px;color:var(--text);cursor:pointer;margin-bottom:6px;" onclick="go('reveal')">‹</div>
+          <div class="h-title" style="font-size:30px;">Glow-Up Studio</div>
+          <p class="h-sub" style="margin:2px 0 18px;">Premium tools for your transformation</p>
+          <div class="grid2" id="tools"></div>
+          <div class="disclaimer">AI-generated artistic visualization for entertainment only.</div>
+        </div>
+      </div>
+
+      <!-- ============ PROGRESS ============ -->
+      <div class="view" id="screen-progress">
+        <button class="admin-fab" onclick="go('admin')">≡</button>
+        <div class="pad" style="padding-bottom:110px;">
+          <div class="h-title" style="font-size:30px;margin-bottom:16px;">Your Progress</div>
+          <div class="summary">
+            <div class="it"><b>72</b><span>Current</span></div>
+            <div class="dv"></div>
+            <div class="it"><b style="color:var(--good);">+4</b><span>All time</span></div>
+            <div class="dv"></div>
+            <div class="it"><b style="color:var(--good);">+6</b><span>Skin</span></div>
+            <div class="dv"></div>
+            <div class="it"><b>🔥 5</b><span>Streak</span></div>
+          </div>
+          <div class="scan-row"><div class="r">72</div><div class="d"><b>Jun 13, 2026</b><span>Skin 68 · Symmetry 81 · Eyes 70</span></div><div class="delta up">+2</div></div>
+          <div class="scan-row"><div class="r">70</div><div class="d"><b>Jun 6, 2026</b><span>Skin 65 · Symmetry 80 · Eyes 69</span></div><div class="delta up">+2</div></div>
+          <div class="scan-row"><div class="r">68</div><div class="d"><b>May 30, 2026</b><span>Skin 62 · Symmetry 79 · Eyes 67</span></div></div>
+          <button class="cta" style="margin-top:8px;" onclick="go('reveal')">⟲ Re-scan now</button>
+        </div>
+        <div class="tabbar">
+          <div class="tab" onclick="go('home')"><span class="ic">◎</span>Scan</div>
+          <div class="tab on"><span class="ic">📈</span>Progress</div>
+          <div class="tab" onclick="go('settings')"><span class="ic">⚙</span>Settings</div>
+        </div>
+      </div>
+
+      <!-- ============ SETTINGS ============ -->
+      <div class="view" id="screen-settings">
+        <button class="admin-fab" onclick="go('admin')">≡</button>
+        <div class="pad" style="padding-bottom:110px;">
+          <div class="h-title" style="font-size:30px;margin-bottom:8px;">Settings</div>
+
+          <div class="sec-h">SUBSCRIPTION</div>
+          <div class="card">
+            <div class="set-row" style="cursor:default;">
+              <span class="l">Status</span>
+              <span class="status-badge prem show-unlocked">Premium</span>
+              <span class="status-badge free show-locked">Free</span>
+            </div>
+            <button class="cta show-locked" style="margin-top:14px;" onclick="go('pricing')">Unlock Your Glow Up</button>
+            <div class="link show-unlocked" style="margin-top:6px;">Manage Subscription</div>
+            <div class="link soft" style="font-size:13px;">Restore Purchases</div>
+          </div>
+
+          <div class="sec-h">ABOUT</div>
+          <div class="card" style="padding:0 16px;">
+            <div class="set-row"><span class="l">Privacy Policy</span><span class="ch">›</span></div>
+            <div class="sep"></div>
+            <div class="set-row"><span class="l">Terms of Use</span><span class="ch">›</span></div>
+            <div class="sep"></div>
+            <div class="set-row"><span class="l">Contact Support</span><span class="ch">›</span></div>
+            <div class="sep"></div>
+            <div class="set-row"><span class="l">Mental Health Support</span><span class="ch">›</span></div>
+          </div>
+
+          <div class="sec-h">ACCOUNT</div>
+          <div class="card"><div class="danger">🗑 Delete Account &amp; Data</div></div>
+
+          <p class="disclaimer" style="margin-top:28px;">AI-generated artistic visualization for entertainment purposes only. Results are not intended to represent real-world outcomes.</p>
+          <p style="text-align:center;font-size:11px;color:var(--textSoft);opacity:.6;margin-top:14px;">GlowScore v1.0.0</p>
+        </div>
+        <div class="tabbar">
+          <div class="tab" onclick="go('home')"><span class="ic">◎</span>Scan</div>
+          <div class="tab" onclick="go('progress')"><span class="ic">📈</span>Progress</div>
+          <div class="tab on"><span class="ic">⚙</span>Settings</div>
+        </div>
+      </div>
+
+    </div>
   </div>
+  <div class="stage-hint">Interactive <b>GlowScore</b> preview · start on the <b>Admin</b> hub to jump to any screen and toggle <b>Unlocked</b> (free vs premium).</div>
 </div>
 
 <script>
-  let currentScreen = 'home';
-  let prevScreen = null;
-  const screens = ['home','style','processing','result','paywall','share','history'];
+  const ASSET = 'https://raw.githubusercontent.com/lezardoloris/glowscore/main/expo-app/assets';
 
-  function goTo(screen) {
-    if (screen === currentScreen) return;
-    const prev = document.getElementById('screen-' + currentScreen);
-    const next = document.getElementById('screen-' + screen);
-    prev.classList.add('hidden-left');
-    prev.classList.remove('hidden');
-    next.classList.remove('hidden');
-    next.classList.remove('hidden-left');
-    prevScreen = currentScreen;
-    currentScreen = screen;
-
-    if (screen === 'processing') {
-      document.getElementById('progress-fill').style.animation = 'none';
-      void document.getElementById('progress-fill').offsetHeight;
-      document.getElementById('progress-fill').style.animation = 'progress 3s ease-in-out forwards';
-      simulateProcessing();
-    }
+  function go(name) {
+    document.querySelectorAll('.view').forEach(v => v.classList.remove('active'));
+    const el = document.getElementById('screen-' + name);
+    el.classList.add('active');
+    el.scrollTop = 0;
   }
-
-  function startTransform(style) {
-    goTo('processing');
+  function toggleFlag(cls, sw) {
+    sw.classList.toggle('on');
+    document.body.classList.toggle(cls, sw.classList.contains('on'));
   }
-
-  function simulateProcessing() {
-    const texts = ['Analyzing your face...', 'Applying Clear Skin...', 'Almost there...', 'Done! ✨'];
-    const el = document.getElementById('status-text');
-    texts.forEach((t, i) => {
-      setTimeout(() => { el.textContent = t; }, i * 1000);
+  function selPlan(el) {
+    document.querySelectorAll('#screen-pricing .plan-card').forEach(p => {
+      p.classList.remove('sel');
+      const r = p.querySelector('.radio');
+      r.textContent = ''; r.style.background = 'transparent'; r.style.borderColor = 'var(--border)';
     });
-    setTimeout(() => goTo('result'), 3500);
+    el.classList.add('sel');
+    const r = el.querySelector('.radio');
+    r.textContent = '✓'; r.style.background = 'var(--pink)'; r.style.borderColor = 'var(--pink)';
+  }
+  function subscribe() {
+    document.body.classList.add('unlocked');
+    document.getElementById('sw-unlocked').classList.add('on');
+    go('reveal');
   }
 
-  function showPaywall() {
-    document.getElementById('screen-paywall').classList.remove('hidden');
-    document.getElementById('screen-paywall').style.transform = 'translateY(0)';
-  }
+  const METRICS = [
+    ['skin','Skin Clarity','Evenness, texture & glow',68],
+    ['symmetry','Facial Symmetry','How balanced your features are',81],
+    ['nose','Nose & Profile','Balance of your nose and profile',74],
+    ['eyes','Eye Area','Brightness, contour & openness',70],
+    ['jawline','Jawline Definition','Definition of your lower face',65],
+    ['lips','Lips & Smile','Shape, balance & smile',79],
+  ];
+  document.getElementById('metrics').innerHTML = METRICS.map(m => `
+    <div class="metric">
+      <div class="top">
+        <img src="${ASSET}/components/${m[0]}.png" alt="">
+        <div class="mt"><b>${m[1]}</b><span>${m[2]}</span></div>
+        <span class="val show-unlocked">${m[3]}</span>
+        <span class="lockc show-locked">🔒</span>
+      </div>
+      <div class="bar show-unlocked"><i style="width:${m[3]}%"></i></div>
+      <div class="bar locked show-locked"><i></i></div>
+    </div>`).join('');
 
-  function closePaywall() {
-    document.getElementById('screen-paywall').classList.add('hidden');
-  }
+  const TASKS = [
+    ['Apply SPF 30 every morning', true],
+    ['Vitamin C serum after cleansing', true],
+    ['Drink 2L of water', false],
+    ['10-min facial massage (lymphatic)', false],
+    ['Lights out by 11pm (8h sleep)', false],
+  ];
+  document.getElementById('tasks').innerHTML = TASKS.map(t => `
+    <div onclick="var c=this.querySelector('.cb');c.classList.toggle('on');var on=c.classList.contains('on');c.textContent=on?'✓':'';c.style.background=on?'var(--pink)':'transparent';c.style.borderColor=on?'var(--pink)':'var(--border)';this.style.background=on?'#FDF4F7':'#fff';this.querySelector('.tt').style.textDecoration=on?'line-through':'none';this.querySelector('.tt').style.color=on?'var(--textSoft)':'var(--text)';"
+         style="display:flex;align-items:center;background:${t[1]?'#FDF4F7':'#fff'};border-radius:16px;padding:16px;margin-bottom:10px;cursor:pointer;">
+      <div class="cb ${t[1]?'on':''}" style="width:26px;height:26px;border-radius:13px;border:2px solid ${t[1]?'var(--pink)':'var(--border)'};background:${t[1]?'var(--pink)':'transparent'};color:#fff;display:flex;align-items:center;justify-content:center;font-size:14px;margin-right:14px;flex-shrink:0;">${t[1]?'✓':''}</div>
+      <span class="tt" style="font-size:15px;color:${t[1]?'var(--textSoft)':'var(--text)'};text-decoration:${t[1]?'line-through':'none'};">${t[0]}</span>
+    </div>`).join('');
 
-  function selectPlan(plan) {
-    document.getElementById('plan-weekly').classList.toggle('selected', plan === 'weekly');
-    document.getElementById('plan-annual').classList.toggle('selected', plan === 'annual');
-    document.getElementById('subscribe-btn').textContent = plan === 'weekly' ? 'Start Free Trial' : 'Subscribe Now';
-  }
-
-  function subscribeDone() {
-    closePaywall();
-    // Unlock all styles
-    document.querySelectorAll('.style-card.locked').forEach(card => {
-      card.classList.remove('locked');
-      card.classList.add('free');
-      const lock = card.querySelector('.lock');
-      if (lock) lock.remove();
-      card.onclick = () => startTransform(card.querySelector('.name').textContent);
-    });
-    // Update result badge
-    const badge = document.querySelector('.result-info .badge');
-    if (badge) { badge.className = 'badge hd'; badge.textContent = 'HD'; }
-    // Hide upgrade button
-    const upgradeBtn = document.querySelector('.result-actions .btn-primary');
-    if (upgradeBtn) upgradeBtn.style.display = 'none';
-  }
-
-  // Before/After Slider interaction
-  const sliderContainer = document.getElementById('slider-container');
-  const sliderHandle = document.getElementById('slider-handle');
-  const beforeLayer = document.getElementById('before-layer');
-
-  function updateSlider(x) {
-    const rect = sliderContainer.getBoundingClientRect();
-    let pos = (x - rect.left) / rect.width;
-    pos = Math.max(0.05, Math.min(0.95, pos));
-    sliderHandle.style.left = (pos * 100) + '%';
-    beforeLayer.style.clipPath = `inset(0 ${(1 - pos) * 100}% 0 0)`;
-  }
-
-  sliderContainer?.addEventListener('mousedown', (e) => {
-    updateSlider(e.clientX);
-    const move = (e) => updateSlider(e.clientX);
-    const up = () => { document.removeEventListener('mousemove', move); document.removeEventListener('mouseup', up); };
-    document.addEventListener('mousemove', move);
-    document.addEventListener('mouseup', up);
-  });
-
-  sliderContainer?.addEventListener('touchstart', (e) => {
-    updateSlider(e.touches[0].clientX);
-    const move = (e) => { e.preventDefault(); updateSlider(e.touches[0].clientX); };
-    const end = () => { document.removeEventListener('touchmove', move); document.removeEventListener('touchend', end); };
-    document.addEventListener('touchmove', move, { passive: false });
-    document.addEventListener('touchend', end);
-  });
-
-  // Auto-reveal animation on result screen
-  const observer = new MutationObserver(() => {
-    if (!document.getElementById('screen-result').classList.contains('hidden')) {
-      setTimeout(() => updateSlider(sliderContainer.getBoundingClientRect().left + sliderContainer.getBoundingClientRect().width * 0.05), 300);
-      setTimeout(() => updateSlider(sliderContainer.getBoundingClientRect().left + sliderContainer.getBoundingClientRect().width * 0.5), 1800);
-    }
-  });
-  observer.observe(document.getElementById('screen-result'), { attributes: true, attributeFilter: ['class'] });
+  const TOOLS = [
+    ['options/symmetry_1','Glow Up Styles','Clear skin, model look & more'],
+    ['options/skin_2','Maxed-Out Self','Your full glow-up potential'],
+    ['features/makeup','Makeup','Virtual makeup looks'],
+    ['features/hair','Hair Makeover','Try any hairstyle or color'],
+    ['features/relight','Relight','Flattering studio lighting'],
+    ['features/headshot','AI Headshot','Polished professional photos'],
+    ['eyes','Age Rewind','See yourself younger'],
+    ['jawline','Fit Version','Visualize your fit self'],
+  ];
+  document.getElementById('tools').innerHTML = TOOLS.map(t => `
+    <div class="tool" onclick="go('pricing')">
+      <img src="${ASSET}/components/${t[0]}.png" alt="">
+      <div class="b"><b>${t[1]}</b><span>${t[2]}</span></div>
+    </div>`).join('');
 </script>
-
 </body>
 </html>
