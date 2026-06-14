@@ -15,7 +15,17 @@ export const CONFIG = {
   ANNUAL_PRODUCT_ID: 'glowup_annual_5999',
   LIFETIME_PRODUCT_ID: 'glowup_lifetime_3999',
   ENTITLEMENT_ID: 'glowup_premium',
+  // Anti-abuse: shared app token. Dormant until the Worker has APP_TOKEN set.
+  APP_TOKEN: extra.APP_TOKEN || '',
 };
+
+/** Standard headers for Worker calls. Adds the app token (anti-abuse) when set,
+ *  plus any extras (e.g. Authorization). Use everywhere we fetch the Worker. */
+export function workerHeaders(extraHeaders: Record<string, string> = {}): Record<string, string> {
+  const h: Record<string, string> = { 'Content-Type': 'application/json', ...extraHeaders };
+  if (CONFIG.APP_TOKEN) h['X-App-Token'] = CONFIG.APP_TOKEN;
+  return h;
+}
 
 export const STYLE_PRESETS = [
   { id: 'clear_skin', name: 'Clear Skin', description: 'Flawless, even skin tone', icon: '✨', isPremium: false },

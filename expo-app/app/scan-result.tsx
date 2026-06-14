@@ -320,7 +320,9 @@ export default function ScanResultScreen() {
                 )}
               </AnimatedCircularProgress>
               <Text style={styles.heroUnlock}>
-                {unlocked ? `Top ${Math.max(1, 100 - score.percentile)}%` : 'Unlock to explore your unique proportions'}
+                {unlocked
+                  ? `Top ${Math.max(1, 100 - score.percentile)}% · Potential ${score.potential}`
+                  : 'Unlock to explore your unique proportions'}
               </Text>
             </View>
 

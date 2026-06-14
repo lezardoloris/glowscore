@@ -1,5 +1,5 @@
 import { Platform } from 'react-native';
-import { CONFIG } from '../config';
+import { CONFIG, workerHeaders } from '../config';
 
 const isWeb = Platform.OS === 'web';
 
@@ -116,8 +116,7 @@ export async function faceScan(imageUri: string, token?: string, focus?: string)
   if (!manipulated.base64) throw new Error('Could not encode image');
   if (manipulated.base64.length > 14_000_000) throw new Error('Image too large');
 
-  const headers: Record<string, string> = { 'Content-Type': 'application/json' };
-  if (token) headers['Authorization'] = `Bearer ${token}`;
+  const headers = workerHeaders(token ? { Authorization: `Bearer ${token}` } : {});
 
   const response = await fetch(`${CONFIG.WORKER_BASE_URL}/api/face-scan`, {
     method: 'POST',

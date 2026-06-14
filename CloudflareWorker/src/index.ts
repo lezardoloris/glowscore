@@ -12,6 +12,8 @@ export interface Env {
   GEMINI_API_KEY?: string;
   // Optional: HMAC secret for signed /images/ URLs. If set, unsigned requests are rejected.
   SIGNING_SECRET?: string;
+  // Optional: shared app token (anti-abuse). If set, /api/* POSTs must send a matching X-App-Token.
+  APP_TOKEN?: string;
 }
 
 // ─── Style presets for Glow Up transforms ───────────────────────────────────
@@ -624,11 +626,19 @@ export default {
     const corsHeaders = {
       "Access-Control-Allow-Origin": corsOrigin,
       "Access-Control-Allow-Methods": "POST, GET, OPTIONS",
-      "Access-Control-Allow-Headers": "Content-Type, Authorization",
+      "Access-Control-Allow-Headers": "Content-Type, Authorization, X-App-Token",
     };
 
     if (request.method === "OPTIONS") {
       return new Response(null, { headers: corsHeaders });
+    }
+
+    // Anti-abuse: when APP_TOKEN is configured, only our app (sending the matching
+    // X-App-Token) may call /api/* POSTs. Dormant when APP_TOKEN is unset.
+    if (env.APP_TOKEN && request.method === "POST" && url.pathname.startsWith("/api/")) {
+      if (request.headers.get("X-App-Token") !== env.APP_TOKEN) {
+        return Response.json({ error: "Forbidden" }, { status: 403, headers: corsHeaders });
+      }
     }
 
     try {

@@ -1,5 +1,5 @@
 import { Platform } from 'react-native';
-import { CONFIG } from '../config';
+import { CONFIG, workerHeaders } from '../config';
 
 const isWeb = Platform.OS === 'web';
 
@@ -33,10 +33,7 @@ export async function transformHD(
 
   const response = await fetch(`${CONFIG.WORKER_BASE_URL}/api/transform`, {
     method: 'POST',
-    headers: {
-      'Content-Type': 'application/json',
-      'Authorization': `Bearer ${subscriberToken}`,
-    },
+    headers: workerHeaders({ Authorization: `Bearer ${subscriberToken}` }),
     body: JSON.stringify({
       image: manipulated.base64,
       style_id: styleId,
@@ -81,7 +78,7 @@ export async function transformTeaser(imageUri: string): Promise<string | null> 
     if (!manipulated.base64) return null;
     const response = await fetch(`${CONFIG.WORKER_BASE_URL}/api/transform`, {
       method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
+      headers: workerHeaders(),
       body: JSON.stringify({
         image: manipulated.base64,
         style_id: 'glow_max',

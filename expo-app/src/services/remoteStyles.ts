@@ -1,6 +1,6 @@
 import { Platform } from 'react-native';
 import AsyncStorage from '@react-native-async-storage/async-storage';
-import { CONFIG, STYLE_PRESETS } from '../config';
+import { CONFIG, STYLE_PRESETS, workerHeaders } from '../config';
 
 const isWeb = Platform.OS === 'web';
 
@@ -55,7 +55,7 @@ export async function fetchRemoteStyles(): Promise<RemoteStyle[]> {
   try {
     const response = await fetch(`${CONFIG.WORKER_BASE_URL}/api/styles`, {
       method: 'GET',
-      headers: { 'Content-Type': 'application/json' },
+      headers: workerHeaders(),
     });
 
     if (!response.ok) {
