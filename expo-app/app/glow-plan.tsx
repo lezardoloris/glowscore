@@ -1,4 +1,4 @@
-import { View, Text, Pressable, ScrollView, StyleSheet, ActivityIndicator } from 'react-native';
+import { View, Text, Pressable, ScrollView, StyleSheet, ActivityIndicator, Linking } from 'react-native';
 import { router } from 'expo-router';
 import { useEffect, useState } from 'react';
 import { Ionicons } from '@expo/vector-icons';
@@ -7,6 +7,7 @@ import {
   getPlan, toggleTaskToday, isDoneToday, getStreak, getPlanWeek, getWeekFocus,
   GlowPlan, GlowTask, PlanCategory,
 } from '../src/services/glowPlan';
+import { recommendProducts, Focus, Product } from '../src/services/recoEngine';
 import { impactMedium, notificationSuccess } from '../src/services/haptics';
 import { trackScreen, trackEvent } from '../src/services/analytics';
 
@@ -141,10 +142,35 @@ export default function GlowPlanScreen() {
         </View>
       ))}
 
+      <RecommendedProducts focus={(plan.persona as Focus) || 'skin'} />
+
       <Text style={styles.hint}>
         Check off a task each day to keep your streak. Re-scan weekly to watch your GlowScore climb.
       </Text>
     </ScrollView>
+  );
+}
+
+function RecommendedProducts({ focus }: { focus: Focus }) {
+  const products = recommendProducts([focus], { limit: 4 });
+  if (!products.length) return null;
+  const tier = (b: Product['budget']) => (b === 'budget' ? '$' : b === 'mid' ? '$$' : '$$$');
+  return (
+    <View style={styles.recoBlock}>
+      <Text style={styles.recoTitle}>Recommended for you</Text>
+      <Text style={styles.recoSub}>Picked for your focus. Affiliate links support the app.</Text>
+      {products.map((p) => (
+        <Pressable key={p.id} style={styles.recoCard} onPress={() => { trackEvent('product_tapped', { id: p.id }); Linking.openURL(p.affiliateUrl).catch(() => {}); }}>
+          <View style={styles.recoIcon}><Ionicons name="bag-handle-outline" size={18} color={C.pink} /></View>
+          <View style={{ flex: 1 }}>
+            <Text style={styles.recoBrand}>{p.brand}</Text>
+            <Text style={styles.recoName} numberOfLines={1}>{p.name}</Text>
+          </View>
+          <Text style={styles.recoTier}>{tier(p.budget)}</Text>
+          <Ionicons name="open-outline" size={16} color={C.textSoft} />
+        </Pressable>
+      ))}
+    </View>
   );
 }
 
@@ -194,4 +220,13 @@ const styles = StyleSheet.create({
   taskTextDone: { color: C.textSoft, textDecorationLine: 'line-through' },
 
   hint: { color: C.textSoft, fontSize: 12, textAlign: 'center', marginTop: 8, lineHeight: 18 },
+
+  recoBlock: { marginTop: 10, marginBottom: 8 },
+  recoTitle: { color: C.text, fontSize: 16, fontWeight: '900' },
+  recoSub: { color: C.textSoft, fontSize: 12, marginTop: 2, marginBottom: 10 },
+  recoCard: { flexDirection: 'row', alignItems: 'center', gap: 12, backgroundColor: C.card, borderRadius: 15, padding: 13, marginBottom: 9 },
+  recoIcon: { width: 34, height: 34, borderRadius: 17, backgroundColor: C.pinkSoft, alignItems: 'center', justifyContent: 'center' },
+  recoBrand: { color: C.textSoft, fontSize: 11.5, fontWeight: '700' },
+  recoName: { color: C.text, fontSize: 14, fontWeight: '700', marginTop: 1 },
+  recoTier: { color: C.pink, fontSize: 13, fontWeight: '900', marginRight: 2 },
 });
