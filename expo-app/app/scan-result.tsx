@@ -9,6 +9,7 @@ import { impactMedium, notificationSuccess } from '../src/services/haptics';
 import { trackScreen, trackEvent } from '../src/services/analytics';
 import { checkSubscription, getSubscriberToken } from '../src/services/subscription';
 import { faceScan, GlowScore } from '../src/services/faceScan';
+import AnalysisLoader from '../src/components/AnalysisLoader';
 import { saveScan, getLastScan, ScanRecord } from '../src/services/history';
 import { savePlanForProfile } from '../src/services/glowPlan';
 import { scheduleRescanReminder } from '../src/services/notifications';
@@ -57,6 +58,7 @@ const METRIC_DEFS = [
 export default function ScanResultScreen() {
   const { imageUri } = useLocalSearchParams<{ imageUri: string }>();
   const [loading, setLoading] = useState(true);
+  const [analysisComplete, setAnalysisComplete] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [score, setScore] = useState<GlowScore | null>(null);
   const [isSubscribed, setIsSubscribed] = useState(false);
@@ -93,7 +95,7 @@ export default function ScanResultScreen() {
         if (mounted.current) { setAwaitingConsent(true); setLoading(false); }
         return;
       }
-      if (mounted.current) setAwaitingConsent(false);
+      if (mounted.current) { setAwaitingConsent(false); setAnalysisComplete(false); }
 
       try {
         const [sub, invUnlocked, invCount] = await Promise.all([
@@ -232,15 +234,13 @@ export default function ScanResultScreen() {
     );
   }
 
-  // ── Loading ──────────────────────────────────────────────────────────────
-  if (loading) {
+  // ── Loading / multi-step analysis (always show the full sequence) ──────────
+  if (loading || (!!score && !analysisComplete && !error)) {
     return (
-      <View style={styles.center}>
-        {imageUri ? <Image source={{ uri: imageUri }} style={styles.scanPhoto} /> : null}
-        <ActivityIndicator size="large" color={C.pink} style={{ marginTop: 28 }} />
-        <Text style={styles.scanText}>Analyzing your facial harmony…</Text>
-        <Text style={styles.scanSub}>Skin · Symmetry · Nose · Eyes · Jawline · Lips</Text>
-      </View>
+      <AnalysisLoader
+        photo={typeof imageUri === 'string' ? imageUri : undefined}
+        onComplete={() => setAnalysisComplete(true)}
+      />
     );
   }
 
@@ -473,7 +473,7 @@ export default function ScanResultScreen() {
           </>
         )}
         <Text style={styles.disclaimer}>
-          AI-generated artistic visualization for entertainment only.{' '}
+          For wellness and entertainment only. Not a medical device, diagnosis, or treatment.{' '}
           <Text style={styles.mhLink} onPress={() => Linking.openURL('https://www.nationaleatingdisorders.org/help-support/')}>
             Need support?
           </Text>

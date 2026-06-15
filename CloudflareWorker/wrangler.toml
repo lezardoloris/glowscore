@@ -5,6 +5,10 @@ compatibility_date = "2026-03-17"
 [vars]
 ENVIRONMENT = "production"
 
+# Privacy: auto-delete cached face images every 6h (see scheduled() handler)
+[triggers]
+crons = ["0 */6 * * *"]
+
 # Secrets (set via `wrangler secret put`)
 # FAL_API_KEY
 # REVENUECAT_API_KEY

@@ -69,12 +69,13 @@ const FOUNDATION: Item[] = [
 
 const FOCUS_TASKS: Record<string, Item[]> = {
   skin: [
-    { text: 'Double cleanse every evening (oil cleanser, then gentle gel)', category: 'Skincare' },
-    { text: 'Vitamin C serum every morning for brightness and even tone', category: 'Skincare' },
-    { text: 'Niacinamide at night to refine pores and calm redness', category: 'Skincare' },
+    { text: 'Double cleanse PM: oil cleanser then a gentle gel (e.g. Beauty of Joseon, COSRX)', category: 'Skincare' },
+    { text: 'Vitamin C serum every AM for brightness and even tone (e.g. Anua, Skinceuticals)', category: 'Skincare' },
+    { text: 'Niacinamide 5% at night to refine pores and calm redness (e.g. The Ordinary, Anua)', category: 'Skincare' },
+    { text: 'Never layer vitamin C and retinol the same night: C in the AM, retinol in the PM', category: 'Skincare' },
+    { text: 'Retinol 2-3 nights/week for renewal, buffer with moisturizer (e.g. CeraVe, La Roche-Posay)', category: 'Skincare' },
     { text: 'Hydrating + barrier moisturizer AM/PM for that glass-skin bounce', category: 'Skincare' },
-    { text: 'Drink 2L of water to plump skin from within', category: 'Lifestyle' },
-    { text: 'Hydrating sheet mask 2x this week', category: 'Skincare' },
+    { text: 'Drink 2L of water and aim for 7-8h sleep to plump skin from within', category: 'Lifestyle' },
   ],
   jawline: [
     { text: '5 min of mewing (tongue flat on the palate) while you work', category: 'Face Fitness' },
@@ -141,7 +142,7 @@ const FOCUS_TASKS: Record<string, Item[]> = {
 
 const GOAL_TO_FOCUS: Record<string, string> = {
   clear_skin: 'skin', harmony: 'harmony', eyes: 'eyes',
-  jawline: 'jawline', lips: 'lips', hair: 'hair',
+  jawline: 'jawline', lips: 'lips', hair: 'hair', color: 'color',
 };
 
 // Map a scan sub-score key to a focus area (to target the weakest trait)
@@ -206,6 +207,7 @@ export function buildPersonaTasks(quiz: QuizProfile | null, score?: PlanScoreInp
 
   // Outcome / type add-ons
   if ((quiz?.outcomes || []).includes('event')) items.push(...FOCUS_TASKS.event.slice(0, 2));
+  if ((quiz?.outcomes || []).includes('work') && primary !== 'corporate') items.push(...FOCUS_TASKS.corporate.slice(0, 2));
   if (quiz?.glowUpType === 'makeup' && primary !== 'makeup') items.push(...FOCUS_TASKS.makeup.slice(0, 2));
 
   items.push(capstone(score?.overall));

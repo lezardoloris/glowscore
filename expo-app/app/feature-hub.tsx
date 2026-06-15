@@ -1,6 +1,7 @@
 import { View, Text, Pressable, ScrollView, StyleSheet, Image, Platform } from 'react-native';
 import { useLocalSearchParams, router } from 'expo-router';
-import { useEffect } from 'react';
+import { useEffect, useState } from 'react';
+import * as ImagePicker from 'expo-image-picker';
 import { Ionicons } from '@expo/vector-icons';
 import { theme as C } from '../src/theme';
 import { trackScreen, trackEvent } from '../src/services/analytics';
@@ -27,6 +28,21 @@ const TOOLS = [
     id: 'destress', title: 'De-Bloat Scan', subtitle: 'Your cortisol face, de-puffed',
     img: require('../assets/components/skin.png'),
     route: (uri?: string) => router.push({ pathname: '/stress-scan', params: { imageUri: uri } }),
+  },
+  {
+    id: 'color', title: 'Color Season', subtitle: 'Your most flattering palette',
+    img: require('../assets/components/lips.png'),
+    route: (uri?: string) => router.push({ pathname: '/color-season', params: { imageUri: uri } }),
+  },
+  {
+    id: 'visual_weight', title: 'Visual Weight', subtitle: 'Soft or striking? Makeup to match',
+    img: require('../assets/components/eyes.png'),
+    route: (uri?: string) => router.push({ pathname: '/visual-weight', params: { imageUri: uri } }),
+  },
+  {
+    id: 'chrono', title: 'Chrono-Skincare', subtitle: 'Sync your routine to your skin clock',
+    img: require('../assets/components/options/skin_3.png'),
+    route: (uri?: string) => router.push({ pathname: '/chrono-skincare', params: { imageUri: uri } }),
   },
   {
     id: 'makeup', title: 'Makeup', subtitle: 'Virtual makeup looks',
@@ -61,9 +77,25 @@ const TOOLS = [
 ] as const;
 
 export default function FeatureHubScreen() {
-  const { imageUri } = useLocalSearchParams<{ imageUri?: string }>();
+  const params = useLocalSearchParams<{ imageUri?: string }>();
+  const [photo, setPhoto] = useState<string | undefined>(typeof params.imageUri === 'string' ? params.imageUri : undefined);
 
   useEffect(() => { trackScreen('feature_hub'); }, []);
+
+  // Single-capture: one selfie powers every tool. Pick once, reuse everywhere.
+  async function pickPhoto(): Promise<string | undefined> {
+    const r = await ImagePicker.launchImageLibraryAsync({ mediaTypes: ['images'] as any, quality: 0.9, allowsEditing: true, aspect: [1, 1] });
+    if (!r.canceled && r.assets[0]) { setPhoto(r.assets[0].uri); return r.assets[0].uri; }
+    return undefined;
+  }
+
+  async function openTool(t: typeof TOOLS[number]) {
+    impactMedium();
+    trackEvent('studio_tool_tapped', { tool: t.id });
+    const uri = photo || (await pickPhoto());
+    if (!uri) return; // user cancelled the picker
+    t.route(uri);
+  }
 
   return (
     <ScrollView style={styles.container} contentContainerStyle={styles.content} showsVerticalScrollIndicator={false}>
@@ -74,17 +106,23 @@ export default function FeatureHubScreen() {
       <Text style={styles.title}>Glow-Up Studio</Text>
       <Text style={styles.subtitle}>Premium tools for your transformation</Text>
 
+      {/* Single photo for the whole studio */}
+      <Pressable style={styles.photoBar} onPress={pickPhoto}>
+        {photo ? (
+          <Image source={{ uri: photo }} style={styles.photoThumb} />
+        ) : (
+          <View style={[styles.photoThumb, styles.photoThumbEmpty]}><Ionicons name="camera" size={20} color={C.pink} /></View>
+        )}
+        <View style={{ flex: 1 }}>
+          <Text style={styles.photoTitle}>{photo ? 'Your photo' : 'Add your photo'}</Text>
+          <Text style={styles.photoSub}>{photo ? 'Used for every tool. Tap to change.' : 'Pick one selfie to use across all tools.'}</Text>
+        </View>
+        <Ionicons name="chevron-forward" size={18} color={C.textSoft} />
+      </Pressable>
+
       <View style={styles.grid}>
         {TOOLS.map((t) => (
-          <Pressable
-            key={t.id}
-            style={styles.card}
-            onPress={() => {
-              impactMedium();
-              trackEvent('studio_tool_tapped', { tool: t.id });
-              t.route(typeof imageUri === 'string' ? imageUri : undefined);
-            }}
-          >
+          <Pressable key={t.id} style={styles.card} onPress={() => openTool(t)}>
             <Image source={t.img} style={styles.cardImg} />
             <View style={styles.cardBody}>
               <Text style={styles.cardTitle}>{t.title}</Text>
@@ -104,7 +142,12 @@ const styles = StyleSheet.create({
   content: { paddingTop: Platform.OS === 'ios' ? 64 : 44, paddingHorizontal: 18, paddingBottom: 50 },
   back: { alignSelf: 'flex-start', marginBottom: 6 },
   title: { fontSize: 30, fontWeight: '900', color: C.text },
-  subtitle: { fontSize: 15, color: C.textSoft, marginTop: 2, marginBottom: 18 },
+  subtitle: { fontSize: 15, color: C.textSoft, marginTop: 2, marginBottom: 14 },
+  photoBar: { flexDirection: 'row', alignItems: 'center', gap: 12, backgroundColor: C.card, borderRadius: 16, padding: 12, marginBottom: 16 },
+  photoThumb: { width: 44, height: 44, borderRadius: 22 },
+  photoThumbEmpty: { backgroundColor: C.pinkSoft, alignItems: 'center', justifyContent: 'center' },
+  photoTitle: { fontSize: 14.5, fontWeight: '800', color: C.text },
+  photoSub: { fontSize: 12, color: C.textSoft, marginTop: 1 },
   grid: { flexDirection: 'row', flexWrap: 'wrap', gap: 12 },
   card: {
     width: '47.5%',

@@ -68,6 +68,7 @@ export async function transformHD(
       body: JSON.stringify({
         image: base64,
         style_id: styleId,
+        quality: 'hd',
         width: CONFIG.HD_SIZE,
         height: CONFIG.HD_SIZE,
       }),
@@ -99,6 +100,7 @@ export async function transformHD(
     body: JSON.stringify({
       image: manipulated.base64,
       style_id: styleId,
+      quality: 'hd',
       width: CONFIG.HD_SIZE,
       height: CONFIG.HD_SIZE,
     }),

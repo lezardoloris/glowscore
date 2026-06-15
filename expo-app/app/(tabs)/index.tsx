@@ -11,8 +11,7 @@ import { theme as C } from '../../src/theme';
 import { trackScreen } from '../../src/services/analytics';
 import { getLastScan, ScanRecord } from '../../src/services/history';
 import { getStreak, getPlan, GlowPlan } from '../../src/services/glowPlan';
-
-const LOGO = require('../../assets/logo/logo_wordmark_t.png');
+import BrandLogo from '../../src/components/BrandLogo';
 
 export default function HomeScreen() {
   const [loading, setLoading] = useState(true);
@@ -100,7 +99,7 @@ export default function HomeScreen() {
     <View style={styles.container}>
       {/* Premium brand header */}
       <View style={styles.header}>
-        <Image source={LOGO} style={styles.logo} resizeMode="contain" />
+        <BrandLogo width={158} />
         <Text style={styles.tagline}>{lastScan ? 'Track your glow-up' : 'Reveal your facial harmony'}</Text>
       </View>
 
@@ -213,9 +212,8 @@ const styles = StyleSheet.create({
   container: { flex: 1, backgroundColor: C.bg, padding: 22, paddingTop: Platform.OS === 'ios' ? 68 : 46 },
   center: { flex: 1, backgroundColor: C.bg, justifyContent: 'center', alignItems: 'center', padding: 24 },
 
-  header: { marginBottom: 22 },
-  logo: { width: 150, height: 42, marginLeft: -4 },
-  tagline: { fontSize: 15, color: C.textSoft, marginTop: 4 },
+  header: { marginBottom: 22, alignItems: 'center' },
+  tagline: { fontSize: 15, color: C.textSoft, marginTop: 6, textAlign: 'center' },
 
   scoreCard: {
     flexDirection: 'row', alignItems: 'center', gap: 16, backgroundColor: C.card,

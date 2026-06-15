@@ -149,8 +149,8 @@ export default function PricingScreen() {
         >
           <View style={styles.planContent}>
             <Text style={styles.planName}>Lifetime</Text>
-            <Text style={styles.planPrice}>$39.99</Text>
-            <Text style={styles.planDetail}>One-time purchase, forever</Text>
+            <Text style={styles.planPrice}>$99.99</Text>
+            <Text style={styles.planDetail}>One-time, pays off in under 2 years</Text>
           </View>
           <View style={[styles.radio, selectedPlan === 'lifetime' && styles.radioSelected]}>
             {selectedPlan === 'lifetime' && <Ionicons name="checkmark" size={15} color="#fff" />}

@@ -13,7 +13,7 @@ export const CONFIG = {
   HD_SIZE: 1024,
   WEEKLY_PRODUCT_ID: 'glowup_weekly_1299',
   ANNUAL_PRODUCT_ID: 'glowup_annual_5999',
-  LIFETIME_PRODUCT_ID: 'glowup_lifetime_3999',
+  LIFETIME_PRODUCT_ID: 'glowup_lifetime_9999',
   ENTITLEMENT_ID: 'glowup_premium',
   // Anti-abuse: shared app token. Dormant until the Worker has APP_TOKEN set.
   APP_TOKEN: extra.APP_TOKEN || '',

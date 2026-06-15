@@ -14,6 +14,9 @@ export interface Env {
   SIGNING_SECRET?: string;
   // Optional: shared app token (anti-abuse). If set, /api/* POSTs must send a matching X-App-Token.
   APP_TOKEN?: string;
+  // "production" enforces subscription on premium endpoints. Anything else (e.g.
+  // "development" in .dev.vars) bypasses auth so local web testing works.
+  ENVIRONMENT?: string;
 }
 
 // ─── Style presets for Glow Up transforms ───────────────────────────────────
@@ -359,6 +362,10 @@ async function validateHdAuth(
   headers: Record<string, string>
 ): Promise<{ subscriberToken: string } | Response> {
   const authHeader = request.headers.get("Authorization");
+  // Local dev bypass (never in production): keeps the web preview testable.
+  if (env.ENVIRONMENT !== "production") {
+    return { subscriberToken: authHeader?.startsWith("Bearer ") ? authHeader.slice(7) : "dev-bypass" };
+  }
   if (!authHeader?.startsWith("Bearer ")) {
     return Response.json({ error: "Unauthorized — HD requires a subscription" }, { status: 401, headers });
   }
@@ -377,6 +384,10 @@ async function validatePremiumAuth(
   headers: Record<string, string>
 ): Promise<{ subscriberToken: string } | Response> {
   const authHeader = request.headers.get("Authorization");
+  // Local dev bypass (never in production).
+  if (env.ENVIRONMENT !== "production") {
+    return { subscriberToken: authHeader?.startsWith("Bearer ") ? authHeader.slice(7) : "dev-bypass" };
+  }
   if (!authHeader?.startsWith("Bearer ")) {
     return Response.json({ error: "Unauthorized — this feature requires a subscription" }, { status: 401, headers });
   }
@@ -671,6 +682,10 @@ export default {
           return await handleTransform(request, env, corsHeaders);
         case "/api/makeup":
           return await handleMakeup(request, env, corsHeaders);
+        case "/api/color-season":
+          return await handleColorSeason(request, env, corsHeaders);
+        case "/api/visual-weight":
+          return await handleVisualWeight(request, env, corsHeaders);
         case "/api/face-scan":
           return await handleFaceScan(request, env, corsHeaders);
         case "/api/face-swap":
@@ -715,7 +730,29 @@ export default {
       return Response.json({ error: "Internal server error" }, { status: 500, headers: corsHeaders });
     }
   },
+
+  // Privacy (BIPA/GDPR): auto-delete cached face images so biometric-derived
+  // photos are never retained. Runs on the cron schedule in wrangler.toml.
+  async scheduled(_event: ScheduledEvent, env: Env, ctx: ExecutionContext): Promise<void> {
+    ctx.waitUntil(cleanupOldImages(env));
+  },
 };
+
+/** Delete R2 images older than the retention window (default 48h). */
+async function cleanupOldImages(env: Env, maxAgeMs = 48 * 60 * 60 * 1000): Promise<void> {
+  const cutoff = Date.now() - maxAgeMs;
+  let cursor: string | undefined = undefined;
+  try {
+    do {
+      const listed: R2Objects = await env.IMAGES_BUCKET.list({ limit: 1000, cursor });
+      const stale = listed.objects.filter((o) => o.uploaded.getTime() < cutoff).map((o) => o.key);
+      if (stale.length) await env.IMAGES_BUCKET.delete(stale);
+      cursor = listed.truncated ? listed.cursor : undefined;
+    } while (cursor);
+  } catch (e) {
+    console.error("R2 cleanup failed:", e);
+  }
+}
 
 // ─── GET /api/styles ────────────────────────────────────────────────────────
 
@@ -794,9 +831,12 @@ async function handleTransform(request: Request, env: Env, headers: Record<strin
   if (rlResult instanceof Response) return rlResult;
   const { currentCount, rateLimitKey } = rlResult;
 
-  // Identity-preserving payoffs via Gemini Nano Banana (glow_max, destress). Falls back to fal.ai if no key.
-  if ((body.style_id === "glow_max" || body.style_id === "destress") && env.GEMINI_API_KEY) {
-    const promptOverride = GEMINI_PROMPTS[body.style_id]; // undefined => default glow-up prompt
+  // All transforms run through Gemini Nano Banana when a key is set (best identity
+  // preservation). Per-style prompt if defined, else the preset prompt adapted for
+  // img2img. Falls back to fal.ai only when GEMINI_API_KEY is unset.
+  if (env.GEMINI_API_KEY) {
+    const promptOverride = GEMINI_PROMPTS[body.style_id] ||
+      `Apply this glow-up to the SAME person, fully preserving their identity, ethnicity, face shape, nose and eye shape: ${preset.prompt}. Strictly photorealistic, flattering, no deformation, keep it recognizably the same person.`;
     const g = await callGeminiGlowup(env, body.image, "image/jpeg", request, headers, rateLimitKey, currentCount, 30000, promptOverride);
     if (g instanceof Response) return g;
     return Response.json(
@@ -907,6 +947,132 @@ async function handleMakeup(request: Request, env: Env, headers: Record<string, 
   }
   const finalUrl = await cacheImageInR2(imageUrl, request, env, "makeup");
   return Response.json({ image_url: finalUrl, feature: "makeup", look, remaining_today: 10 - (currentCount + 1) }, { headers });
+}
+
+// ─── Color Season + Visual Weight (styling analyzers, premium) ──────────────
+
+/** Generic OpenAI-compatible vision call that returns parsed JSON (or an error Response). */
+async function callVisionJSON(
+  env: Env, imageDataUrl: string, rubric: string, maxTokens: number,
+  headers: Record<string, string>, rateLimitKey: string, currentCount: number, timeoutMs = 25000,
+): Promise<{ data: any } | Response> {
+  const baseUrl = (env.LLM_BASE_URL || "https://openrouter.ai/api/v1").replace(/\/$/, "");
+  const model = env.LLM_MODEL || "openai/gpt-4o-mini";
+  const controller = new AbortController();
+  const t = setTimeout(() => controller.abort(), timeoutMs);
+  let resp: Response;
+  try {
+    resp = await fetch(`${baseUrl}/chat/completions`, {
+      method: "POST",
+      headers: { Authorization: `Bearer ${env.LLM_API_KEY}`, "Content-Type": "application/json" },
+      body: JSON.stringify({
+        model, temperature: 0, max_tokens: maxTokens,
+        messages: [{ role: "user", content: [{ type: "text", text: rubric }, { type: "image_url", image_url: { url: imageDataUrl } }] }],
+      }),
+      signal: controller.signal,
+    });
+    clearTimeout(t);
+  } catch {
+    clearTimeout(t); await rollbackRateLimit(env, rateLimitKey, currentCount);
+    return Response.json({ error: "Analysis timed out. Please try again." }, { status: 504, headers });
+  }
+  if (!resp.ok) { await rollbackRateLimit(env, rateLimitKey, currentCount); return Response.json({ error: "Analysis service unavailable" }, { status: 502, headers }); }
+  let content = "";
+  try { const j: any = await resp.json(); content = j.choices?.[0]?.message?.content || ""; }
+  catch { await rollbackRateLimit(env, rateLimitKey, currentCount); return Response.json({ error: "Analysis failed" }, { status: 502, headers }); }
+  const match = content.replace(/```json|```/g, "").match(/\{[\s\S]*\}/);
+  if (!match) { await rollbackRateLimit(env, rateLimitKey, currentCount); return Response.json({ error: "Could not read result" }, { status: 502, headers }); }
+  try { return { data: JSON.parse(match[0]) }; }
+  catch { await rollbackRateLimit(env, rateLimitKey, currentCount); return Response.json({ error: "Could not parse result" }, { status: 502, headers }); }
+}
+
+function asHexArray(v: any, max: number): string[] {
+  if (!Array.isArray(v)) return [];
+  return v.filter((x) => typeof x === "string" && /^#?[0-9a-fA-F]{6}$/.test(x.trim()))
+    .map((x) => (x.trim().startsWith("#") ? x.trim() : `#${x.trim()}`)).slice(0, max);
+}
+
+// POST /api/color-season — seasonal color analysis (premium styling, Apple-safe)
+async function handleColorSeason(request: Request, env: Env, headers: Record<string, string>): Promise<Response> {
+  const m = requirePost(request, headers); if (m) return m;
+  const bodyOrErr = await parseBody<{ image: string }>(request, headers);
+  if (bodyOrErr instanceof Response) return bodyOrErr;
+  const body = bodyOrErr;
+  if (!body.image || body.image.length > 14_000_000) return Response.json({ error: "Image too large (max 10MB)" }, { status: 400, headers });
+  if (!isValidImageBase64(body.image)) return Response.json({ error: "Invalid image format" }, { status: 400, headers });
+  const auth = await validatePremiumAuth(request, env, headers);
+  if (auth instanceof Response) return auth;
+  const rl = await checkRateLimit(request, env, headers, "color", 10, true, auth.subscriberToken);
+  if (rl instanceof Response) return rl;
+  const { currentCount, rateLimitKey } = rl;
+
+  const rubric = [
+    "You are a seasonal color analysis stylist for a positive styling app. Analyze the person's natural coloring (skin undertone, hair, eyes) from the selfie.",
+    "This is styling guidance only, never an attractiveness or beauty judgement.",
+    "Classify into the 4 seasons and a sub-season, the undertone, and a contrast level 0-10 (luminance difference between skin, hair and eyes).",
+    "Give a flattering wearable palette and shades to avoid, best metal, and best lip and blush shades, all as 6-digit hex.",
+    "Return ONLY minified JSON, no markdown, EXACT keys:",
+    '{"season":string,"sub_season":string,"undertone":string,"contrast":int,"confidence":int,"description":string,"palette":[string,string,string,string,string,string],"avoid":[string,string,string],"metal":string,"lip":string,"blush":string}',
+    "description: one upbeat sentence (max 130 chars). If no clear face, set confidence to 0.",
+  ].join(" ");
+
+  const res = await callVisionJSON(env, `data:image/jpeg;base64,${body.image}`, rubric, 600, headers, rateLimitKey, currentCount);
+  if (res instanceof Response) return res;
+  const d = res.data || {};
+  return Response.json({
+    feature: "color_season",
+    season: String(d.season || "").slice(0, 24),
+    sub_season: String(d.sub_season || "").slice(0, 32),
+    undertone: String(d.undertone || "").slice(0, 24),
+    contrast: Math.max(0, Math.min(10, parseInt(d.contrast) || 0)),
+    confidence: Math.max(0, Math.min(100, parseInt(d.confidence) || 0)),
+    description: String(d.description || "").slice(0, 160),
+    palette: asHexArray(d.palette, 6),
+    avoid: asHexArray(d.avoid, 3),
+    metal: String(d.metal || "").slice(0, 16),
+    lip: asHexArray([d.lip], 1)[0] || "",
+    blush: asHexArray([d.blush], 1)[0] || "",
+    remaining_today: 10 - (currentCount + 1),
+  }, { headers });
+}
+
+// POST /api/visual-weight — high/low visual weight styling typology (premium)
+async function handleVisualWeight(request: Request, env: Env, headers: Record<string, string>): Promise<Response> {
+  const m = requirePost(request, headers); if (m) return m;
+  const bodyOrErr = await parseBody<{ image: string }>(request, headers);
+  if (bodyOrErr instanceof Response) return bodyOrErr;
+  const body = bodyOrErr;
+  if (!body.image || body.image.length > 14_000_000) return Response.json({ error: "Image too large (max 10MB)" }, { status: 400, headers });
+  if (!isValidImageBase64(body.image)) return Response.json({ error: "Invalid image format" }, { status: 400, headers });
+  const auth = await validatePremiumAuth(request, env, headers);
+  if (auth instanceof Response) return auth;
+  const rl = await checkRateLimit(request, env, headers, "vweight", 10, true, auth.subscriberToken);
+  if (rl instanceof Response) return rl;
+  const { currentCount, rateLimitKey } = rl;
+
+  const rubric = [
+    "You are a makeup stylist using the 'visual weight' theory (how soft vs striking someone's features read). This is styling guidance, never an attractiveness judgement.",
+    "Assess whether features read as high visual weight (bold, high-contrast, defined) or low visual weight (soft, delicate, blended), with a 0-100 score where 100 is highest weight.",
+    "Give a flattering aesthetic label and 3 concrete makeup tips that suit that weight.",
+    "Return ONLY minified JSON, no markdown, EXACT keys:",
+    '{"weight":string,"score":int,"label":string,"confidence":int,"description":string,"makeup_tips":[string,string,string]}',
+    "weight is 'high', 'low' or 'balanced'. label is a flattering 1-3 word aesthetic (e.g. 'Soft Radiance', 'Striking Siren'). description max 130 chars. If no clear face, confidence 0.",
+  ].join(" ");
+
+  const res = await callVisionJSON(env, `data:image/jpeg;base64,${body.image}`, rubric, 500, headers, rateLimitKey, currentCount);
+  if (res instanceof Response) return res;
+  const d = res.data || {};
+  const tips = Array.isArray(d.makeup_tips) ? d.makeup_tips.filter((x: any) => typeof x === "string").slice(0, 3) : [];
+  return Response.json({
+    feature: "visual_weight",
+    weight: ["high", "low", "balanced"].includes(d.weight) ? d.weight : "balanced",
+    score: Math.max(0, Math.min(100, parseInt(d.score) || 0)),
+    label: String(d.label || "").slice(0, 40),
+    confidence: Math.max(0, Math.min(100, parseInt(d.confidence) || 0)),
+    description: String(d.description || "").slice(0, 160),
+    makeup_tips: tips,
+    remaining_today: 10 - (currentCount + 1),
+  }, { headers });
 }
 
 // ─── Vision LLM helper (GlowScore) ──────────────────────────────────────────

@@ -10,6 +10,7 @@ import {
 } from 'react-native';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import { router } from 'expo-router';
+import BrandLogo from '../src/components/BrandLogo';
 import { Ionicons } from '@expo/vector-icons';
 import {
   trackEvent,
@@ -53,6 +54,7 @@ const GOALS = [
   { id: 'jawline', title: 'Defined jawline', subtitle: 'Sculpt and de-bloat' },
   { id: 'lips', title: 'Fuller lips', subtitle: 'Shape and definition' },
   { id: 'hair', title: 'Better hair', subtitle: 'Shine, volume, framing' },
+  { id: 'color', title: 'Your best colors', subtitle: 'Seasonal palette & shades' },
 ];
 
 const OUTCOMES = [
@@ -61,6 +63,7 @@ const OUTCOMES = [
   { id: 'mirror', title: 'Feel proud in the mirror', subtitle: 'See the version of yourself you want to be' },
   { id: 'confidence', title: 'Real, lasting confidence', subtitle: 'Earned through visible change' },
   { id: 'event', title: 'Glow for a big moment', subtitle: 'Wedding, reunion, fresh start' },
+  { id: 'work', title: 'Win at work', subtitle: 'Polished, professional presence' },
 ];
 
 const SLEEP_OPTIONS = ['< 5h', '5-6h', '6-7h', '7-8h', '8h+'];
@@ -219,7 +222,7 @@ export default function OnboardingScreen() {
         {/* STEP 0 — Hook */}
         {step === 0 && (
           <View style={styles.hookWrap}>
-            <Text style={styles.brand}>💋 GlowUp</Text>
+            <BrandLogo width={132} style={{ marginBottom: 22 }} />
             <Text style={styles.hookTitle}>
               Ready For{'\n'}
               <Text style={{ color: C.pink }}>Glow Up?</Text>
@@ -352,8 +355,10 @@ export default function OnboardingScreen() {
             </Pressable>
 
             <Text style={styles.consentLegal}>
-              By tapping "I Agree" you consent to your photo being analyzed by AI for entertainment
-              purposes.{' '}
+              By tapping "I Agree" you consent to your selfie (including facial geometry, a form of
+              biometric data) being processed by AI to generate your wellness and styling results, then
+              automatically deleted within 48 hours. We never sell your photos or use them to train AI.
+              For wellness and entertainment only, not medical advice.{' '}
               <Text
                 style={styles.consentLink}
                 onPress={() => Linking.openURL('https://glowupai.app/privacy')}
