@@ -1,5 +1,4 @@
-import { View, Text, Pressable, StyleSheet, Platform, ActivityIndicator, Linking, Image } from 'react-native';
-import * as ImagePicker from 'expo-image-picker';
+import { View, Text, Pressable, StyleSheet, Platform, ActivityIndicator, Image, ScrollView } from 'react-native';
 import { router } from 'expo-router';
 import { useState, useEffect, useCallback } from 'react';
 import { useFocusEffect } from 'expo-router';
@@ -13,6 +12,7 @@ import { shadow } from '../../src/shadows';
 import { trackScreen } from '../../src/services/analytics';
 import { getLastScan, ScanRecord } from '../../src/services/history';
 import { getStreak, getPlan, GlowPlan } from '../../src/services/glowPlan';
+import { getQuizProfile } from '../../src/services/quizProfile';
 import BrandLogo from '../../src/components/BrandLogo';
 
 const SUB_LABELS: Record<string, string> = {
@@ -22,10 +22,10 @@ const SUB_LABELS: Record<string, string> = {
 
 export default function HomeScreen() {
   const [loading, setLoading] = useState(true);
-  const [cameraPermDenied, setCameraPermDenied] = useState(false);
   const [lastScan, setLastScan] = useState<ScanRecord | null>(null);
   const [streak, setStreak] = useState(0);
   const [plan, setPlan] = useState<GlowPlan | null>(null);
+  const [isBody, setIsBody] = useState(false); // plus-size body_glow persona: only then surface body care
 
   useEffect(() => {
     trackScreen('home');
@@ -37,61 +37,24 @@ export default function HomeScreen() {
       setLoading(false);
     };
     checkOnboarding();
-    if (Platform.OS !== 'web') {
-      ImagePicker.getCameraPermissionsAsync().then(({ status }) => {
-        if (status === 'denied') setCameraPermDenied(true);
-      });
-    }
   }, []);
 
   useFocusEffect(
     useCallback(() => {
       let active = true;
       (async () => {
-        const [scan, s, p] = await Promise.all([getLastScan(), getStreak(), getPlan()]);
-        if (active) { setLastScan(scan); setStreak(s); setPlan(p); }
+        const [scan, s, p, quiz] = await Promise.all([getLastScan(), getStreak(), getPlan(), getQuizProfile()]);
+        if (active) {
+          setLastScan(scan); setStreak(s); setPlan(p);
+          setIsBody((quiz?.goals || []).includes('body_glow') || p?.persona === 'bodycare');
+        }
       })();
       return () => { active = false; };
     }, [])
   );
 
-  async function pickImage() {
-    const result = await ImagePicker.launchImageLibraryAsync({
-      mediaTypes: ['images'] as any, quality: 0.85, allowsEditing: true, aspect: [1, 1],
-    });
-    if (!result.canceled && result.assets[0]) {
-      router.push({ pathname: '/scan-result', params: { imageUri: result.assets[0].uri } });
-    }
-  }
-
-  async function takePhoto() {
-    const { status } = await ImagePicker.requestCameraPermissionsAsync();
-    if (status !== 'granted') { setCameraPermDenied(true); return; }
-    setCameraPermDenied(false);
-    const result = await ImagePicker.launchCameraAsync({
-      quality: 0.85, allowsEditing: true, aspect: [1, 1], cameraType: 'front' as any,
-    });
-    if (!result.canceled && result.assets[0]) {
-      router.push({ pathname: '/scan-result', params: { imageUri: result.assets[0].uri } });
-    }
-  }
-
   if (loading) {
     return <View style={styles.center}><ActivityIndicator size="large" color={C.pink} /></View>;
-  }
-
-  if (cameraPermDenied) {
-    return (
-      <View style={styles.center}>
-        <View style={styles.permCard}>
-          <View style={styles.iconCircle}><Ionicons name="camera" size={40} color={C.pink} /></View>
-          <Text style={styles.permTitle}>Camera Access Needed</Text>
-          <Text style={styles.permSub}>We need camera access to scan your face. Your photo is processed securely and deleted after.</Text>
-          <Pressable style={styles.ctaSolid} onPress={() => Linking.openSettings()}><Text style={styles.ctaText}>Open Settings</Text></Pressable>
-          <Pressable onPress={() => { setCameraPermDenied(false); pickImage(); }}><Text style={styles.link}>Or choose a photo from your library</Text></Pressable>
-        </View>
-      </View>
-    );
   }
 
   const tasksToday = plan ? plan.tasks.filter((t) => t.completedDates.includes(new Date().toISOString().split('T')[0])).length : 0;
@@ -101,10 +64,14 @@ export default function HomeScreen() {
   const chips = lastScan ? weakestChips(lastScan) : [];
 
   return (
-    <View style={styles.container}>
+    <ScrollView style={styles.container} contentContainerStyle={styles.scrollContent} showsVerticalScrollIndicator={false}>
       <View style={styles.header}>
         <BrandLogo width={150} />
-        <Text style={styles.tagline}>{lastScan ? 'Glow at any size — your routine, your evolution' : 'Glow at any size — reveal your facial harmony'}</Text>
+        <Text style={styles.tagline}>
+          {isBody
+            ? (lastScan ? 'Glow at any size, your routine and your evolution' : 'Glow at any size, reveal your facial harmony')
+            : (lastScan ? 'Your routine, your evolution' : 'Reveal your facial harmony')}
+        </Text>
       </View>
 
       {lastScan ? (
@@ -146,14 +113,16 @@ export default function HomeScreen() {
             </Pressable>
           )}
 
-          <Pressable style={styles.row} onPress={() => router.push('/body-care')}>
-            <View style={styles.rowIcon}><Ionicons name="body-outline" size={16} color={C.pink} /></View>
-            <View style={{ flex: 1 }}>
-              <Text style={styles.rowTitle}>Body glow & comfort</Text>
-              <Text style={styles.rowSub}>Chafing, folds, barrier care</Text>
-            </View>
-            <Ionicons name="chevron-forward" size={18} color={C.textSoft} />
-          </Pressable>
+          {isBody && (
+            <Pressable style={styles.row} onPress={() => router.push('/body-care')}>
+              <View style={styles.rowIcon}><Ionicons name="body-outline" size={16} color={C.pink} /></View>
+              <View style={{ flex: 1 }}>
+                <Text style={styles.rowTitle}>Body glow & comfort</Text>
+                <Text style={styles.rowSub}>Skin comfort & barrier care</Text>
+              </View>
+              <Ionicons name="chevron-forward" size={18} color={C.textSoft} />
+            </Pressable>
+          )}
 
           <Pressable style={styles.row} onPress={() => router.push('/debloat-morning')}>
             <View style={styles.rowIcon}><Ionicons name="timer-outline" size={16} color={C.pink} /></View>
@@ -189,11 +158,7 @@ export default function HomeScreen() {
             </View>
           )}
 
-          <GradientCta icon="scan" label="Re-scan to see your progress" onPress={takePhoto} />
-          <Pressable style={styles.secondary} onPress={pickImage}><Text style={styles.secondaryText}>Choose a photo</Text></Pressable>
-          {Platform.OS !== 'web' && (
-            <Pressable style={styles.liveScanLink} onPress={() => router.push('/camera-scan')}><Text style={styles.liveScanText}>Try live scan (beta)</Text></Pressable>
-          )}
+          <GradientCta icon="scan" label="Re-scan to see your progress" onPress={() => router.push('/multi-scan')} />
         </>
       ) : (
         <>
@@ -203,13 +168,12 @@ export default function HomeScreen() {
           </View>
           <Text style={styles.firstTitle}>Scan your face,{'\n'}reveal your potential</Text>
           <Text style={styles.firstSub}>An AI-powered read of your facial harmony in seconds.</Text>
-          <GradientCta icon="camera" label="Take a Selfie" onPress={takePhoto} />
-          <Pressable style={styles.secondary} onPress={pickImage}><Text style={styles.secondaryText}>Choose a photo</Text></Pressable>
+          <GradientCta icon="camera" label="Scan your face" onPress={() => router.push('/multi-scan')} />
         </>
       )}
 
       <Text style={styles.disclaimer}>For wellness and entertainment only. Not a medical device.</Text>
-    </View>
+    </ScrollView>
   );
 }
 
@@ -247,7 +211,8 @@ const chipShadow = shadow(1);
 const ctaGlow = shadow(2);
 
 const styles = StyleSheet.create({
-  container: { flex: 1, backgroundColor: C.bg, padding: 20, paddingTop: Platform.OS === 'ios' ? 64 : 44 },
+  container: { flex: 1, backgroundColor: C.bg },
+  scrollContent: { padding: 20, paddingTop: Platform.OS === 'ios' ? 64 : 44, paddingBottom: 40 },
   center: { flex: 1, backgroundColor: C.bg, justifyContent: 'center', alignItems: 'center', padding: 24 },
 
   header: { marginBottom: 18, alignItems: 'center' },
@@ -300,5 +265,5 @@ const styles = StyleSheet.create({
   permSub: { fontSize: 14, color: C.textSoft, textAlign: 'center', lineHeight: 20, marginBottom: 22 },
   link: { color: C.pink, fontSize: 14, fontWeight: '600', textDecorationLine: 'underline', marginTop: 14 },
 
-  disclaimer: { fontSize: 10, color: C.textSoft, textAlign: 'center', marginTop: 'auto', paddingTop: 18, opacity: 0.85 },
+  disclaimer: { fontSize: 10, color: C.textSoft, textAlign: 'center', marginTop: 24, paddingTop: 4, opacity: 0.85 },
 });

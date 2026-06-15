@@ -21,6 +21,7 @@ import { saveQuizProfile } from '../src/services/quizProfile';
 import { setAiConsent } from '../src/services/aiConsent';
 import { impactMedium } from '../src/services/haptics';
 import { requestPermission, scheduleActivationSequence, scheduleRoutineMicroPushes } from '../src/services/notifications';
+import InfoSheet, { InfoButton, InfoContent } from '../src/components/InfoSheet';
 
 // ---------------------------------------------------------------------------
 // Aura palette (light pink clinical-feminine theme)
@@ -42,37 +43,43 @@ const C = {
 // Quiz data (Aura structure: pick type → goals → outcomes → daily basics)
 // ---------------------------------------------------------------------------
 
+// Non-medical glow styles (no surgical/Botox naming, App Store + tone compliant).
+// The `makeup` id is consumed downstream (recoEngine, glowPlan), keep it.
 const GLOW_TYPES = [
-  { id: 'surgical', title: 'Surgical', subtitle: 'Rhinoplasty, facelift & more' },
-  { id: 'non_surgical', title: 'Non-Surgical', subtitle: 'Botox, fillers & lasers' },
-  { id: 'makeup', title: 'Makeup', subtitle: 'Professional style guide' },
+  { id: 'skincare', title: 'Skincare & glow', subtitle: 'Clearer, healthier-looking skin' },
+  { id: 'makeup', title: 'Makeup & style', subtitle: 'Contour, color and looks' },
+  { id: 'full', title: 'Full glow-up', subtitle: 'Skin, features, hair and more' },
 ] as const;
 
 const GOALS = [
   { id: 'clear_skin', title: 'Clearer, smoother skin', subtitle: 'Even tone, refined texture' },
   { id: 'harmony', title: 'Facial harmony', subtitle: 'Balance and symmetry' },
   { id: 'eyes', title: 'Brighter eye area', subtitle: 'Dark circles, eye bags' },
+  { id: 'body_glow', title: 'Body glow & comfort', subtitle: 'Comfort and care at any size' },
   { id: 'jawline', title: 'Defined jawline', subtitle: 'Sculpt and de-bloat' },
   { id: 'lips', title: 'Fuller lips', subtitle: 'Shape and definition' },
   { id: 'hair', title: 'Better hair', subtitle: 'Shine, volume, framing' },
   { id: 'color', title: 'Your best colors', subtitle: 'Seasonal palette & shades' },
-  { id: 'body_glow', title: 'Body glow & comfort', subtitle: 'Chafing, folds, glow at any size' },
 ];
 
-const OUTCOMES = [
-  { id: 'photos', title: 'Look great in every photo', subtitle: 'No more avoiding the camera' },
-  { id: 'noticed', title: 'Get noticed', subtitle: 'Approached more, ignored less' },
-  { id: 'mirror', title: 'Feel proud in the mirror', subtitle: 'See the version of yourself you want to be' },
-  { id: 'confidence', title: 'Real, lasting confidence', subtitle: 'Earned through visible change' },
-  { id: 'event', title: 'Glow for a big moment', subtitle: 'Wedding, reunion, fresh start' },
-  { id: 'work', title: 'Win at work', subtitle: 'Polished, professional presence' },
-];
+// (i) explainers: teach, never judge. Non-shaming, never about weight.
+const GOAL_INFO: Record<string, { title: string; body: string }> = {
+  clear_skin: { title: 'Clearer, smoother skin', body: 'Even tone and refined texture make your whole face look brighter and healthier. We focus on gentle actives (vitamin C, niacinamide) and barrier care. Most people see a difference in 8-12 weeks of consistency.' },
+  harmony: { title: 'Facial harmony', body: 'How balanced your features look together. Small habits like de-puffing, posture and good angles enhance it. This is about your own balance, not a beauty standard.' },
+  eyes: { title: 'Brighter eye area', body: 'Soften the look of dark circles and puffiness with cooling, caffeine eye care and sleep. A rested eye area lifts the whole face.' },
+  body_glow: { title: 'Body glow & comfort', body: 'Care for the skin your face does not get all the attention: comfort for folds and friction zones, even tone, soft hydrated skin. Glow at any size, never about weight.' },
+  jawline: { title: 'Defined jawline', body: 'De-bloating and posture make the jaw and neck look more sculpted. Gua sha, less salt and your sleep position help in days, no surgery involved.' },
+  lips: { title: 'Fuller lips', body: 'Smooth, hydrated, well-shaped lips look fuller naturally. Lip care plus a subtle liner technique, no fillers needed.' },
+  hair: { title: 'Better hair', body: 'Shine, volume and face-framing cuts change how your whole face reads. Scalp care, heat protection and the right shape for your face.' },
+  color: { title: 'Your best colors', body: 'Wearing shades that match your undertone makes your skin look instantly clearer and more awake. We help you find your seasonal palette.' },
+};
 
 const SLEEP_OPTIONS = ['< 5h', '5-6h', '6-7h', '7-8h', '8h+'];
-const DIET_OPTIONS = ['Terrible', 'Not great', 'Average', 'Pretty good', 'Very healthy'];
+const DIET_OPTIONS = ['Could be better', 'Average', 'Pretty good', 'Very healthy'];
 const WORKOUT_OPTIONS = ['0', '1', '2', '3', '4', '5', '6+'];
 
-const TOTAL_STEPS = 7;
+// Hook, Glow style, Goals, Daily basics, AI consent, Camera (Outcomes step removed: pure friction).
+const TOTAL_STEPS = 6;
 
 // ---------------------------------------------------------------------------
 // Shared pieces
@@ -83,11 +90,13 @@ function SelectCard({
   subtitle,
   selected,
   onPress,
+  onInfo,
 }: {
   title: string;
   subtitle: string;
   selected: boolean;
   onPress: () => void;
+  onInfo?: () => void;
 }) {
   return (
     <Pressable
@@ -98,6 +107,7 @@ function SelectCard({
         <Text style={styles.selectCardTitle}>{title}</Text>
         <Text style={styles.selectCardSubtitle}>{subtitle}</Text>
       </View>
+      {onInfo ? <InfoButton onPress={onInfo} /> : null}
       <View style={[styles.radio, selected && styles.radioSelected]}>
         {selected && <Ionicons name="checkmark" size={16} color="#fff" />}
       </View>
@@ -132,12 +142,13 @@ export default function OnboardingScreen() {
   const [step, setStep] = useState(0);
   const [glowUpType, setGlowUpType] = useState<string | null>(null);
   const [goals, setGoals] = useState<string[]>([]);
-  const [outcomes, setOutcomes] = useState<string[]>([]);
+  const outcomes: string[] = []; // Outcomes step removed; kept in the saved profile shape as empty.
   const [sleep, setSleep] = useState<string | null>(null);
   const [diet, setDiet] = useState<string | null>(null);
   const [workouts, setWorkouts] = useState<string | null>(null);
   const [requestingCamera, setRequestingCamera] = useState(false);
   const [ageConfirmed, setAgeConfirmed] = useState(false);
+  const [info, setInfo] = useState<InfoContent | null>(null);
 
   useEffect(() => {
     trackOnboardingStarted();
@@ -204,9 +215,8 @@ export default function OnboardingScreen() {
     step === 0 ||
     (step === 1 && glowUpType !== null) ||
     (step === 2 && goals.length > 0) ||
-    (step === 3 && outcomes.length > 0) ||
-    (step === 4 && sleep !== null && diet !== null && workouts !== null) ||
-    step === 5;
+    (step === 3 && sleep !== null && diet !== null && workouts !== null) ||
+    step === 4;
 
   return (
     <View style={styles.container}>
@@ -243,7 +253,7 @@ export default function OnboardingScreen() {
             <View style={styles.hookCard}>
               <Text style={styles.hookCardEmoji}>✨</Text>
               <Text style={styles.hookCardText}>
-                Facial Harmony score{'\n'}6 detailed components{'\n'}Your personal treatment plan
+                Facial Harmony score{'\n'}6 detailed components{'\n'}Your personal glow-up plan
               </Text>
             </View>
           </View>
@@ -280,30 +290,14 @@ export default function OnboardingScreen() {
                 subtitle={g.subtitle}
                 selected={goals.includes(g.id)}
                 onPress={() => toggle(goals, setGoals, g.id)}
+                onInfo={GOAL_INFO[g.id] ? () => setInfo(GOAL_INFO[g.id]) : undefined}
               />
             ))}
           </View>
         )}
 
-        {/* STEP 3 — Outcomes (desire) */}
+        {/* STEP 3 — Daily basics */}
         {step === 3 && (
-          <View>
-            <Text style={styles.stepTitle}>What would that change for you?</Text>
-            <Text style={styles.stepSubtitle}>Select all that resonate.</Text>
-            {OUTCOMES.map((o) => (
-              <SelectCard
-                key={o.id}
-                title={o.title}
-                subtitle={o.subtitle}
-                selected={outcomes.includes(o.id)}
-                onPress={() => toggle(outcomes, setOutcomes, o.id)}
-              />
-            ))}
-          </View>
-        )}
-
-        {/* STEP 4 — Daily basics */}
-        {step === 4 && (
           <View>
             <Text style={styles.stepTitle}>Your daily basics</Text>
             <Text style={styles.stepSubtitle}>Three quick taps, these directly shape your glow.</Text>
@@ -331,8 +325,8 @@ export default function OnboardingScreen() {
           </View>
         )}
 
-        {/* STEP 5 — AI consent (Apple requirement: explicit opt-in before sending to a third-party AI) */}
-        {step === 5 && (
+        {/* STEP 4 — AI consent (Apple requirement: explicit opt-in before sending to a third-party AI) */}
+        {step === 4 && (
           <View>
             <View style={styles.iconCircleLeft}>
               <Ionicons name="sparkles" size={30} color={C.pink} />
@@ -379,8 +373,8 @@ export default function OnboardingScreen() {
           </View>
         )}
 
-        {/* STEP 6 — Camera permission */}
-        {step === 6 && (
+        {/* STEP 5 — Camera permission */}
+        {step === 5 && (
           <View style={styles.cameraWrap}>
             <View style={styles.iconCircle}>
               <Ionicons name="camera" size={52} color={C.pink} />
@@ -395,7 +389,7 @@ export default function OnboardingScreen() {
 
       {/* Bottom CTA */}
       <View style={styles.bottomBar}>
-        {step < 5 ? (
+        {step < 4 ? (
           <Pressable
             onPress={next}
             disabled={!canContinue}
@@ -403,7 +397,7 @@ export default function OnboardingScreen() {
           >
             <Text style={styles.ctaText}>{step === 0 ? 'Get Started' : 'Continue'}</Text>
           </Pressable>
-        ) : step === 5 ? (
+        ) : step === 4 ? (
           <Pressable
             onPress={agreeAndContinue}
             disabled={!ageConfirmed}
@@ -424,6 +418,8 @@ export default function OnboardingScreen() {
           </>
         )}
       </View>
+
+      <InfoSheet visible={!!info} content={info} onClose={() => setInfo(null)} />
     </View>
   );
 }

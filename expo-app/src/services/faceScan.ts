@@ -85,7 +85,7 @@ function normalizeScore(data: any): GlowScore {
  * Scan a selfie and return a GlowScore. Passing a subscriber token raises the
  * daily scan limit. Mirrors the upload pattern in featureService.ts.
  */
-export async function faceScan(imageUri: string, token?: string, focus?: string): Promise<GlowScore> {
+export async function faceScan(imageUri: string, token?: string, focus?: string, extraImages?: string[]): Promise<GlowScore> {
   if (isWeb) {
     // Web preview — believable mock so the reveal UI is demo-able without a backend
     await new Promise((r) => setTimeout(r, 1800));
@@ -108,20 +108,29 @@ export async function faceScan(imageUri: string, token?: string, focus?: string)
   }
 
   const ImageManipulator = await import('expo-image-manipulator');
-  const manipulated = await ImageManipulator.manipulateAsync(
-    imageUri,
-    [{ resize: { width: CONFIG.PREVIEW_SIZE, height: CONFIG.PREVIEW_SIZE } }],
-    { compress: 0.85, format: ImageManipulator.SaveFormat.JPEG, base64: true }
-  );
-  if (!manipulated.base64) throw new Error('Could not encode image');
-  if (manipulated.base64.length > 14_000_000) throw new Error('Image too large');
+  const encode = async (uri: string): Promise<string> => {
+    const m = await ImageManipulator.manipulateAsync(
+      uri,
+      [{ resize: { width: CONFIG.PREVIEW_SIZE, height: CONFIG.PREVIEW_SIZE } }],
+      { compress: 0.85, format: ImageManipulator.SaveFormat.JPEG, base64: true }
+    );
+    if (!m.base64) throw new Error('Could not encode image');
+    if (m.base64.length > 14_000_000) throw new Error('Image too large');
+    return m.base64;
+  };
+
+  const front = await encode(imageUri);
+  // Multi-angle: front + any extra angles (3/4 left, 3/4 right) for a fuller read.
+  const extras = extraImages?.length ? await Promise.all(extraImages.map(encode)) : [];
+  const images = [front, ...extras];
 
   const headers = workerHeaders(token ? { Authorization: `Bearer ${token}` } : {});
 
   const response = await fetch(`${CONFIG.WORKER_BASE_URL}/api/face-scan`, {
     method: 'POST',
     headers,
-    body: JSON.stringify({ image: manipulated.base64, ...(focus ? { focus } : {}) }),
+    // `image` kept for backward compat; `images` carries every captured angle.
+    body: JSON.stringify({ image: front, images, ...(focus ? { focus } : {}) }),
   });
 
   if (response.status === 429) throw new Error('Daily scan limit reached. Try again tomorrow!');

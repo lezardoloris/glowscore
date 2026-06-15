@@ -15,20 +15,13 @@ import { impactMedium } from '../src/services/haptics';
  * tool here serves the face glow-up loop and is premium (hard paywall
  * enforced downstream at processing / feature submit).
  */
+// Curated set (EPIC UX-2 triage 2026-06). Ordered by value/usage: Glow Up Styles first
+// (a meta-tool with many looks inside). Niche/unreliable tools (Visual Weight, Chrono,
+// Round Face Makeup, Posture, Age) and the plus-size Body Care hub are moved out of the
+// default grid; Body Care lives in the Plan/Body section, round-face inside Makeup.
 const TOOLS = [
   {
-    id: 'body_care', title: 'Body Glow Care', subtitle: 'Chafing, folds, comfort protocols',
-    img: require('../assets/components/bodycare.png'), // PS-5.3 inclusive imagery (Gemini)
-    noPhoto: true, // content-only hub: open straight away, no selfie needed
-    route: () => router.push('/body-care'),
-  },
-  {
-    id: 'round_makeup', title: 'Round Face Makeup', subtitle: 'Contour & blush guide',
-    img: require('../assets/components/lips.png'),
-    route: (uri?: string) => router.push({ pathname: '/makeup-round-face', params: { imageUri: uri } }),
-  },
-  {
-    id: 'glow_up', title: 'Glow Up Styles', subtitle: 'Clear skin, model look & more',
+    id: 'glow_up', title: 'Glow Up Styles', subtitle: 'Clear skin, model look & more in one place',
     img: require('../assets/components/options/symmetry_1.png'),
     route: (uri?: string) => router.push({ pathname: '/styles', params: { imageUri: uri } }),
   },
@@ -48,17 +41,7 @@ const TOOLS = [
     route: (uri?: string) => router.push({ pathname: '/color-season', params: { imageUri: uri } }),
   },
   {
-    id: 'visual_weight', title: 'Visual Weight', subtitle: 'Soft or striking? Makeup to match',
-    img: require('../assets/components/eyes.png'),
-    route: (uri?: string) => router.push({ pathname: '/visual-weight', params: { imageUri: uri } }),
-  },
-  {
-    id: 'chrono', title: 'Chrono-Skincare', subtitle: 'Sync your routine to your skin clock',
-    img: require('../assets/components/options/skin_3.png'),
-    route: (uri?: string) => router.push({ pathname: '/chrono-skincare', params: { imageUri: uri } }),
-  },
-  {
-    id: 'makeup', title: 'Makeup', subtitle: 'Virtual makeup looks',
+    id: 'makeup', title: 'Makeup', subtitle: 'Virtual looks + face-shape contour guide',
     img: require('../assets/components/features/makeup.png'),
     route: (uri?: string) => router.push({ pathname: '/virtual-makeup', params: { imageUri: uri } }),
   },
@@ -72,21 +55,6 @@ const TOOLS = [
     img: require('../assets/components/features/relight.png'),
     route: (uri?: string) => router.push({ pathname: '/relight', params: { imageUri: uri } }),
   },
-  {
-    id: 'headshot', title: 'AI Headshot', subtitle: 'Polished professional photos',
-    img: require('../assets/components/features/headshot.png'),
-    route: (uri?: string) => router.push({ pathname: '/headshot', params: { imageUri: uri } }),
-  },
-  {
-    id: 'age', title: 'Age Rewind', subtitle: 'See yourself younger',
-    img: require('../assets/components/eyes.png'),
-    route: (uri?: string) => router.push({ pathname: '/age-transform', params: { imageUri: uri } }),
-  },
-  {
-    id: 'fit', title: 'Posture Glow', subtitle: 'Lighting & angle tips (wellness framing)',
-    img: require('../assets/components/jawline.png'),
-    route: (uri?: string) => router.push({ pathname: '/relight', params: { imageUri: uri } }),
-  },
 ] as const;
 
 export default function FeatureHubScreen() {
@@ -95,9 +63,18 @@ export default function FeatureHubScreen() {
 
   useEffect(() => { trackScreen('feature_hub'); }, []);
 
-  // Single-capture: one selfie powers every tool. Pick once, reuse everywhere.
+  // Single-capture: one selfie powers every tool. Capture or pick once, reuse everywhere.
   async function pickPhoto(): Promise<string | undefined> {
     const r = await ImagePicker.launchImageLibraryAsync({ mediaTypes: ['images'] as any, quality: 0.9, allowsEditing: true, aspect: [1, 1] });
+    if (!r.canceled && r.assets[0]) { setPhoto(r.assets[0].uri); return r.assets[0].uri; }
+    return undefined;
+  }
+
+  // Take a fresh selfie with the camera (front-lit, neutral expression works best).
+  async function takePhoto(): Promise<string | undefined> {
+    const perm = await ImagePicker.requestCameraPermissionsAsync();
+    if (!perm.granted) return undefined;
+    const r = await ImagePicker.launchCameraAsync({ quality: 0.9, allowsEditing: true, aspect: [1, 1], cameraType: ImagePicker.CameraType.front });
     if (!r.canceled && r.assets[0]) { setPhoto(r.assets[0].uri); return r.assets[0].uri; }
     return undefined;
   }
@@ -105,8 +82,6 @@ export default function FeatureHubScreen() {
   async function openTool(t: typeof TOOLS[number]) {
     impactMedium();
     trackEvent('studio_tool_tapped', { tool: t.id });
-    // Content-only tools (e.g. Body Care) open without a selfie — no upfront friction.
-    if ('noPhoto' in t && t.noPhoto) { t.route(); return; }
     const uri = photo || (await pickPhoto());
     if (!uri) return; // user cancelled the picker
     t.route(uri);
@@ -121,19 +96,26 @@ export default function FeatureHubScreen() {
       <Text style={styles.title}>Glow-Up Studio</Text>
       <Text style={styles.subtitle}>Premium tools for your transformation</Text>
 
-      {/* Single photo for the whole studio */}
-      <Pressable style={styles.photoBar} onPress={pickPhoto}>
+      {/* Single photo for the whole studio: take a fresh selfie or pick from gallery */}
+      <View style={styles.photoBar}>
         {photo ? (
           <Image source={{ uri: photo }} style={styles.photoThumb} />
         ) : (
-          <View style={[styles.photoThumb, styles.photoThumbEmpty]}><Ionicons name="camera" size={20} color={C.pink} /></View>
+          <View style={[styles.photoThumb, styles.photoThumbEmpty]}><Ionicons name="person" size={20} color={C.pink} /></View>
         )}
         <View style={{ flex: 1 }}>
           <Text style={styles.photoTitle}>{photo ? 'Your photo' : 'Add your photo'}</Text>
-          <Text style={styles.photoSub}>{photo ? 'Used for every tool. Tap to change.' : 'Pick one selfie to use across all tools.'}</Text>
+          <Text style={styles.photoSub}>{photo ? 'Used for every tool. Re-take or change.' : 'One selfie powers every tool.'}</Text>
         </View>
-        <Ionicons name="chevron-forward" size={18} color={C.textSoft} />
-      </Pressable>
+        <Pressable style={styles.photoAction} onPress={takePhoto} hitSlop={6}>
+          <Ionicons name="camera" size={18} color={C.pink} />
+          <Text style={styles.photoActionText}>Camera</Text>
+        </Pressable>
+        <Pressable style={styles.photoAction} onPress={pickPhoto} hitSlop={6}>
+          <Ionicons name="images-outline" size={18} color={C.pink} />
+          <Text style={styles.photoActionText}>Gallery</Text>
+        </Pressable>
+      </View>
 
       <View style={styles.grid}>
         {TOOLS.map((t) => (
@@ -163,6 +145,8 @@ const styles = StyleSheet.create({
   photoThumbEmpty: { backgroundColor: C.pinkSoft, alignItems: 'center', justifyContent: 'center' },
   photoTitle: { fontSize: 14.5, fontWeight: '800', color: C.text },
   photoSub: { fontSize: 12, color: C.textSoft, marginTop: 1 },
+  photoAction: { alignItems: 'center', paddingHorizontal: 6, gap: 2 },
+  photoActionText: { fontSize: 10, fontWeight: '700', color: C.pink },
   grid: { flexDirection: 'row', flexWrap: 'wrap', gap: 12 },
   card: {
     width: '47.5%',

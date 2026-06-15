@@ -49,7 +49,7 @@ const METRIC_DEFS = [
 ] as const;
 
 export default function ScanResultScreen() {
-  const { imageUri } = useLocalSearchParams<{ imageUri: string }>();
+  const { imageUri, extraUris } = useLocalSearchParams<{ imageUri: string; extraUris?: string }>();
   const [loading, setLoading] = useState(true);
   const [analysisComplete, setAnalysisComplete] = useState(false);
   const [error, setError] = useState<string | null>(null);
@@ -115,7 +115,9 @@ export default function ScanResultScreen() {
         const focus = quiz?.goals?.length ? quiz.goals.join(', ') : quiz?.glowUpType;
         if (mounted.current) setProductRecos(recommendForQuiz(quiz, 4));
 
-        const res = await faceScan(imageUri, token, focus || undefined);
+        let extras: string[] | undefined;
+        try { extras = extraUris ? (JSON.parse(extraUris) as string[]).filter(Boolean) : undefined; } catch { extras = undefined; }
+        const res = await faceScan(imageUri, token, focus || undefined, extras);
         if (!mounted.current) return;
         if (!res.overall) { setError('No face detected. Try a clear, front-facing selfie.'); setLoading(false); return; }
         setScore(res);

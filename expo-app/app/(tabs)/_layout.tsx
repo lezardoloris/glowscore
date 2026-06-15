@@ -47,13 +47,9 @@ export default function TabsLayout() {
           tabBarIcon: ({ color, size }) => <Ionicons name="sparkles" size={size} color={color} />,
         }}
       />
-      <Tabs.Screen
-        name="body"
-        options={{
-          title: 'Body',
-          tabBarIcon: ({ color, size }) => <Ionicons name="body-outline" size={size} color={color} />,
-        }}
-      />
+      {/* Body care is persona-gated (women-general default + plus-size niche), not a top-level
+          tab. Route kept (href:null) but hidden from the bar; reached from Home/Plan. */}
+      <Tabs.Screen name="body" options={{ href: null }} />
       <Tabs.Screen
         name="plan"
         options={{
