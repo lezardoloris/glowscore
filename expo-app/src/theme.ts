@@ -14,6 +14,14 @@ export const theme = {
   track: '#F4E6EB',
   trackLocked: '#D9CCD2',
   good: '#2E9E5B',
+  // Clinical-luxe design system (ChatGPT direction, 2026-06)
+  blush: '#FDEAF1',
+  cream: '#FFF7F9',
+  roseGold: '#FFC1CC',
+  pinkGrad: ['#E0537A', '#EC7FA0'] as const, // primary CTA gradient
 };
+
+/** Radii scale (8/12/16/24/32/full). */
+export const radii = { sm: 8, md: 12, lg: 16, xl: 24, xxl: 32, full: 999 };
 
 export type Theme = typeof theme;

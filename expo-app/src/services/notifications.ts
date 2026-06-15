@@ -179,6 +179,34 @@ export async function scheduleRescanReminder(overall: number): Promise<string | 
   return id;
 }
 
+/**
+ * Activation sequence (D1/D3/D7): the habit-forming nudges that carry a new user
+ * from paywall to first visible delta. Behaviour-triggered (call after onboarding
+ * or the first scan), so it is App Store compliant. No-op on web.
+ */
+export async function scheduleActivationSequence(): Promise<void> {
+  if (isWeb) return;
+  const Notifications = await import('expo-notifications');
+  const scheduled = await Notifications.getAllScheduledNotificationsAsync();
+  for (const n of scheduled) {
+    if (n.identifier.startsWith('activation_')) await Notifications.cancelScheduledNotificationAsync(n.identifier);
+  }
+  const day = 24 * 60 * 60;
+  const seq = [
+    { id: 'activation_d1', s: day, title: 'Your glow-up starts today ✨', body: 'Take your before photo and tick off your first routine step.' },
+    { id: 'activation_d3', s: 3 * day, title: 'Keep your streak going', body: 'Small daily habits compound. Open your glow-up plan for today.' },
+    { id: 'activation_d7', s: 7 * day, title: 'Your week-1 reveal is ready', body: 'Re-scan to see your first GlowScore progress.' },
+  ];
+  for (const n of seq) {
+    await Notifications.scheduleNotificationAsync({
+      identifier: n.id,
+      content: { title: n.title, body: n.body, sound: true },
+      trigger: { type: Notifications.SchedulableTriggerInputTypes.TIME_INTERVAL, seconds: n.s, repeats: false },
+    });
+  }
+  console.log('[Notifications] Activation sequence (D1/D3/D7) scheduled');
+}
+
 export async function cancelAllNotifications(): Promise<void> {
   if (isWeb) return;
 
