@@ -1,7 +1,9 @@
 /**
  * Affiliate-ready product catalog for the recommendation engine (recoEngine.ts).
- * concernTags use the research concern vocabulary (FR ids) so reco-rules.json can
- * match products to rules. Seed set, extend from the beauty-blog scrape.
+ * concernTags use internal research ids so reco-rules.json can match rules.
+ *
+ * **Affiliate URLs:** phased rollout — see `docs/AFFILIATE-ROADMAP.md`.
+ * Until each wave ships, taps use `glowupai.app/go/{id}` redirects.
  */
 
 export type Market = 'us' | 'uk' | 'fr';

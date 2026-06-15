@@ -251,3 +251,36 @@ export async function cancelAllNotifications(): Promise<void> {
   await Notifications.cancelAllScheduledNotificationsAsync();
   console.log('[Notifications] All scheduled notifications cancelled');
 }
+
+/** Daily micro-tips from routineCopy (market research verbatims). */
+export async function scheduleRoutineMicroPushes(): Promise<void> {
+  if (isWeb) return;
+  const { MICRO_PUSH_TIPS } = await import('../data/routineCopy');
+  const Notifications = await import('expo-notifications');
+
+  const scheduled = await Notifications.getAllScheduledNotificationsAsync();
+  for (const n of scheduled) {
+    if (n.identifier.startsWith('micro_tip_')) {
+      await Notifications.cancelScheduledNotificationAsync(n.identifier);
+    }
+  }
+
+  const tips = MICRO_PUSH_TIPS.slice(0, 5);
+  for (let i = 0; i < tips.length; i++) {
+    const day = (i + 1) * 24 * 60 * 60;
+    await Notifications.scheduleNotificationAsync({
+      identifier: `micro_tip_${i}`,
+      content: {
+        title: 'Glow tip of the day',
+        body: tips[i],
+        sound: true,
+      },
+      trigger: {
+        type: Notifications.SchedulableTriggerInputTypes.TIME_INTERVAL,
+        seconds: day,
+        repeats: false,
+      },
+    });
+  }
+  console.log('[Notifications] Routine micro-tips scheduled');
+}

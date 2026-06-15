@@ -2,7 +2,9 @@ import { View, Text, Pressable, ScrollView, StyleSheet, Platform } from 'react-n
 import { useState, useCallback } from 'react';
 import { useFocusEffect, router } from 'expo-router';
 import { Ionicons } from '@expo/vector-icons';
-import { theme as C } from '../../src/theme';
+import { theme as C, radii } from '../../src/theme';
+import { typography, fonts } from '../../src/typography';
+import { shadow } from '../../src/shadows';
 import { getScanHistory, ScanRecord } from '../../src/services/history';
 import { getStreak } from '../../src/services/glowPlan';
 import { trackScreen } from '../../src/services/analytics';
@@ -124,11 +126,11 @@ function formatDate(iso: string): string {
 const styles = StyleSheet.create({
   container: { flex: 1, backgroundColor: C.bg },
   content: { paddingTop: Platform.OS === 'ios' ? 70 : 48, paddingHorizontal: 18, paddingBottom: 110 },
-  header: { fontSize: 30, fontWeight: '900', color: C.text, marginBottom: 16 },
+  header: { ...typography.h2, marginBottom: 16 },
 
   summaryCard: {
     flexDirection: 'row', backgroundColor: C.card, borderRadius: 20, padding: 18,
-    marginBottom: 18, alignItems: 'center',
+    marginBottom: 18, alignItems: 'center', ...shadow(1),
   },
   summaryItem: { flex: 1, alignItems: 'center' },
   summaryNum: { fontSize: 24, fontWeight: '900', color: C.text },
@@ -137,7 +139,7 @@ const styles = StyleSheet.create({
 
   scanRow: {
     flexDirection: 'row', alignItems: 'center', gap: 12,
-    backgroundColor: C.card, borderRadius: 16, padding: 14, marginBottom: 10,
+    backgroundColor: C.card, borderRadius: 16, padding: 14, marginBottom: 10, ...shadow(1),
   },
   scanRing: {
     width: 52, height: 52, borderRadius: 26, borderWidth: 4, borderColor: C.pink,

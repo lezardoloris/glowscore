@@ -1,13 +1,14 @@
 import { TextStyle } from 'react-native';
 import { theme } from './theme';
 
-/** Clinical Luxe typography tokens (Fraunces display + Inter UI). */
+/** Display = Fraunces (Canela alternative). UI = Inter. */
 export const fonts = {
   display: 'Fraunces_600SemiBold',
-  displayRegular: 'Fraunces_400Regular',
+  displayBold: 'Fraunces_700Bold',
   body: 'Inter_400Regular',
   bodyMedium: 'Inter_500Medium',
-  bodySemiBold: 'Inter_600SemiBold',
+  bodySemi: 'Inter_600SemiBold',
+  bodyBold: 'Inter_700Bold',
 } as const;
 
 export const typography = {
@@ -47,10 +48,17 @@ export const typography = {
     lineHeight: 16,
     color: theme.textSoft,
   } satisfies TextStyle,
+  eyebrow: {
+    fontFamily: fonts.bodyBold,
+    fontSize: 11.5,
+    letterSpacing: 1.4,
+    color: theme.pink,
+    textTransform: 'uppercase' as const,
+  } satisfies TextStyle,
   cta: {
-    fontFamily: fonts.bodySemiBold,
+    fontFamily: fonts.bodySemi,
     fontSize: 16,
     lineHeight: 22,
     color: '#FFFFFF',
   } satisfies TextStyle,
-} as const;
+};

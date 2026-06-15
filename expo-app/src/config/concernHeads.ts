@@ -8,11 +8,16 @@ export const CONCERN_HEADS: Record<string, ImageSourcePropType> = {
   asymmetry: require('../../assets/concerns/asymmetry.png'),
   redness: require('../../assets/concerns/redness.png'),
   fine_lines: require('../../assets/concerns/fine_lines.png'),
+  texture: require('../../assets/concerns/texture.png'),
+  dryness: require('../../assets/concerns/dryness.png'),
+  sagging: require('../../assets/concerns/sagging.png'),
 };
 
 export interface Concern { id: string; title: string; subtitle: string; focus: string; }
 
-/** Female-framed concerns (vs Mogged's male jawline/hunter-eyes). focus maps to glowPlan. */
+export const MAX_CONCERNS = 5;
+
+/** 9 concerns (3x3 grid). focus maps to glowPlan FOCUS_TASKS. */
 export const CONCERNS: Concern[] = [
   { id: 'breakouts', title: 'Breakouts', subtitle: 'Acne & congestion', focus: 'skin' },
   { id: 'dark_circles', title: 'Dark circles', subtitle: 'Tired, shadowed eyes', focus: 'eyes' },
@@ -20,4 +25,7 @@ export const CONCERNS: Concern[] = [
   { id: 'asymmetry', title: 'Asymmetry', subtitle: 'Balance your features', focus: 'harmony' },
   { id: 'redness', title: 'Redness', subtitle: 'Uneven, reactive tone', focus: 'skin' },
   { id: 'fine_lines', title: 'Fine lines', subtitle: 'Smooth & prevent', focus: 'skin' },
+  { id: 'texture', title: 'Texture', subtitle: 'Pores & bumpiness', focus: 'skin' },
+  { id: 'dryness', title: 'Dryness', subtitle: 'Tight, flaky skin', focus: 'skin' },
+  { id: 'sagging', title: 'Sagging', subtitle: 'Firmness & lift', focus: 'harmony' },
 ];

@@ -7,6 +7,7 @@ import * as ImagePicker from 'expo-image-picker';
 import { Ionicons } from '@expo/vector-icons';
 import { theme as C } from '../src/theme';
 import { analyzeColorSeason, ColorSeasonResult } from '../src/services/styling';
+import { splitSeasonPalette, generateLipSwatches, generateBlushSwatches } from '../src/utils/colorPalette';
 import { checkSubscription, getSubscriberToken } from '../src/services/subscription';
 import { notificationSuccess, impactMedium } from '../src/services/haptics';
 import { trackScreen, trackEvent } from '../src/services/analytics';
@@ -95,16 +96,39 @@ export default function ColorSeasonScreen() {
           <Text style={styles.bandText}>{result.undertone} undertone · {result.metal} jewelry</Text>
           <Text style={styles.note}>{result.description}</Text>
 
-          <Text style={styles.section}>Your palette</Text>
-          <View style={styles.swatchRow}>
-            {result.palette.map((c, i) => <View key={i} style={[styles.swatch, { backgroundColor: c }]} />)}
-          </View>
+          {(() => {
+            const { neutrals, accents, makeup } = splitSeasonPalette(result.palette);
+            const lips = generateLipSwatches(result.lip, 12);
+            const blushes = generateBlushSwatches(result.blush, 8);
+            return (
+              <>
+                <Text style={styles.section}>Neutrals</Text>
+                <View style={styles.swatchRow}>
+                  {neutrals.map((c, i) => <View key={`n${i}`} style={[styles.swatch, { backgroundColor: c }]} />)}
+                </View>
 
-          <Text style={styles.section}>Best lip & blush</Text>
-          <View style={styles.swatchRow}>
-            {!!result.lip && <View style={styles.lbItem}><View style={[styles.swatchLg, { backgroundColor: result.lip }]} /><Text style={styles.lbLabel}>Lip</Text></View>}
-            {!!result.blush && <View style={styles.lbItem}><View style={[styles.swatchLg, { backgroundColor: result.blush }]} /><Text style={styles.lbLabel}>Blush</Text></View>}
-          </View>
+                <Text style={styles.section}>Accents</Text>
+                <View style={styles.swatchRow}>
+                  {accents.map((c, i) => <View key={`a${i}`} style={[styles.swatch, { backgroundColor: c }]} />)}
+                </View>
+
+                <Text style={styles.section}>Makeup wardrobe</Text>
+                <View style={styles.swatchRow}>
+                  {makeup.map((c, i) => <View key={`m${i}`} style={[styles.swatch, { backgroundColor: c }]} />)}
+                </View>
+
+                <Text style={styles.section}>Lip shades (12)</Text>
+                <View style={styles.swatchRow}>
+                  {lips.map((c, i) => <View key={`l${i}`} style={[styles.swatchSm, { backgroundColor: c }]} />)}
+                </View>
+
+                <Text style={styles.section}>Blush shades (8)</Text>
+                <View style={styles.swatchRow}>
+                  {blushes.map((c, i) => <View key={`b${i}`} style={[styles.swatchSm, { backgroundColor: c }]} />)}
+                </View>
+              </>
+            );
+          })()}
 
           {result.avoid.length > 0 && (
             <>
@@ -118,6 +142,17 @@ export default function ColorSeasonScreen() {
           <Text style={styles.section}>Contrast level</Text>
           <View style={styles.contrastTrack}><View style={[styles.contrastFill, { width: `${result.contrast * 10}%` }]} /></View>
           <Text style={styles.note}>{result.contrast}/10 · {result.contrast >= 7 ? 'high contrast (bold shades suit you)' : result.contrast <= 3 ? 'low contrast (soft, blended shades suit you)' : 'medium contrast'}</Text>
+
+          <View style={styles.shareCard}>
+            <Text style={styles.shareCardEyebrow}>MY COLOR SEASON</Text>
+            <Text style={styles.shareCardTitle}>{result.sub_season || result.season}</Text>
+            <View style={styles.shareSwatches}>
+              {result.palette.slice(0, 6).map((c, i) => (
+                <View key={i} style={[styles.shareSwatch, { backgroundColor: c }]} />
+              ))}
+            </View>
+            <Text style={styles.shareCardBrand}>GlowUp</Text>
+          </View>
 
           <Pressable style={styles.cta} onPress={share}>
             <Ionicons name="share-social" size={18} color="#fff" />
@@ -151,12 +186,23 @@ const styles = StyleSheet.create({
   loadingBox: { alignItems: 'center', justifyContent: 'center', paddingVertical: 30, gap: 12 },
   swatchRow: { flexDirection: 'row', flexWrap: 'wrap', gap: 10 },
   swatch: { width: 46, height: 46, borderRadius: 12, borderWidth: 1, borderColor: 'rgba(0,0,0,0.06)' },
+  swatchSm: { width: 28, height: 28, borderRadius: 8, borderWidth: 1, borderColor: 'rgba(0,0,0,0.06)' },
   swatchAvoid: { opacity: 0.6 },
   swatchLg: { width: 56, height: 56, borderRadius: 14, borderWidth: 1, borderColor: 'rgba(0,0,0,0.06)' },
   lbItem: { alignItems: 'center', gap: 5 },
   lbLabel: { color: C.textSoft, fontSize: 12, fontWeight: '700' },
   contrastTrack: { height: 10, backgroundColor: C.track, borderRadius: 5, overflow: 'hidden' },
   contrastFill: { height: '100%', backgroundColor: C.pink, borderRadius: 5 },
+  shareCard: {
+    width: '72%', aspectRatio: 9 / 16, alignSelf: 'center', backgroundColor: C.card,
+    borderRadius: 20, padding: 20, marginTop: 24, justifyContent: 'center', alignItems: 'center',
+    borderWidth: 1, borderColor: C.border,
+  },
+  shareCardEyebrow: { color: C.pink, fontSize: 10, fontWeight: '900', letterSpacing: 1.2 },
+  shareCardTitle: { color: C.text, fontSize: 22, fontWeight: '900', marginTop: 8, textAlign: 'center' },
+  shareSwatches: { flexDirection: 'row', flexWrap: 'wrap', gap: 8, justifyContent: 'center', marginTop: 16 },
+  shareSwatch: { width: 36, height: 36, borderRadius: 10 },
+  shareCardBrand: { color: C.textSoft, fontSize: 11, fontWeight: '700', marginTop: 'auto' },
   cta: { flexDirection: 'row', alignItems: 'center', justifyContent: 'center', gap: 9, backgroundColor: C.pink, borderRadius: 28, paddingVertical: 16, marginTop: 24 },
   ctaText: { color: '#fff', fontSize: 16, fontWeight: '900' },
   ghost: { alignItems: 'center', paddingVertical: 14 },

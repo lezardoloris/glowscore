@@ -1,5 +1,6 @@
 /**
- * In-app copy from market research verbatims (EN source + FR for UI).
+ * In-app copy from market research (English UI only at launch).
+ * titleFr / microTipFr fields are archived for a future locale pass — not shown in app.
  */
 
 export interface RoutineCopyLine {
@@ -80,8 +81,25 @@ export const PAYWALL_BENEFITS_FR = [
   'Analyse colorimétrique et produits',
 ];
 
-export function getRoutineTitle(id: string, locale: 'en' | 'fr' = 'en'): string {
+export function getRoutineTitle(id: string): string {
   const line = ROUTINE_TITLES.find((r) => r.id === id);
-  if (!line) return locale === 'fr' ? 'Ton plan Glow-Up' : 'Your Glow-Up Plan';
-  return locale === 'fr' ? line.titleFr : line.titleEn;
+  return line?.titleEn || 'Your Glow-Up Plan';
 }
+
+const PERSONA_TO_ROUTINE: Record<string, string> = {
+  cortisol: 'debloat_7d',
+  skin: 'glass_minimal',
+  bodycare: 'body_glow',
+  color: 'color_12',
+  hair: 'hair_volume',
+  makeup: 'no_makeup',
+  eyes: 'eyes_correct',
+};
+
+export function getRoutineTitleForPlan(persona?: string, fallback = 'Your Glow-Up'): string {
+  const id = PERSONA_TO_ROUTINE[persona || ''] || 'glass_minimal';
+  const line = ROUTINE_TITLES.find((r) => r.id === id);
+  return line?.titleEn || fallback;
+}
+
+export const MICRO_PUSH_TIPS = ROUTINE_TITLES.filter((t) => t.microTipEn).map((t) => t.microTipEn!);

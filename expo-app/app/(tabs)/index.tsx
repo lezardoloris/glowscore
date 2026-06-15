@@ -7,7 +7,9 @@ import AsyncStorage from '@react-native-async-storage/async-storage';
 import { Ionicons } from '@expo/vector-icons';
 import { LinearGradient } from 'expo-linear-gradient';
 import { AnimatedCircularProgress } from 'react-native-circular-progress';
-import { theme as C } from '../../src/theme';
+import { theme as C, radii } from '../../src/theme';
+import { typography, fonts } from '../../src/typography';
+import { shadow } from '../../src/shadows';
 import { trackScreen } from '../../src/services/analytics';
 import { getLastScan, ScanRecord } from '../../src/services/history';
 import { getStreak, getPlan, GlowPlan } from '../../src/services/glowPlan';
@@ -102,7 +104,7 @@ export default function HomeScreen() {
     <View style={styles.container}>
       <View style={styles.header}>
         <BrandLogo width={150} />
-        <Text style={styles.tagline}>{lastScan ? 'Your routine, your evolution' : 'Reveal your facial harmony'}</Text>
+        <Text style={styles.tagline}>{lastScan ? 'Glow at any size — your routine, your evolution' : 'Glow at any size — reveal your facial harmony'}</Text>
       </View>
 
       {lastScan ? (
@@ -222,9 +224,9 @@ function timeAgo(iso: string): string {
   return `${Math.floor(d / 7)}w ago`;
 }
 
-const shadow = Platform.OS === 'web'
-  ? ({ boxShadow: '0 8px 24px rgba(45,35,48,0.08)' } as any)
-  : { shadowColor: '#2D2330', shadowOpacity: 0.08, shadowRadius: 18, shadowOffset: { width: 0, height: 8 }, elevation: 3 };
+const cardShadow = shadow(2);
+const chipShadow = shadow(1);
+const ctaGlow = shadow(2);
 
 const styles = StyleSheet.create({
   container: { flex: 1, backgroundColor: C.bg, padding: 20, paddingTop: Platform.OS === 'ios' ? 64 : 44 },
@@ -233,17 +235,17 @@ const styles = StyleSheet.create({
   header: { marginBottom: 18, alignItems: 'center' },
   tagline: { fontSize: 14.5, color: C.textSoft, marginTop: 6, textAlign: 'center' },
 
-  heroCard: { backgroundColor: C.card, borderRadius: 28, paddingVertical: 22, paddingHorizontal: 18, alignItems: 'center', marginBottom: 12, ...shadow },
-  heroTitle: { fontSize: 18, fontWeight: '800', color: C.text },
+  heroCard: { backgroundColor: C.card, borderRadius: radii.xxl, paddingVertical: 22, paddingHorizontal: 18, alignItems: 'center', marginBottom: 12, ...cardShadow },
+  heroTitle: { fontFamily: fonts.bodyBold, fontSize: 18, color: C.text },
   ringInner: { alignItems: 'center', justifyContent: 'center' },
-  scoreNum: { fontSize: 42, fontWeight: '900', color: C.text },
-  scoreOut: { fontSize: 13, color: C.textSoft, marginTop: -6 },
-  band: { fontSize: 15, fontWeight: '800', color: C.pink, marginTop: 2 },
+  scoreNum: { fontFamily: fonts.displayBold, fontSize: 42, color: C.text },
+  scoreOut: { fontFamily: fonts.body, fontSize: 13, color: C.textSoft, marginTop: -6 },
+  band: { fontFamily: fonts.bodyBold, fontSize: 15, color: C.pink, marginTop: 2 },
   topPct: { fontSize: 12.5, color: C.textSoft, marginTop: 4 },
   streakChip: { flexDirection: 'row', alignItems: 'center', gap: 5, backgroundColor: C.pink, borderRadius: 14, paddingHorizontal: 12, paddingVertical: 6, marginTop: 12 },
   streakText: { color: '#fff', fontSize: 12.5, fontWeight: '800' },
 
-  row: { flexDirection: 'row', alignItems: 'center', gap: 12, backgroundColor: C.card, borderRadius: 18, padding: 14, marginBottom: 10, ...shadow },
+  row: { flexDirection: 'row', alignItems: 'center', gap: 12, backgroundColor: C.card, borderRadius: radii.lg, padding: 14, marginBottom: 10, ...chipShadow },
   rowIcon: { width: 34, height: 34, borderRadius: 17, backgroundColor: C.pinkSoft, alignItems: 'center', justifyContent: 'center' },
   rowTitle: { fontSize: 14.5, fontWeight: '800', color: C.text },
   rowSub: { fontSize: 12, color: C.textSoft, marginTop: 1 },
@@ -256,10 +258,10 @@ const styles = StyleSheet.create({
   workTitle: { fontSize: 14.5, fontWeight: '900', color: C.text },
   workSeeAll: { fontSize: 13, fontWeight: '700', color: C.pink },
   chipRow: { flexDirection: 'row', flexWrap: 'wrap', gap: 8 },
-  chip: { backgroundColor: C.card, borderRadius: 14, paddingHorizontal: 14, paddingVertical: 9, ...shadow },
+  chip: { backgroundColor: C.card, borderRadius: radii.md, paddingHorizontal: 14, paddingVertical: 9, ...chipShadow },
   chipText: { fontSize: 13, fontWeight: '700', color: C.text },
 
-  ctaWrap: { borderRadius: 30, marginTop: 4, ...(Platform.OS === 'web' ? ({ boxShadow: '0 6px 18px rgba(224,83,122,0.4)' } as any) : { shadowColor: C.pink, shadowOpacity: 0.4, shadowRadius: 14, shadowOffset: { width: 0, height: 5 }, elevation: 5 }) },
+  ctaWrap: { borderRadius: radii.full, marginTop: 4, ...ctaGlow },
   cta: { flexDirection: 'row', alignItems: 'center', justifyContent: 'center', gap: 10, borderRadius: 30, paddingVertical: 18 },
   ctaSolid: { flexDirection: 'row', alignItems: 'center', justifyContent: 'center', gap: 10, backgroundColor: C.pink, borderRadius: 30, paddingVertical: 16, paddingHorizontal: 28, marginTop: 4 },
   ctaText: { color: '#fff', fontSize: 16.5, fontWeight: '900' },
@@ -268,10 +270,10 @@ const styles = StyleSheet.create({
   liveScanLink: { alignItems: 'center', paddingVertical: 6 },
   liveScanText: { color: C.textSoft, fontSize: 13, fontWeight: '600' },
 
-  firstHero: { borderRadius: 26, overflow: 'hidden', marginBottom: 20, backgroundColor: C.card, ...shadow },
+  firstHero: { borderRadius: radii.xl, overflow: 'hidden', marginBottom: 20, backgroundColor: C.card, ...cardShadow },
   heroImg: { width: '100%', height: 290 },
   heroFade: { position: 'absolute', left: 0, right: 0, bottom: 0, height: 90 },
-  firstTitle: { fontSize: 28, fontWeight: '900', color: C.text, textAlign: 'center', lineHeight: 34 },
+  firstTitle: { ...typography.h2, fontFamily: fonts.displayBold, textAlign: 'center' },
   firstSub: { fontSize: 15, color: C.textSoft, textAlign: 'center', marginTop: 8, marginBottom: 24, paddingHorizontal: 10, lineHeight: 21 },
 
   permCard: { width: '100%', backgroundColor: C.card, borderRadius: 24, padding: 24, alignItems: 'center' },

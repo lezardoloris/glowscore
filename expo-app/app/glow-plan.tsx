@@ -1,17 +1,17 @@
-import { View, Text, Pressable, ScrollView, StyleSheet, ActivityIndicator, Linking } from 'react-native';
+import { View, Text, Pressable, ScrollView, StyleSheet, ActivityIndicator } from 'react-native';
 import { router } from 'expo-router';
 import { useEffect, useState } from 'react';
 import { Ionicons } from '@expo/vector-icons';
-import { theme as C } from '../src/theme';
+import { theme as C, radii } from '../src/theme';
+import { typography, fonts } from '../src/typography';
+import { shadow } from '../src/shadows';
 import {
   getPlan, toggleTaskToday, isDoneToday, getStreak, getPlanWeek, getWeekFocus,
+  getCurrentWeekDays, getCategoryCompletion, getDayCompletion,
   GlowPlan, GlowTask, PlanCategory,
 } from '../src/services/glowPlan';
-import { recommendProducts, contextFromConcerns, ProductRecommendation } from '../src/services/recoEngine';
-import { GlowProduct } from '../src/services/products';
-import AsyncStorage from '@react-native-async-storage/async-storage';
 import { impactMedium, notificationSuccess } from '../src/services/haptics';
-import { trackScreen, trackEvent, trackPlanViewed, trackTaskCompleted } from '../src/services/analytics';
+import { trackScreen, trackEvent } from '../src/services/analytics';
 
 const CAT_ICON: Record<string, keyof typeof Ionicons.glyphMap> = {
   Skincare: 'water-outline',
@@ -22,37 +22,36 @@ const CAT_ICON: Record<string, keyof typeof Ionicons.glyphMap> = {
   Hair: 'cut-outline',
   Eyes: 'eye-outline',
   'Glow Habits': 'sparkles-outline',
-  'Body Care': 'body-outline',
 };
 const CAT_ORDER: PlanCategory[] = [
-  'Skincare', 'Face Fitness', 'Eyes', 'Makeup', 'Hair', 'Body Care', 'Style & Color', 'Lifestyle', 'Glow Habits',
+  'Skincare', 'Face Fitness', 'Eyes', 'Makeup', 'Hair', 'Style & Color', 'Lifestyle', 'Glow Habits',
 ];
 
 export default function GlowPlanScreen() {
   const [plan, setPlan] = useState<GlowPlan | null>(null);
   const [streak, setStreak] = useState(0);
   const [loading, setLoading] = useState(true);
+  const [selectedDay, setSelectedDay] = useState(() => new Date().toISOString().split('T')[0]);
+  const weekDays = getCurrentWeekDays();
+  const todayKey = new Date().toISOString().split('T')[0];
 
   useEffect(() => {
     trackScreen('glow_plan');
     (async () => {
-      const p = await getPlan();
-      setPlan(p);
+      setPlan(await getPlan());
       setStreak(await getStreak());
       setLoading(false);
-      if (p) trackPlanViewed(p.persona);
     })();
   }, []);
 
   async function toggle(id: string) {
+    if (selectedDay !== todayKey) return;
     impactMedium();
     const p = await toggleTaskToday(id);
     setPlan(p ? { ...p } : p);
     const s = await getStreak();
     setStreak(s);
     trackEvent('glowplan_task_toggled');
-    const task = p?.tasks.find((t) => t.id === id);
-    if (task && isDoneToday(task)) trackTaskCompleted(task.category);
     if (s > 0) notificationSuccess();
   }
 
@@ -71,18 +70,16 @@ export default function GlowPlanScreen() {
     );
   }
 
-  const doneToday = plan.tasks.filter(isDoneToday).length;
-  const total = plan.tasks.length;
-  const pct = total ? Math.round((doneToday / total) * 100) : 0;
   const week = getPlanWeek(plan);
+  const dayStats = getDayCompletion(plan, selectedDay);
+  const categoryRows = getCategoryCompletion(plan, selectedDay);
+  const isToday = selectedDay === todayKey;
 
-  // Group tasks by category, preserving a sensible category order
   const groups: { cat: PlanCategory; tasks: GlowTask[] }[] = [];
   for (const cat of CAT_ORDER) {
     const tasks = plan.tasks.filter((t) => (t.category || 'Glow Habits') === cat);
     if (tasks.length) groups.push({ cat, tasks });
   }
-  // Any uncategorized fallthrough
   const known = new Set(groups.flatMap((g) => g.tasks.map((t) => t.id)));
   const rest = plan.tasks.filter((t) => !known.has(t.id));
   if (rest.length) groups.push({ cat: 'Glow Habits', tasks: rest });
@@ -93,41 +90,54 @@ export default function GlowPlanScreen() {
         <Ionicons name="chevron-back" size={26} color={C.text} />
       </Pressable>
 
-      <Text style={styles.eyebrow}>YOUR GLOW-UP PLAN</Text>
+      <Text style={styles.eyebrow}>MY GLOW-UP PLAN</Text>
       <Text style={styles.title}>{plan.personaLabel || 'Your Glow-Up'}</Text>
-      {plan.intro ? <Text style={styles.intro}>{plan.intro}</Text> : null}
+      <Text style={styles.weekLabel}>Week {week}/12 · {getWeekFocus(week)}</Text>
 
-      <View style={styles.chipsRow}>
-        {typeof plan.score === 'number' && (
-          <View style={styles.chip}>
-            <Ionicons name="analytics-outline" size={13} color={C.pink} />
-            <Text style={styles.chipText}>GlowScore {plan.score}</Text>
-          </View>
-        )}
-        <View style={styles.chip}>
-          <Ionicons name="calendar-outline" size={13} color={C.pink} />
-          <Text style={styles.chipText}>Week {week}/12 · {getWeekFocus(week)}</Text>
-        </View>
+      {/* Day selector M T W T F S S */}
+      <View style={styles.dayRow}>
+        {weekDays.map((d) => {
+          const active = d.key === selectedDay;
+          const dayDone = getDayCompletion(plan, d.key);
+          const hasActivity = dayDone.done > 0;
+          return (
+            <Pressable
+              key={d.key}
+              style={[styles.dayChip, active && styles.dayChipActive]}
+              onPress={() => { impactMedium(); setSelectedDay(d.key); }}
+            >
+              <Text style={[styles.dayLabel, active && styles.dayLabelActive]}>{d.label}</Text>
+              {hasActivity && <View style={[styles.dayDot, active && styles.dayDotActive]} />}
+            </Pressable>
+          );
+        })}
       </View>
 
-      {/* Progress + streak */}
-      <View style={styles.statsCard}>
-        <View style={styles.statBlock}>
-          <Text style={styles.statNum}>{doneToday}<Text style={styles.statDen}>/{total}</Text></Text>
-          <Text style={styles.statLabel}>done today</Text>
-        </View>
-        <View style={styles.divider} />
-        <View style={styles.statBlock}>
-          <View style={styles.streakRow}>
-            <Ionicons name="flame" size={22} color={C.pink} />
-            <Text style={styles.statNum}>{streak}</Text>
+      {/* Category summary with % bars */}
+      <View style={[styles.summaryCard, shadow(2)]}>
+        {categoryRows.map((row) => (
+          <View key={row.label} style={styles.catRow}>
+            <View style={styles.catHead}>
+              <Text style={styles.catTitle}>{row.label}</Text>
+              <Text style={styles.catMeta}>{row.total} task{row.total > 1 ? 's' : ''} · {row.pct}%</Text>
+            </View>
+            <View style={styles.catTrack}>
+              <View style={[styles.catFill, { width: `${row.pct}%` }]} />
+            </View>
           </View>
-          <Text style={styles.statLabel}>day streak</Text>
-        </View>
+        ))}
       </View>
-      <View style={styles.progressTrack}>
-        <View style={[styles.progressFill, { width: `${pct}%` }]} />
+
+      {/* Streak */}
+      <View style={[styles.streakCard, shadow(1)]}>
+        <Ionicons name="flame" size={22} color={C.pink} />
+        <Text style={styles.streakText}>Current streak · {streak} day{streak !== 1 ? 's' : ''}</Text>
+        <Text style={styles.streakPct}>{dayStats.done}/{dayStats.total} today</Text>
       </View>
+
+      {!isToday && (
+        <Text style={styles.viewHint}>Viewing {selectedDay}. Switch to today to check off tasks.</Text>
+      )}
 
       {groups.map((g) => (
         <View key={g.cat} style={styles.group}>
@@ -136,9 +146,14 @@ export default function GlowPlanScreen() {
             <Text style={styles.groupTitle}>{g.cat}</Text>
           </View>
           {g.tasks.map((t) => {
-            const done = isDoneToday(t);
+            const done = isToday ? isDoneToday(t) : t.completedDates.includes(selectedDay);
             return (
-              <Pressable key={t.id} style={[styles.task, done && styles.taskDone]} onPress={() => toggle(t.id)}>
+              <Pressable
+                key={t.id}
+                style={[styles.task, done && styles.taskDone]}
+                onPress={() => toggle(t.id)}
+                disabled={!isToday}
+              >
                 <View style={[styles.checkBox, done && styles.checkDone]}>
                   {done ? <Ionicons name="checkmark" size={15} color="#fff" /> : null}
                 </View>
@@ -149,8 +164,6 @@ export default function GlowPlanScreen() {
         </View>
       ))}
 
-      <RecommendedProducts />
-
       <Text style={styles.hint}>
         Check off a task each day to keep your streak. Re-scan weekly to watch your GlowScore climb.
       </Text>
@@ -158,90 +171,63 @@ export default function GlowPlanScreen() {
   );
 }
 
-function RecommendedProducts() {
-  const [recs, setRecs] = useState<ProductRecommendation[]>([]);
-  useEffect(() => {
-    (async () => {
-      let ids: string[] = [];
-      try { ids = JSON.parse((await AsyncStorage.getItem('glow_concerns')) || '[]'); } catch {}
-      const ctx = contextFromConcerns(ids);
-      setRecs(recommendProducts(ctx, 6).filter((r) => r.product));
-    })();
-  }, []);
-  if (!recs.length) return null;
-  const tier = (b: GlowProduct['budgetTier']) => (b === 'budget' ? '$' : b === 'mid' ? '$$' : b === 'premium' ? '$$$' : '$$$$');
-  return (
-    <View style={styles.recoBlock}>
-      <Text style={styles.recoTitle}>Recommended for you</Text>
-      <Text style={styles.recoSub}>Picked for your concerns. Affiliate links support the app.</Text>
-      {recs.map((r) => r.product ? (
-        <Pressable key={r.ruleId + r.product.id} style={styles.recoCard} onPress={() => { trackEvent('product_tapped', { id: r.product!.id }); Linking.openURL(r.affiliateUrl || '').catch(() => {}); }}>
-          <View style={styles.recoIcon}><Ionicons name="bag-handle-outline" size={18} color={C.pink} /></View>
-          <View style={{ flex: 1 }}>
-            <Text style={styles.recoBrand}>{r.product.brand}</Text>
-            <Text style={styles.recoName} numberOfLines={1}>{r.product.name}</Text>
-          </View>
-          <Text style={styles.recoTier}>{tier(r.product.budgetTier)}</Text>
-          <Ionicons name="open-outline" size={16} color={C.textSoft} />
-        </Pressable>
-      ) : null)}
-    </View>
-  );
-}
-
 const styles = StyleSheet.create({
   container: { flex: 1, backgroundColor: C.bg },
   content: { paddingTop: 56, paddingHorizontal: 20, paddingBottom: 64 },
   center: { flex: 1, backgroundColor: C.bg, alignItems: 'center', justifyContent: 'center', padding: 24 },
-  empty: { color: C.textSoft, fontSize: 16, marginBottom: 18 },
-  cta: { backgroundColor: C.pink, borderRadius: 24, paddingVertical: 14, paddingHorizontal: 26 },
-  ctaText: { color: '#fff', fontSize: 15, fontWeight: '800' },
+  empty: { ...typography.body1, color: C.textSoft, marginBottom: 18 },
+  cta: { backgroundColor: C.pink, borderRadius: radii.xl, paddingVertical: 14, paddingHorizontal: 26 },
+  ctaText: { fontFamily: fonts.bodyBold, color: '#fff', fontSize: 15 },
 
   back: { alignSelf: 'flex-start', marginBottom: 8 },
-  eyebrow: { color: C.pink, fontSize: 11.5, fontWeight: '900', letterSpacing: 1.4 },
-  title: { color: C.text, fontSize: 28, fontWeight: '900', marginTop: 4 },
-  intro: { color: C.textSoft, fontSize: 14, lineHeight: 20, marginTop: 8 },
+  eyebrow: typography.eyebrow,
+  title: { ...typography.h2, fontFamily: fonts.displayBold, marginTop: 4 },
+  weekLabel: { fontFamily: fonts.bodySemi, fontSize: 14, color: C.pink, marginTop: 6, marginBottom: 14 },
 
-  chipsRow: { flexDirection: 'row', flexWrap: 'wrap', gap: 8, marginTop: 14 },
-  chip: {
-    flexDirection: 'row', alignItems: 'center', gap: 5, backgroundColor: C.pinkSoft,
-    borderRadius: 12, paddingHorizontal: 11, paddingVertical: 6,
+  dayRow: { flexDirection: 'row', justifyContent: 'space-between', marginBottom: 16 },
+  dayChip: {
+    width: 40, height: 48, borderRadius: radii.md, backgroundColor: C.card,
+    alignItems: 'center', justifyContent: 'center', ...shadow(1),
   },
-  chipText: { fontSize: 12, fontWeight: '800', color: C.pink },
+  dayChipActive: { backgroundColor: C.pink },
+  dayLabel: { fontFamily: fonts.bodyBold, fontSize: 13, color: C.textSoft },
+  dayLabelActive: { color: '#fff' },
+  dayDot: { width: 5, height: 5, borderRadius: 3, backgroundColor: C.pink, marginTop: 4 },
+  dayDotActive: { backgroundColor: '#fff' },
 
-  statsCard: {
-    flexDirection: 'row', alignItems: 'center', justifyContent: 'space-around',
-    backgroundColor: C.card, borderRadius: 20, paddingVertical: 18, marginTop: 16, marginBottom: 10,
+  summaryCard: { backgroundColor: C.card, borderRadius: radii.xl, padding: 16, marginBottom: 12, gap: 14 },
+  catRow: { gap: 6 },
+  catHead: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'baseline' },
+  catTitle: { fontFamily: fonts.bodyBold, fontSize: 14, color: C.text },
+  catMeta: { fontFamily: fonts.body, fontSize: 12, color: C.textSoft },
+  catTrack: { height: 6, backgroundColor: C.track, borderRadius: 3, overflow: 'hidden' },
+  catFill: { height: '100%', backgroundColor: C.pink, borderRadius: 3 },
+
+  streakCard: {
+    flexDirection: 'row', alignItems: 'center', gap: 8, backgroundColor: C.card,
+    borderRadius: radii.lg, padding: 14, marginBottom: 18,
   },
-  statBlock: { alignItems: 'center', flex: 1 },
-  divider: { width: 1, height: 36, backgroundColor: C.border },
-  statNum: { color: C.text, fontSize: 30, fontWeight: '900' },
-  statDen: { color: C.textSoft, fontSize: 16, fontWeight: '800' },
-  statLabel: { color: C.textSoft, fontSize: 12.5, marginTop: 2 },
-  streakRow: { flexDirection: 'row', alignItems: 'center', gap: 4 },
+  streakText: { fontFamily: fonts.bodyBold, fontSize: 14, color: C.text, flex: 1 },
+  streakPct: { fontFamily: fonts.bodyBold, fontSize: 14, color: C.pink },
 
-  progressTrack: { height: 8, backgroundColor: C.track, borderRadius: 4, overflow: 'hidden', marginBottom: 22 },
-  progressFill: { height: '100%', backgroundColor: C.pink, borderRadius: 4 },
+  viewHint: { ...typography.caption, textAlign: 'center', marginBottom: 12 },
 
   group: { marginBottom: 18 },
   groupHead: { flexDirection: 'row', alignItems: 'center', gap: 7, marginBottom: 9, marginLeft: 2 },
-  groupTitle: { color: C.text, fontSize: 14, fontWeight: '900', letterSpacing: 0.2 },
+  groupTitle: { fontFamily: fonts.bodyBold, fontSize: 14, color: C.text },
 
-  task: { flexDirection: 'row', alignItems: 'center', backgroundColor: C.card, borderRadius: 15, padding: 15, marginBottom: 9 },
-  taskDone: { backgroundColor: '#FDF4F7' },
-  checkBox: { width: 25, height: 25, borderRadius: 13, borderWidth: 2, borderColor: C.border, alignItems: 'center', justifyContent: 'center', marginRight: 13 },
+  task: {
+    flexDirection: 'row', alignItems: 'center', backgroundColor: C.card, borderRadius: radii.md,
+    padding: 15, marginBottom: 9, ...shadow(1),
+  },
+  taskDone: { backgroundColor: C.blush },
+  checkBox: {
+    width: 25, height: 25, borderRadius: 13, borderWidth: 2, borderColor: C.border,
+    alignItems: 'center', justifyContent: 'center', marginRight: 13,
+  },
   checkDone: { backgroundColor: C.pink, borderColor: C.pink },
-  taskText: { color: C.text, fontSize: 14.5, flex: 1, lineHeight: 20, fontWeight: '500' },
+  taskText: { fontFamily: fonts.body, fontSize: 14.5, flex: 1, lineHeight: 20, color: C.text },
   taskTextDone: { color: C.textSoft, textDecorationLine: 'line-through' },
 
-  hint: { color: C.textSoft, fontSize: 12, textAlign: 'center', marginTop: 8, lineHeight: 18 },
-
-  recoBlock: { marginTop: 10, marginBottom: 8 },
-  recoTitle: { color: C.text, fontSize: 16, fontWeight: '900' },
-  recoSub: { color: C.textSoft, fontSize: 12, marginTop: 2, marginBottom: 10 },
-  recoCard: { flexDirection: 'row', alignItems: 'center', gap: 12, backgroundColor: C.card, borderRadius: 15, padding: 13, marginBottom: 9 },
-  recoIcon: { width: 34, height: 34, borderRadius: 17, backgroundColor: C.pinkSoft, alignItems: 'center', justifyContent: 'center' },
-  recoBrand: { color: C.textSoft, fontSize: 11.5, fontWeight: '700' },
-  recoName: { color: C.text, fontSize: 14, fontWeight: '700', marginTop: 1 },
-  recoTier: { color: C.pink, fontSize: 13, fontWeight: '900', marginRight: 2 },
+  hint: { ...typography.caption, textAlign: 'center', marginTop: 8 },
 });

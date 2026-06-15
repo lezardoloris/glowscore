@@ -8,6 +8,12 @@ export async function notificationSuccess() {
   Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success);
 }
 
+export async function impactLight() {
+  if (isWeb) return;
+  const Haptics = await import('expo-haptics');
+  Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
+}
+
 export async function impactMedium() {
   if (isWeb) return;
   const Haptics = await import('expo-haptics');

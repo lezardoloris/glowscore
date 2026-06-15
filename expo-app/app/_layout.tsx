@@ -1,25 +1,40 @@
 import { Stack, usePathname } from 'expo-router';
-import { useEffect } from 'react';
-import { View, Platform, StyleSheet, ActivityIndicator } from 'react-native';
+import { useEffect, useCallback } from 'react';
+import { View, Platform, StyleSheet } from 'react-native';
 import { StatusBar } from 'expo-status-bar';
-import { useFonts, Fraunces_400Regular, Fraunces_600SemiBold } from '@expo-google-fonts/fraunces';
-import { Inter_400Regular, Inter_500Medium, Inter_600SemiBold } from '@expo-google-fonts/inter';
+import * as SplashScreen from 'expo-splash-screen';
+import {
+  useFonts,
+  Fraunces_600SemiBold,
+  Fraunces_700Bold,
+} from '@expo-google-fonts/fraunces';
+import {
+  Inter_400Regular,
+  Inter_500Medium,
+  Inter_600SemiBold,
+  Inter_700Bold,
+} from '@expo-google-fonts/inter';
 import { initPurchases } from '../src/services/subscription';
 import { trackScreen } from '../src/services/analytics';
 import ErrorBoundary from '../src/components/ErrorBoundary';
 import { theme } from '../src/theme';
 
+SplashScreen.preventAutoHideAsync().catch(() => {});
+
 const isWeb = Platform.OS === 'web';
 
 export default function RootLayout() {
   const pathname = usePathname();
-  const [fontsLoaded] = useFonts({
-    Fraunces_400Regular,
+  const [fontsLoaded, fontError] = useFonts({
     Fraunces_600SemiBold,
+    Fraunces_700Bold,
     Inter_400Regular,
     Inter_500Medium,
     Inter_600SemiBold,
+    Inter_700Bold,
   });
+
+  const ready = fontsLoaded || fontError;
 
   useEffect(() => {
     initPurchases();
@@ -32,20 +47,16 @@ export default function RootLayout() {
     }
   }, [pathname]);
 
-  if (!fontsLoaded) {
-    return (
-      <View style={[styles.fill, styles.fontLoader]}>
-        <ActivityIndicator color={theme.pink} />
-      </View>
-    );
-  }
+  const onLayout = useCallback(() => {
+    if (ready) SplashScreen.hideAsync().catch(() => {});
+  }, [ready]);
+
+  if (!ready) return null;
 
   return (
     <ErrorBoundary>
       <StatusBar style="dark" />
-      {/* Web-only phone frame: constrain to mobile width so the desktop
-          preview shows the app at real phone dimensions instead of stretching. */}
-      <View style={isWeb ? styles.webOuter : styles.fill}>
+      <View style={isWeb ? styles.webOuter : styles.fill} onLayout={onLayout}>
         <View style={isWeb ? styles.webPhone : styles.fill}>
       <Stack
         screenOptions={{
@@ -87,8 +98,6 @@ export default function RootLayout() {
 
 const styles = StyleSheet.create({
   fill: { flex: 1 },
-  fontLoader: { alignItems: 'center', justifyContent: 'center', backgroundColor: theme.bg },
-  // Desktop web: dim backdrop, app constrained to a centered phone-width column.
   webOuter: { flex: 1, alignItems: 'center', backgroundColor: '#E4BACB' },
   webPhone: { flex: 1, width: '100%', maxWidth: 440, backgroundColor: theme.bg, overflow: 'hidden' },
 });

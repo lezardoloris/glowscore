@@ -20,6 +20,7 @@ import {
 import { saveQuizProfile } from '../src/services/quizProfile';
 import { setAiConsent } from '../src/services/aiConsent';
 import { impactMedium } from '../src/services/haptics';
+import { scheduleActivationSequence, scheduleRoutineMicroPushes } from '../src/services/notifications';
 
 // ---------------------------------------------------------------------------
 // Aura palette (light pink clinical-feminine theme)
@@ -55,6 +56,7 @@ const GOALS = [
   { id: 'lips', title: 'Fuller lips', subtitle: 'Shape and definition' },
   { id: 'hair', title: 'Better hair', subtitle: 'Shine, volume, framing' },
   { id: 'color', title: 'Your best colors', subtitle: 'Seasonal palette & shades' },
+  { id: 'body_glow', title: 'Body glow & comfort', subtitle: 'Chafing, folds, glow at any size' },
 ];
 
 const OUTCOMES = [
@@ -173,6 +175,8 @@ export default function OnboardingScreen() {
     });
     await AsyncStorage.setItem('hasCompletedOnboarding', 'true');
     trackOnboardingCompleted();
+    scheduleActivationSequence().catch(() => {});
+    scheduleRoutineMicroPushes().catch(() => {});
     router.replace('/(tabs)');
   }
 

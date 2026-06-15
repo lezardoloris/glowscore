@@ -3,7 +3,9 @@ import { useLocalSearchParams, router } from 'expo-router';
 import { useEffect, useState } from 'react';
 import * as ImagePicker from 'expo-image-picker';
 import { Ionicons } from '@expo/vector-icons';
-import { theme as C } from '../src/theme';
+import { theme as C, radii } from '../src/theme';
+import { typography, fonts } from '../src/typography';
+import { shadow } from '../src/shadows';
 import { trackScreen, trackEvent } from '../src/services/analytics';
 import { impactMedium } from '../src/services/haptics';
 
@@ -141,9 +143,9 @@ const styles = StyleSheet.create({
   container: { flex: 1, backgroundColor: C.bg },
   content: { paddingTop: Platform.OS === 'ios' ? 64 : 44, paddingHorizontal: 18, paddingBottom: 50 },
   back: { alignSelf: 'flex-start', marginBottom: 6 },
-  title: { fontSize: 30, fontWeight: '900', color: C.text },
-  subtitle: { fontSize: 15, color: C.textSoft, marginTop: 2, marginBottom: 14 },
-  photoBar: { flexDirection: 'row', alignItems: 'center', gap: 12, backgroundColor: C.card, borderRadius: 16, padding: 12, marginBottom: 16 },
+  title: { ...typography.h2 },
+  subtitle: { ...typography.body2, color: C.textSoft, marginTop: 2, marginBottom: 14 },
+  photoBar: { flexDirection: 'row', alignItems: 'center', gap: 12, backgroundColor: C.card, borderRadius: 16, padding: 12, marginBottom: 16, ...shadow(1) },
   photoThumb: { width: 44, height: 44, borderRadius: 22 },
   photoThumbEmpty: { backgroundColor: C.pinkSoft, alignItems: 'center', justifyContent: 'center' },
   photoTitle: { fontSize: 14.5, fontWeight: '800', color: C.text },
@@ -154,6 +156,7 @@ const styles = StyleSheet.create({
     backgroundColor: C.card,
     borderRadius: 18,
     overflow: 'hidden',
+    ...shadow(1),
   },
   cardImg: { width: '100%', height: 120 },
   cardBody: { padding: 12 },

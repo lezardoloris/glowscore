@@ -52,6 +52,7 @@ const GOAL_TO_CONCERNS: Record<string, string[]> = {
   lips: ['teint_irregulier'],
   hair: ['cheveux_plats', 'cheveux_ternes'],
   color: ['color_analysis_cool', 'color_analysis_warm'],
+  body_glow: ['irritation_plis', 'frottements_cuisse', 'peau_transformation'],
 };
 
 /** Derive reco context from onboarding quiz. */

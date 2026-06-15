@@ -3,17 +3,14 @@ import { router } from 'expo-router';
 import { useState, useEffect } from 'react';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import { Ionicons } from '@expo/vector-icons';
-import { CONCERNS, CONCERN_HEADS } from '../src/config/concernHeads';
+import { LinearGradient } from 'expo-linear-gradient';
+import { CONCERNS, CONCERN_HEADS, MAX_CONCERNS } from '../src/config/concernHeads';
 import { savePlanFromConcerns } from '../src/services/glowPlan';
 import { impactMedium } from '../src/services/haptics';
 import { trackScreen, trackEvent } from '../src/services/analytics';
-
-/**
- * Premium dark "what do you want to improve" concern picker. Female-framed
- * equivalent of Mogged's purple 3D-head selector: feminine 3D heads with a
- * rose-pink glow on each concern zone. Multi-select, feeds the glow-up plan.
- */
-const P = '#E0537A';
+import { theme as C, radii } from '../src/theme';
+import { typography, fonts } from '../src/typography';
+import { shadow } from '../src/shadows';
 
 export default function ConcernsScreen() {
   const [selected, setSelected] = useState<string[]>([]);
@@ -21,7 +18,11 @@ export default function ConcernsScreen() {
 
   function toggle(id: string) {
     impactMedium();
-    setSelected((s) => (s.includes(id) ? s.filter((x) => x !== id) : [...s, id]));
+    setSelected((s) => {
+      if (s.includes(id)) return s.filter((x) => x !== id);
+      if (s.length >= MAX_CONCERNS) return s;
+      return [...s, id];
+    });
   }
 
   async function cont() {
@@ -36,18 +37,28 @@ export default function ConcernsScreen() {
     <View style={styles.container}>
       <ScrollView contentContainerStyle={styles.content} showsVerticalScrollIndicator={false}>
         <Pressable style={styles.back} onPress={() => router.back()} hitSlop={8}>
-          <Ionicons name="chevron-back" size={26} color="#fff" />
+          <Ionicons name="chevron-back" size={26} color={C.text} />
         </Pressable>
-        <Text style={styles.title}>What do you want{'\n'}to improve?</Text>
-        <Text style={styles.sub}>Pick everything you'd like to work on. Your plan adapts to what you select.</Text>
+        <Text style={styles.title}>What concerns you?</Text>
+        <Text style={styles.sub}>Select up to {MAX_CONCERNS} priorities. Your plan adapts to what you pick.</Text>
 
         <View style={styles.grid}>
           {CONCERNS.map((c) => {
             const on = selected.includes(c.id);
+            const disabled = !on && selected.length >= MAX_CONCERNS;
             return (
-              <Pressable key={c.id} style={[styles.card, on && styles.cardOn]} onPress={() => toggle(c.id)}>
+              <Pressable
+                key={c.id}
+                style={[styles.card, on && styles.cardOn, disabled && styles.cardDisabled]}
+                onPress={() => toggle(c.id)}
+                disabled={disabled}
+              >
                 <Image source={CONCERN_HEADS[c.id]} style={styles.head} />
-                {on && <View style={styles.check}><Ionicons name="checkmark" size={14} color="#fff" /></View>}
+                {on && (
+                  <View style={styles.check}>
+                    <Ionicons name="checkmark" size={14} color="#fff" />
+                  </View>
+                )}
                 <Text style={styles.cardTitle}>{c.title}</Text>
                 <Text style={styles.cardSub}>{c.subtitle}</Text>
               </Pressable>
@@ -57,8 +68,18 @@ export default function ConcernsScreen() {
       </ScrollView>
 
       <View style={styles.footer}>
-        <Pressable style={[styles.cta, selected.length === 0 && styles.ctaOff]} disabled={selected.length === 0} onPress={cont}>
-          <Text style={styles.ctaText}>Continue{selected.length ? ` (${selected.length})` : ''}</Text>
+        <Text style={styles.counter}>
+          {selected.length} selected{selected.length >= MAX_CONCERNS ? ' · max reached' : ''}
+        </Text>
+        <Pressable onPress={cont} disabled={selected.length === 0}>
+          <LinearGradient
+            colors={selected.length ? C.pinkGrad : [C.trackLocked, C.trackLocked]}
+            start={{ x: 0, y: 0 }}
+            end={{ x: 1, y: 1 }}
+            style={[styles.cta, selected.length === 0 && styles.ctaOff]}
+          >
+            <Text style={styles.ctaText}>Continue</Text>
+          </LinearGradient>
         </Pressable>
       </View>
     </View>
@@ -66,20 +87,35 @@ export default function ConcernsScreen() {
 }
 
 const styles = StyleSheet.create({
-  container: { flex: 1, backgroundColor: '#14111A' },
+  container: { flex: 1, backgroundColor: C.bg },
   content: { paddingTop: 56, paddingHorizontal: 16, paddingBottom: 24 },
   back: { alignSelf: 'flex-start', marginBottom: 10 },
-  title: { color: '#fff', fontSize: 28, fontWeight: '900', lineHeight: 34 },
-  sub: { color: '#A79CB0', fontSize: 14, lineHeight: 20, marginTop: 8, marginBottom: 18 },
+  title: { ...typography.h2, fontFamily: fonts.displayBold },
+  sub: { ...typography.body2, color: C.textSoft, marginTop: 8, marginBottom: 18 },
   grid: { flexDirection: 'row', flexWrap: 'wrap', justifyContent: 'space-between' },
-  card: { width: '48.5%', backgroundColor: '#1D1925', borderRadius: 18, padding: 12, marginBottom: 12, borderWidth: 1.5, borderColor: 'transparent', overflow: 'hidden' },
-  cardOn: { borderColor: P, backgroundColor: '#241A22' },
-  head: { width: '100%', height: 150, borderRadius: 12, marginBottom: 8 },
-  check: { position: 'absolute', top: 18, right: 18, width: 24, height: 24, borderRadius: 12, backgroundColor: P, alignItems: 'center', justifyContent: 'center' },
-  cardTitle: { color: '#fff', fontSize: 16, fontWeight: '800' },
-  cardSub: { color: '#A79CB0', fontSize: 12, marginTop: 2 },
-  footer: { padding: 16, paddingBottom: 28, backgroundColor: '#14111A' },
-  cta: { backgroundColor: P, borderRadius: 28, paddingVertical: 17, alignItems: 'center' },
-  ctaOff: { opacity: 0.4 },
-  ctaText: { color: '#fff', fontSize: 17, fontWeight: '900' },
+  card: {
+    width: '31.5%',
+    backgroundColor: C.card,
+    borderRadius: radii.md,
+    padding: 8,
+    marginBottom: 10,
+    borderWidth: 1.5,
+    borderColor: 'transparent',
+    overflow: 'hidden',
+    ...shadow(1),
+  },
+  cardOn: { borderColor: C.pink, backgroundColor: C.blush },
+  cardDisabled: { opacity: 0.45 },
+  head: { width: '100%', height: 88, borderRadius: radii.sm, marginBottom: 6 },
+  check: {
+    position: 'absolute', top: 12, right: 12, width: 22, height: 22, borderRadius: 11,
+    backgroundColor: C.pink, alignItems: 'center', justifyContent: 'center',
+  },
+  cardTitle: { fontFamily: fonts.bodyBold, fontSize: 12, color: C.text },
+  cardSub: { fontFamily: fonts.body, fontSize: 10, color: C.textSoft, marginTop: 1 },
+  footer: { padding: 16, paddingBottom: 28, backgroundColor: C.bg, borderTopWidth: 1, borderTopColor: C.border },
+  counter: { ...typography.caption, textAlign: 'center', marginBottom: 10, color: C.textSoft },
+  cta: { borderRadius: radii.full, paddingVertical: 17, alignItems: 'center', ...shadow(2) },
+  ctaOff: { opacity: 0.5 },
+  ctaText: { fontFamily: fonts.bodyBold, color: '#fff', fontSize: 17 },
 });

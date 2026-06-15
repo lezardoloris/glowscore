@@ -4,7 +4,9 @@ import {
 import { useState, useCallback, useEffect } from 'react';
 import { useFocusEffect, router } from 'expo-router';
 import { Ionicons } from '@expo/vector-icons';
-import { theme as C } from '../../src/theme';
+import { theme as C, radii } from '../../src/theme';
+import { typography, fonts } from '../../src/typography';
+import { shadow } from '../../src/shadows';
 import { checkSubscription } from '../../src/services/subscription';
 import { trackScreen } from '../../src/services/analytics';
 import { deleteAllData } from '../../src/services/account';
@@ -121,9 +123,9 @@ function AboutRow({ label, onPress }: { label: string; onPress: () => void }) {
 const styles = StyleSheet.create({
   container: { flex: 1, backgroundColor: C.bg },
   content: { paddingTop: 60, paddingHorizontal: 16, paddingBottom: 100 },
-  header: { fontSize: 30, fontWeight: '900', color: C.text, marginBottom: 18 },
-  sectionHeader: { fontSize: 12, fontWeight: '800', color: C.textSoft, letterSpacing: 1, marginBottom: 8, marginTop: 20 },
-  card: { backgroundColor: C.card, borderRadius: 18, padding: 16 },
+  header: { ...typography.h2, marginBottom: 18 },
+  sectionHeader: { ...typography.caption, fontWeight: '800', letterSpacing: 1, marginBottom: 8, marginTop: 20 },
+  card: { backgroundColor: C.card, borderRadius: 18, padding: 16, ...shadow(1) },
   row: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center' },
   label: { fontSize: 15, color: C.text, fontWeight: '600' },
   statusBadge: { paddingHorizontal: 12, paddingVertical: 5, borderRadius: 12 },

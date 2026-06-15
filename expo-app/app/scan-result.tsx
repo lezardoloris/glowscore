@@ -24,24 +24,15 @@ import ShareCard from '../src/components/ShareCard';
 import AnimatedBar from '../src/components/AnimatedBar';
 import { AnimatedCircularProgress } from 'react-native-circular-progress';
 import AnimatedNumbers from 'react-native-animated-numbers';
+import SoftConfetti from '../src/components/SoftConfetti';
+import { theme as C, radii } from '../src/theme';
+import { fonts } from '../src/typography';
+import { shadow } from '../src/shadows';
 
-const WEB_FRAME_W = 440; // must match _layout webPhone maxWidth
+const WEB_FRAME_W = 440;
 
-// Aura palette (light pink clinical-feminine theme)
-const C = {
-  bg: '#F9E0E8',
-  panel: '#FBEAF0',
-  card: '#FFFFFF',
-  border: '#F2C4D2',
-  pink: '#E0537A',
-  pinkSoft: '#F8D4DF',
-  text: '#2D2330',
-  textSoft: '#8A7B85',
-  lockBg: '#EFEAEC',
-  lockIcon: '#9B8F96',
-  track: '#F4E6EB',
-  trackLocked: '#D9CCD2',
-};
+const LOCK_BG = '#EFEAEC';
+const LOCK_ICON = '#9B8F96';
 
 // The 6 diagnostic components, ranked most → least relevant for the female
 // glow-up persona (see market-research/diagnostic-composants-visage.md).
@@ -70,6 +61,9 @@ export default function ScanResultScreen() {
   const [teaserUri, setTeaserUri] = useState<string | null>(null);
   const [page, setPage] = useState(0);
   const [animatedTarget, setAnimatedTarget] = useState(0);
+  const [showConfetti, setShowConfetti] = useState(false);
+  const [avatarBlur, setAvatarBlur] = useState(22);
+  const sawLocked = useRef(false);
   const pagerRef = useRef<ScrollView>(null);
   // Pager pages must match the visible frame width, not the browser window.
   // On web the phone frame is capped at WEB_FRAME_W; on native use full screen.
@@ -156,11 +150,26 @@ export default function ScanResultScreen() {
     })();
   }, [imageUri, consentTick]);
 
-  // Drive the ring sweep + score count-up once the (unlocked) score lands
+  useEffect(() => {
+    if (score && !unlocked) sawLocked.current = true;
+  }, [score, unlocked]);
+
   useEffect(() => {
     if (!score || !unlocked) return;
+    if (sawLocked.current) {
+      setShowConfetti(true);
+      let b = 22;
+      const blurId = setInterval(() => {
+        b -= 2;
+        setAvatarBlur(Math.max(0, b));
+        if (b <= 0) clearInterval(blurId);
+      }, 45);
+      sawLocked.current = false;
+    } else {
+      setAvatarBlur(0);
+    }
     const t1 = setTimeout(() => setAnimatedTarget(score.overall), 150);
-    const t2 = setTimeout(() => impactMedium(), 1500);
+    const t2 = setTimeout(() => { impactMedium(); trackScoreRevealed(score.overall, true); }, 1500);
     return () => { clearTimeout(t1); clearTimeout(t2); };
   }, [score, unlocked]);
 
@@ -265,6 +274,7 @@ export default function ScanResultScreen() {
 
   return (
     <View style={styles.container}>
+      <SoftConfetti active={showConfetti && unlocked} onDone={() => setShowConfetti(false)} />
       {/* Off-screen branded card used as the share asset (unlocked only) */}
       {unlocked && (
         <View ref={shareRef} collapsable={false} style={styles.offscreen}>
@@ -299,7 +309,13 @@ export default function ScanResultScreen() {
 
             {/* Harmony hero: animated radial ring gauge + score count-up */}
             <View style={styles.heroCardCenter}>
-              {imageUri ? <Image source={{ uri: imageUri }} style={styles.heroAvatar} /> : null}
+              {imageUri ? (
+                <Image
+                  source={{ uri: imageUri }}
+                  style={styles.heroAvatar}
+                  blurRadius={unlocked ? avatarBlur : 22}
+                />
+              ) : null}
               <AnimatedCircularProgress
                 size={156}
                 width={13}
@@ -318,10 +334,10 @@ export default function ScanResultScreen() {
                         <Text style={styles.ringOutOf}>/100</Text>
                       </View>
                     ) : (
-                      <Text style={styles.ringScore}>
-                        <Text style={{ color: C.pink }}>??</Text>
+                      <View style={styles.ringScoreRow}>
+                        <Text style={[styles.ringScore, styles.ringScoreBlurred]}>{score.overall}</Text>
                         <Text style={styles.ringOutOf}>/100</Text>
-                      </Text>
+                      </View>
                     )}
                     <Text style={styles.ringLabel}>Facial Harmony</Text>
                   </View>
@@ -330,8 +346,9 @@ export default function ScanResultScreen() {
               <Text style={styles.heroUnlock}>
                 {unlocked
                   ? `Top ${Math.max(1, 100 - score.percentile)}% · Potential ${score.potential}`
-                  : 'Unlock to explore your unique proportions'}
+                  : 'Unlock your detailed score and personalized plan'}
               </Text>
+              {!unlocked && <Text style={styles.premiumHint}>Included in GlowUp Premium</Text>}
             </View>
 
             {/* Maxed-Out Self teaser (EPIC 4.4): her blurred potential, right before the paywall */}
@@ -377,7 +394,7 @@ export default function ScanResultScreen() {
                       <Text style={styles.metricValue}>{value}</Text>
                     ) : (
                       <View style={styles.lockChip}>
-                        <Ionicons name="lock-closed" size={15} color={C.lockIcon} />
+                        <Ionicons name="lock-closed" size={15} color={LOCK_ICON} />
                       </View>
                     )}
                   </View>
@@ -400,7 +417,7 @@ export default function ScanResultScreen() {
                     <Ionicons
                       name={unlocked ? 'sparkles' : 'lock-closed'}
                       size={18}
-                      color={unlocked ? C.pink : C.lockIcon}
+                      color={unlocked ? C.pink : LOCK_ICON}
                     />
                   </View>
                   <Text style={styles.metricTitle}>{unlocked ? t.name : `Treatment ${i + 1}`}</Text>
@@ -453,7 +470,7 @@ export default function ScanResultScreen() {
         {!unlocked ? (
           <>
             <Pressable style={styles.cta} onPress={openPaywall}>
-              <Text style={styles.ctaText}>Unlock Your Glow Up</Text>
+              <Text style={styles.ctaText}>Unlock now</Text>
             </Pressable>
             <Pressable onPress={handleInvite} hitSlop={8}>
               <Text style={styles.inviteLink}>
@@ -563,10 +580,12 @@ const styles = StyleSheet.create({
   heroAvatar: { width: 64, height: 64, borderRadius: 32, borderWidth: 2, borderColor: C.pink },
   ringInner: { alignItems: 'center' },
   ringScoreRow: { flexDirection: 'row', alignItems: 'flex-end' },
-  ringScore: { fontSize: 40, fontWeight: '900', color: C.text },
-  ringOutOf: { fontSize: 15, color: C.textSoft, fontWeight: '700', marginBottom: 6 },
-  ringLabel: { fontSize: 11, fontWeight: '700', color: C.textSoft, marginTop: 2 },
-  heroUnlock: { fontSize: 15, fontWeight: '700', color: C.text, marginTop: 2, textAlign: 'center' },
+  ringScore: { fontFamily: fonts.displayBold, fontSize: 40, color: C.text },
+  ringScoreBlurred: { opacity: 0.35, textShadowColor: 'rgba(45,35,48,0.5)', textShadowRadius: 12 },
+  ringOutOf: { fontFamily: fonts.bodyBold, fontSize: 15, color: C.textSoft, marginBottom: 6 },
+  ringLabel: { fontFamily: fonts.bodySemi, fontSize: 11, color: C.textSoft, marginTop: 2 },
+  heroUnlock: { fontFamily: fonts.bodyBold, fontSize: 15, color: C.text, marginTop: 2, textAlign: 'center' },
+  premiumHint: { fontFamily: fonts.body, fontSize: 13, color: C.textSoft, marginTop: 4, textAlign: 'center' },
 
   // Maxed-Out Self teaser
   teaserCard: { borderRadius: 22, overflow: 'hidden', marginBottom: 12, backgroundColor: C.card },
@@ -597,11 +616,11 @@ const styles = StyleSheet.create({
   metricTitle: { fontSize: 16, fontWeight: '800', color: C.text },
   metricValue: { fontSize: 18, fontWeight: '900', color: C.pink },
   lockChip: {
-    width: 34, height: 34, borderRadius: 10, backgroundColor: C.lockBg,
+    width: 34, height: 34, borderRadius: 10, backgroundColor: LOCK_BG,
     alignItems: 'center', justifyContent: 'center',
   },
   lockChipBig: {
-    width: 44, height: 44, borderRadius: 12, backgroundColor: C.lockBg,
+    width: 44, height: 44, borderRadius: 12, backgroundColor: LOCK_BG,
     alignItems: 'center', justifyContent: 'center',
   },
   metricSubtitle: { fontSize: 13, color: C.textSoft, marginTop: 2 },

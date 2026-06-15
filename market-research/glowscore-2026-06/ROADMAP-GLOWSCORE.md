@@ -24,7 +24,7 @@ Transformer la recherche en structures code exploitables.
 | Importer 50 règles reco | JSON → moteur règles | `recoEngine.ts` |
 | Catalogue 20 produits launch | Array produits affiliés | `products.ts` |
 | Taxonomie concerns / skin types | Enum + quiz mapping | `quizSchema.ts` |
-| Copy pack (10 titres + 10 push) | i18n EN/FR | `routineCopy.ts` |
+| Copy pack (10 titres + 10 push) | i18n EN only at launch | `routineCopy.ts` |
 
 ### FOCUS_TASKS MVP (13 tâches)
 
@@ -117,6 +117,11 @@ interface FocusTask {
 - Pas de reco `prescription_cream` (reco_010 modifié → rétinal OTC)
 - Pas de claims "cure cortisol face" ou "Ozempic treatment"
 - Disclaimer bien-être sur chaque fiche produit
+
+**Affiliate URLs (phased, not bulk)**
+- Launch : English UI, US market; taps go to `glowupai.app/go/{id}` placeholders
+- Real Amazon Associates links added in waves — see `expo-app/docs/AFFILIATE-ROADMAP.md`
+- Wave 1 priority : body care + debloat SKUs (persona US differentiation)
 
 ### 1.4 Copy & notifications (Sem. 6)
 

@@ -9,6 +9,9 @@ import type { QuizProfile } from './quizProfile';
 
 const PLAN_KEY = 'glow_plan';
 
+/** Skinimalism cap: max actionable tasks in a plan (market research 2026-06). */
+export const MAX_PLAN_TASKS = 5;
+
 export type PlanCategory =
   | 'Skincare' | 'Face Fitness' | 'Lifestyle' | 'Style & Color'
   | 'Makeup' | 'Hair' | 'Eyes' | 'Glow Habits' | 'Body Care';
@@ -31,6 +34,53 @@ export interface GlowPlan {
 
 function dayKey(d: Date = new Date()): string {
   return d.toISOString().split('T')[0];
+}
+
+/** Completion % for a category on a given day (default today). */
+export function categoryCompletion(plan: GlowPlan, cat: PlanCategory, dateKey?: string): number {
+  const dk = dateKey || dayKey();
+  const tasks = plan.tasks.filter((t) => (t.category || 'Glow Habits') === cat);
+  if (!tasks.length) return 0;
+  const done = tasks.filter((t) => t.completedDates.includes(dk)).length;
+  return Math.round((done / tasks.length) * 100);
+}
+
+/** Overall completion for one calendar day. */
+export function dayCompletion(plan: GlowPlan, dateKey: string): number {
+  if (!plan.tasks.length) return 0;
+  const done = plan.tasks.filter((t) => t.completedDates.includes(dateKey)).length;
+  return Math.round((done / plan.tasks.length) * 100);
+}
+
+/** Last 7 days ending today (for week selector). */
+export function getLast7Days(): { key: string; label: string; isToday: boolean }[] {
+  const labels = ['S', 'M', 'T', 'W', 'T', 'F', 'S'];
+  const out: { key: string; label: string; isToday: boolean }[] = [];
+  const today = new Date();
+  for (let i = 6; i >= 0; i--) {
+    const d = new Date(today);
+    d.setDate(today.getDate() - i);
+    const key = dayKey(d);
+    out.push({ key, label: labels[d.getDay()], isToday: i === 0 });
+  }
+  return out;
+}
+
+/** Grouped category summary for plan dashboard. */
+export const PLAN_CATEGORY_GROUPS: { label: string; cats: PlanCategory[] }[] = [
+  { label: 'Skin', cats: ['Skincare'] },
+  { label: 'Stress & De-bloat', cats: ['Face Fitness', 'Lifestyle'] },
+  { label: 'Eyes & habits', cats: ['Eyes', 'Glow Habits'] },
+  { label: 'Makeup & style', cats: ['Makeup', 'Hair', 'Style & Color'] },
+  { label: 'Body care', cats: ['Body Care'] },
+];
+
+export function groupCompletion(plan: GlowPlan, cats: PlanCategory[], dateKey?: string): number {
+  const dk = dateKey || dayKey();
+  const tasks = plan.tasks.filter((t) => cats.includes((t.category || 'Glow Habits') as PlanCategory));
+  if (!tasks.length) return 0;
+  const done = tasks.filter((t) => t.completedDates.includes(dk)).length;
+  return Math.round((done / tasks.length) * 100);
 }
 
 export async function getPlan(): Promise<GlowPlan | null> {
@@ -231,7 +281,7 @@ export function buildPersonaTasks(quiz: QuizProfile | null, score?: PlanScoreInp
 
   const personaLabel = PERSONA_LABEL[primary] || 'Your Glow-Up';
   // Cap the daily list so it stays actionable (foundation + 2 focuses + capstone).
-  return { items: deduped.slice(0, 12), persona: primary, personaLabel, intro: introFor(personaLabel, score?.overall) };
+  return { items: deduped.slice(0, MAX_PLAN_TASKS), persona: primary, personaLabel, intro: introFor(personaLabel, score?.overall) };
 }
 
 // ─── Persistence ────────────────────────────────────────────────────────────
@@ -275,7 +325,7 @@ export async function savePlanFromConcerns(focuses: string[]): Promise<void> {
   const seen = new Set<string>();
   const deduped = items.filter((it) => (seen.has(it.text) ? false : (seen.add(it.text), true)));
   const primary = uniq[0];
-  await persistTasks(deduped.slice(0, 12), {
+  await persistTasks(deduped.slice(0, MAX_PLAN_TASKS), {
     persona: primary,
     personaLabel: PERSONA_LABEL[primary] || 'Your Glow-Up',
     intro: 'Built around the concerns you picked. Consistency over 8-12 weeks is where the magic happens.',
@@ -344,6 +394,66 @@ const WEEK_FOCUS = [
 ];
 export function getWeekFocus(week: number): string {
   return WEEK_FOCUS[(week - 1) % WEEK_FOCUS.length];
+}
+
+/** Mon–Sun labels for the week selector. */
+export function getCurrentWeekDays(): { key: string; label: string; date: Date }[] {
+  const today = new Date();
+  const dow = today.getDay(); // 0 = Sun
+  const mondayOffset = dow === 0 ? -6 : 1 - dow;
+  const monday = new Date(today);
+  monday.setHours(0, 0, 0, 0);
+  monday.setDate(today.getDate() + mondayOffset);
+  const labels = ['M', 'T', 'W', 'T', 'F', 'S', 'S'];
+  return labels.map((label, i) => {
+    const d = new Date(monday);
+    d.setDate(monday.getDate() + i);
+    return { key: dayKey(d), label, date: d };
+  });
+}
+
+export function isTaskDoneOnDate(task: GlowTask, dateKey: string): boolean {
+  return task.completedDates.includes(dateKey);
+}
+
+export function getDayCompletion(plan: GlowPlan, dateKey: string): { done: number; total: number; pct: number } {
+  const total = plan.tasks.length;
+  if (!total) return { done: 0, total: 0, pct: 0 };
+  const done = plan.tasks.filter((t) => isTaskDoneOnDate(t, dateKey)).length;
+  return { done, total, pct: Math.round((done / total) * 100) };
+}
+
+/** Category completion for a given day (summary rows with % bars). */
+export function getCategoryCompletion(
+  plan: GlowPlan,
+  dateKey: string,
+): { cat: PlanCategory; label: string; done: number; total: number; pct: number }[] {
+  const CAT_LABEL: Partial<Record<PlanCategory, string>> = {
+    Skincare: 'Skin',
+    'Face Fitness': 'Stress & De-puff',
+    Lifestyle: 'Stress & De-puff',
+    'Style & Color': 'Complexion & Glow',
+    Makeup: 'Makeup & Style',
+    Hair: 'Makeup & Style',
+    Eyes: 'Complexion & Glow',
+    'Glow Habits': 'Glow Habits',
+  };
+  const merged = new Map<string, { cat: PlanCategory; done: number; total: number }>();
+  for (const t of plan.tasks) {
+    const cat = t.category || 'Glow Habits';
+    const label = CAT_LABEL[cat] || cat;
+    const prev = merged.get(label) || { cat, done: 0, total: 0 };
+    prev.total += 1;
+    if (isTaskDoneOnDate(t, dateKey)) prev.done += 1;
+    merged.set(label, prev);
+  }
+  return [...merged.entries()].map(([label, v]) => ({
+    cat: v.cat,
+    label,
+    done: v.done,
+    total: v.total,
+    pct: v.total ? Math.round((v.done / v.total) * 100) : 0,
+  }));
 }
 
 /** Consecutive days (ending today or yesterday) with at least one task done. */
