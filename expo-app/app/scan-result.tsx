@@ -1,6 +1,6 @@
 import {
   View, Text, Image, Pressable, StyleSheet, ScrollView, ActivityIndicator,
-  Share, Linking, Dimensions,
+  Share, Linking, Platform, useWindowDimensions,
 } from 'react-native';
 import { useLocalSearchParams, router } from 'expo-router';
 import { useEffect, useRef, useState } from 'react';
@@ -10,7 +10,7 @@ import { trackScreen, trackEvent } from '../src/services/analytics';
 import { checkSubscription, getSubscriberToken } from '../src/services/subscription';
 import { faceScan, GlowScore } from '../src/services/faceScan';
 import { saveScan, getLastScan, ScanRecord } from '../src/services/history';
-import { savePlanFromTips } from '../src/services/glowPlan';
+import { savePlanForProfile } from '../src/services/glowPlan';
 import { scheduleRescanReminder } from '../src/services/notifications';
 import { captureAndShare } from '../src/services/shareCapture';
 import {
@@ -24,7 +24,7 @@ import AnimatedBar from '../src/components/AnimatedBar';
 import { AnimatedCircularProgress } from 'react-native-circular-progress';
 import AnimatedNumbers from 'react-native-animated-numbers';
 
-const { width } = Dimensions.get('window');
+const WEB_FRAME_W = 440; // must match _layout webPhone maxWidth
 
 // Aura palette (light pink clinical-feminine theme)
 const C = {
@@ -69,6 +69,10 @@ export default function ScanResultScreen() {
   const [page, setPage] = useState(0);
   const [animatedTarget, setAnimatedTarget] = useState(0);
   const pagerRef = useRef<ScrollView>(null);
+  // Pager pages must match the visible frame width, not the browser window.
+  // On web the phone frame is capped at WEB_FRAME_W; on native use full screen.
+  const { width: winW } = useWindowDimensions();
+  const pagerW = Platform.OS === 'web' ? Math.min(winW, WEB_FRAME_W) : winW;
   const mounted = useRef(true);
   const shareRef = useRef<View>(null);
 
@@ -135,10 +139,12 @@ export default function ScanResultScreen() {
           potential: res.potential, percentile: res.percentile,
         };
         saveScan(record).catch(() => {});
-        const planItems = res.treatments?.length
-          ? res.treatments.map((t) => t.detail || t.name)
-          : res.tips;
-        savePlanFromTips(planItems).catch(() => {});
+        // Persona + score aware glow-up plan (built from the quiz + this scan).
+        savePlanForProfile(quiz, {
+          overall: res.overall, skin: res.skin, jawline: res.jawline,
+          symmetry: res.symmetry, eyes: res.eyes, harmony: res.harmony,
+          nose_lip_ratio: res.nose_lip_ratio, lip_harmony: res.lip_harmony,
+        }).catch(() => {});
         scheduleRescanReminder(res.overall).catch(() => {});
       } catch (e: any) {
         if (mounted.current) { setError(e?.message || 'Scan failed'); setLoading(false); }
@@ -166,7 +172,7 @@ export default function ScanResultScreen() {
 
   function goToPage(idx: number) {
     const clamped = Math.max(0, Math.min(1, idx));
-    pagerRef.current?.scrollTo({ x: clamped * width, animated: true });
+    pagerRef.current?.scrollTo({ x: clamped * pagerW, animated: true });
     setPage(clamped);
   }
 
@@ -281,11 +287,11 @@ export default function ScanResultScreen() {
         horizontal
         pagingEnabled
         showsHorizontalScrollIndicator={false}
-        onMomentumScrollEnd={(e) => setPage(Math.round(e.nativeEvent.contentOffset.x / width))}
+        onMomentumScrollEnd={(e) => setPage(Math.round(e.nativeEvent.contentOffset.x / pagerW))}
         style={{ flex: 1 }}
       >
         {/* ── PAGE 1: Your Facial Harmony ── */}
-        <ScrollView style={{ width }} contentContainerStyle={styles.pageContent} showsVerticalScrollIndicator={false}>
+        <ScrollView style={{ width: pagerW }} contentContainerStyle={styles.pageContent} showsVerticalScrollIndicator={false}>
           <View style={styles.panel}>
             <Text style={styles.panelTitle}>Your Facial{'\n'}Harmony</Text>
 
@@ -381,7 +387,7 @@ export default function ScanResultScreen() {
         </ScrollView>
 
         {/* ── PAGE 2: Your Glow Up Plan ── */}
-        <ScrollView style={{ width }} contentContainerStyle={styles.pageContent} showsVerticalScrollIndicator={false}>
+        <ScrollView style={{ width: pagerW }} contentContainerStyle={styles.pageContent} showsVerticalScrollIndicator={false}>
           <View style={styles.panel}>
             <Text style={styles.panelTitle}>Your Glow Up{'\n'}Plan</Text>
 

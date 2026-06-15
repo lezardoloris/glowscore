@@ -65,6 +65,24 @@ const STYLE_PRESETS: Record<string, { prompt: string; negative_prompt: string; i
     negative_prompt: "different person, different ethnicity, skin lightening, altered face shape, altered nose, blurry, deformed, low quality, exaggerated, unrealistic, plastic, fake, cartoon",
     ip_adapter_scale: 0.82,
   },
+  // Stress-Faciometre payoff — same person after lymphatic drainage / lower stress (de-puffed)
+  destress: {
+    prompt: "the same exact person after one week of lymphatic drainage and reduced stress: less facial puffiness and water retention, de-puffed under-eyes, reduced dark circles, relaxed facial tension, calm refreshed healthy skin, soft natural daylight, photorealistic portrait",
+    negative_prompt: "different person, different ethnicity, slimmed bones, altered face shape, altered nose, gaunt, weight loss, blurry, deformed, low quality, plastic, fake, cartoon",
+    ip_adapter_scale: 0.85,
+  },
+};
+
+// Gemini Nano Banana prompts per style (identity-preserving img2img). Keys here
+// route through callGeminiGlowup instead of fal.ai when GEMINI_API_KEY is set.
+const GEMINI_PROMPTS: Record<string, string> = {
+  destress:
+    "Show this exact same person after a week of consistent lymphatic drainage and lower stress. " +
+    "Reduce facial puffiness and water retention, de-puff the under-eyes and soften dark circles, " +
+    "relax facial tension for a calm refreshed look. The natural contour can look slightly more defined " +
+    "ONLY from reduced bloating. Keep it strictly photorealistic and fully preserve the core identity, " +
+    "ethnicity, gender, bone structure, face shape, nose and eye shape. Do NOT slim the bones, do NOT " +
+    "change face shape, do NOT make the face gaunt. Soft flattering daylight, natural healthy skin, 4K raw photo.",
 };
 
 // ─── Instant Style presets ──────────────────────────────────────────────────
@@ -776,12 +794,13 @@ async function handleTransform(request: Request, env: Env, headers: Record<strin
   if (rlResult instanceof Response) return rlResult;
   const { currentCount, rateLimitKey } = rlResult;
 
-  // Maxed-Out Self via Gemini Nano Banana (best identity preservation). Falls back to fal.ai if no key.
-  if (body.style_id === "glow_max" && env.GEMINI_API_KEY) {
-    const g = await callGeminiGlowup(env, body.image, "image/jpeg", request, headers, rateLimitKey, currentCount);
+  // Identity-preserving payoffs via Gemini Nano Banana (glow_max, destress). Falls back to fal.ai if no key.
+  if ((body.style_id === "glow_max" || body.style_id === "destress") && env.GEMINI_API_KEY) {
+    const promptOverride = GEMINI_PROMPTS[body.style_id]; // undefined => default glow-up prompt
+    const g = await callGeminiGlowup(env, body.image, "image/jpeg", request, headers, rateLimitKey, currentCount, 30000, promptOverride);
     if (g instanceof Response) return g;
     return Response.json(
-      { image_url: g.url, quality, feature: "glow_up", style_id: body.style_id, remaining_today: dailyLimit - (currentCount + 1) },
+      { image_url: g.url, quality, feature: body.style_id === "destress" ? "destress" : "glow_up", style_id: body.style_id, remaining_today: dailyLimit - (currentCount + 1) },
       { headers }
     );
   }

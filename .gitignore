@@ -49,6 +49,11 @@ expo-app/web-preview/*.jpg
 expo-app/web-preview/*.jpeg
 expo-app/web-preview/*.webp
 
+# Local verification/test artifacts (not app code)
+web-preview/
+CloudflareWorker/_test_*
+CloudflareWorker/.wrangler/
+
 # Env / secrets
 .env.*
 .dev.vars

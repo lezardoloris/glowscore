@@ -24,6 +24,11 @@ const TOOLS = [
     route: (uri?: string) => router.push({ pathname: '/processing', params: { imageUri: uri, styleId: 'glow_max' } }),
   },
   {
+    id: 'destress', title: 'De-Bloat Scan', subtitle: 'Your cortisol face, de-puffed',
+    img: require('../assets/components/skin.png'),
+    route: (uri?: string) => router.push({ pathname: '/stress-scan', params: { imageUri: uri } }),
+  },
+  {
     id: 'makeup', title: 'Makeup', subtitle: 'Virtual makeup looks',
     img: require('../assets/components/features/makeup.png'),
     route: (uri?: string) => router.push({ pathname: '/virtual-makeup', params: { imageUri: uri } }),

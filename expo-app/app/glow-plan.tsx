@@ -3,9 +3,26 @@ import { router } from 'expo-router';
 import { useEffect, useState } from 'react';
 import { Ionicons } from '@expo/vector-icons';
 import { theme as C } from '../src/theme';
-import { getPlan, toggleTaskToday, isDoneToday, getStreak, getPlanWeek, getWeekFocus, GlowPlan } from '../src/services/glowPlan';
+import {
+  getPlan, toggleTaskToday, isDoneToday, getStreak, getPlanWeek, getWeekFocus,
+  GlowPlan, GlowTask, PlanCategory,
+} from '../src/services/glowPlan';
 import { impactMedium, notificationSuccess } from '../src/services/haptics';
 import { trackScreen, trackEvent } from '../src/services/analytics';
+
+const CAT_ICON: Record<string, keyof typeof Ionicons.glyphMap> = {
+  Skincare: 'water-outline',
+  'Face Fitness': 'fitness-outline',
+  Lifestyle: 'moon-outline',
+  'Style & Color': 'color-palette-outline',
+  Makeup: 'brush-outline',
+  Hair: 'cut-outline',
+  Eyes: 'eye-outline',
+  'Glow Habits': 'sparkles-outline',
+};
+const CAT_ORDER: PlanCategory[] = [
+  'Skincare', 'Face Fitness', 'Eyes', 'Makeup', 'Hair', 'Style & Color', 'Lifestyle', 'Glow Habits',
+];
 
 export default function GlowPlanScreen() {
   const [plan, setPlan] = useState<GlowPlan | null>(null);
@@ -47,42 +64,85 @@ export default function GlowPlanScreen() {
   }
 
   const doneToday = plan.tasks.filter(isDoneToday).length;
+  const total = plan.tasks.length;
+  const pct = total ? Math.round((doneToday / total) * 100) : 0;
+  const week = getPlanWeek(plan);
+
+  // Group tasks by category, preserving a sensible category order
+  const groups: { cat: PlanCategory; tasks: GlowTask[] }[] = [];
+  for (const cat of CAT_ORDER) {
+    const tasks = plan.tasks.filter((t) => (t.category || 'Glow Habits') === cat);
+    if (tasks.length) groups.push({ cat, tasks });
+  }
+  // Any uncategorized fallthrough
+  const known = new Set(groups.flatMap((g) => g.tasks.map((t) => t.id)));
+  const rest = plan.tasks.filter((t) => !known.has(t.id));
+  if (rest.length) groups.push({ cat: 'Glow Habits', tasks: rest });
 
   return (
-    <ScrollView style={styles.container} contentContainerStyle={styles.content}>
+    <ScrollView style={styles.container} contentContainerStyle={styles.content} showsVerticalScrollIndicator={false}>
       <Pressable style={styles.back} onPress={() => router.back()} hitSlop={8}>
         <Ionicons name="chevron-back" size={26} color={C.text} />
       </Pressable>
 
-      <Text style={styles.title}>Your Glow-Up Plan</Text>
-      <View style={styles.weekChip}>
-        <Text style={styles.weekText}>Week {getPlanWeek(plan)} of 12 · Focus: {getWeekFocus(getPlanWeek(plan))}</Text>
-      </View>
+      <Text style={styles.eyebrow}>YOUR GLOW-UP PLAN</Text>
+      <Text style={styles.title}>{plan.personaLabel || 'Your Glow-Up'}</Text>
+      {plan.intro ? <Text style={styles.intro}>{plan.intro}</Text> : null}
 
-      <View style={styles.streakCard}>
-        <View style={{ flexDirection: 'row', alignItems: 'center', gap: 5 }}>
-          <Ionicons name="flame" size={26} color={C.pink} />
-          <Text style={styles.streakNum}>{streak}</Text>
+      <View style={styles.chipsRow}>
+        {typeof plan.score === 'number' && (
+          <View style={styles.chip}>
+            <Ionicons name="analytics-outline" size={13} color={C.pink} />
+            <Text style={styles.chipText}>GlowScore {plan.score}</Text>
+          </View>
+        )}
+        <View style={styles.chip}>
+          <Ionicons name="calendar-outline" size={13} color={C.pink} />
+          <Text style={styles.chipText}>Week {week}/12 · {getWeekFocus(week)}</Text>
         </View>
-        <Text style={styles.streakLabel}>day streak</Text>
       </View>
 
-      <Text style={styles.progress}>{doneToday}/{plan.tasks.length} done today</Text>
+      {/* Progress + streak */}
+      <View style={styles.statsCard}>
+        <View style={styles.statBlock}>
+          <Text style={styles.statNum}>{doneToday}<Text style={styles.statDen}>/{total}</Text></Text>
+          <Text style={styles.statLabel}>done today</Text>
+        </View>
+        <View style={styles.divider} />
+        <View style={styles.statBlock}>
+          <View style={styles.streakRow}>
+            <Ionicons name="flame" size={22} color={C.pink} />
+            <Text style={styles.statNum}>{streak}</Text>
+          </View>
+          <Text style={styles.statLabel}>day streak</Text>
+        </View>
+      </View>
+      <View style={styles.progressTrack}>
+        <View style={[styles.progressFill, { width: `${pct}%` }]} />
+      </View>
 
-      {plan.tasks.map((t) => {
-        const done = isDoneToday(t);
-        return (
-          <Pressable key={t.id} style={[styles.task, done && styles.taskDone]} onPress={() => toggle(t.id)}>
-            <View style={[styles.checkBox, done && styles.checkDone]}>
-              {done ? <Ionicons name="checkmark" size={16} color="#fff" /> : null}
-            </View>
-            <Text style={[styles.taskText, done && styles.taskTextDone]}>{t.text}</Text>
-          </Pressable>
-        );
-      })}
+      {groups.map((g) => (
+        <View key={g.cat} style={styles.group}>
+          <View style={styles.groupHead}>
+            <Ionicons name={CAT_ICON[g.cat] || 'sparkles-outline'} size={16} color={C.pink} />
+            <Text style={styles.groupTitle}>{g.cat}</Text>
+          </View>
+          {g.tasks.map((t) => {
+            const done = isDoneToday(t);
+            return (
+              <Pressable key={t.id} style={[styles.task, done && styles.taskDone]} onPress={() => toggle(t.id)}>
+                <View style={[styles.checkBox, done && styles.checkDone]}>
+                  {done ? <Ionicons name="checkmark" size={15} color="#fff" /> : null}
+                </View>
+                <Text style={[styles.taskText, done && styles.taskTextDone]}>{t.text}</Text>
+              </Pressable>
+            );
+          })}
+        </View>
+      ))}
 
       <Text style={styles.hint}>
-        Complete a task each day to keep your streak. Re-scan weekly to watch your GlowScore climb.
+        Check off a task each day to keep your streak. Re-scan weekly to watch your GlowScore climb.
       </Text>
     </ScrollView>
   );
@@ -90,28 +150,48 @@ export default function GlowPlanScreen() {
 
 const styles = StyleSheet.create({
   container: { flex: 1, backgroundColor: C.bg },
-  content: { paddingTop: 56, paddingHorizontal: 20, paddingBottom: 60 },
+  content: { paddingTop: 56, paddingHorizontal: 20, paddingBottom: 64 },
   center: { flex: 1, backgroundColor: C.bg, alignItems: 'center', justifyContent: 'center', padding: 24 },
   empty: { color: C.textSoft, fontSize: 16, marginBottom: 18 },
   cta: { backgroundColor: C.pink, borderRadius: 24, paddingVertical: 14, paddingHorizontal: 26 },
   ctaText: { color: '#fff', fontSize: 15, fontWeight: '800' },
 
-  back: { alignSelf: 'flex-start', marginBottom: 6 },
-  title: { color: C.text, fontSize: 26, fontWeight: '900', marginBottom: 16 },
+  back: { alignSelf: 'flex-start', marginBottom: 8 },
+  eyebrow: { color: C.pink, fontSize: 11.5, fontWeight: '900', letterSpacing: 1.4 },
+  title: { color: C.text, fontSize: 28, fontWeight: '900', marginTop: 4 },
+  intro: { color: C.textSoft, fontSize: 14, lineHeight: 20, marginTop: 8 },
 
-  weekChip: { alignSelf: 'flex-start', backgroundColor: C.pinkSoft, borderRadius: 12, paddingHorizontal: 12, paddingVertical: 6, marginTop: -8, marginBottom: 14 },
-  weekText: { fontSize: 12.5, fontWeight: '800', color: C.pink },
-  streakCard: { alignSelf: 'center', alignItems: 'center', backgroundColor: C.card, borderRadius: 18, paddingVertical: 16, paddingHorizontal: 40, marginBottom: 8 },
-  streakNum: { color: C.text, fontSize: 34, fontWeight: '900' },
-  streakLabel: { color: C.textSoft, fontSize: 13, marginTop: 2 },
-  progress: { color: C.textSoft, fontSize: 13, textAlign: 'center', marginBottom: 18, fontWeight: '600' },
+  chipsRow: { flexDirection: 'row', flexWrap: 'wrap', gap: 8, marginTop: 14 },
+  chip: {
+    flexDirection: 'row', alignItems: 'center', gap: 5, backgroundColor: C.pinkSoft,
+    borderRadius: 12, paddingHorizontal: 11, paddingVertical: 6,
+  },
+  chipText: { fontSize: 12, fontWeight: '800', color: C.pink },
 
-  task: { flexDirection: 'row', alignItems: 'center', backgroundColor: C.card, borderRadius: 16, padding: 16, marginBottom: 10 },
+  statsCard: {
+    flexDirection: 'row', alignItems: 'center', justifyContent: 'space-around',
+    backgroundColor: C.card, borderRadius: 20, paddingVertical: 18, marginTop: 16, marginBottom: 10,
+  },
+  statBlock: { alignItems: 'center', flex: 1 },
+  divider: { width: 1, height: 36, backgroundColor: C.border },
+  statNum: { color: C.text, fontSize: 30, fontWeight: '900' },
+  statDen: { color: C.textSoft, fontSize: 16, fontWeight: '800' },
+  statLabel: { color: C.textSoft, fontSize: 12.5, marginTop: 2 },
+  streakRow: { flexDirection: 'row', alignItems: 'center', gap: 4 },
+
+  progressTrack: { height: 8, backgroundColor: C.track, borderRadius: 4, overflow: 'hidden', marginBottom: 22 },
+  progressFill: { height: '100%', backgroundColor: C.pink, borderRadius: 4 },
+
+  group: { marginBottom: 18 },
+  groupHead: { flexDirection: 'row', alignItems: 'center', gap: 7, marginBottom: 9, marginLeft: 2 },
+  groupTitle: { color: C.text, fontSize: 14, fontWeight: '900', letterSpacing: 0.2 },
+
+  task: { flexDirection: 'row', alignItems: 'center', backgroundColor: C.card, borderRadius: 15, padding: 15, marginBottom: 9 },
   taskDone: { backgroundColor: '#FDF4F7' },
-  checkBox: { width: 26, height: 26, borderRadius: 13, borderWidth: 2, borderColor: C.border, alignItems: 'center', justifyContent: 'center', marginRight: 14 },
+  checkBox: { width: 25, height: 25, borderRadius: 13, borderWidth: 2, borderColor: C.border, alignItems: 'center', justifyContent: 'center', marginRight: 13 },
   checkDone: { backgroundColor: C.pink, borderColor: C.pink },
-  taskText: { color: C.text, fontSize: 15, flex: 1, lineHeight: 20, fontWeight: '500' },
+  taskText: { color: C.text, fontSize: 14.5, flex: 1, lineHeight: 20, fontWeight: '500' },
   taskTextDone: { color: C.textSoft, textDecorationLine: 'line-through' },
 
-  hint: { color: C.textSoft, fontSize: 12, textAlign: 'center', marginTop: 16, lineHeight: 18 },
+  hint: { color: C.textSoft, fontSize: 12, textAlign: 'center', marginTop: 8, lineHeight: 18 },
 });

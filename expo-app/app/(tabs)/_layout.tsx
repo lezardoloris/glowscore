@@ -12,8 +12,8 @@ export default function TabsLayout() {
           backgroundColor: theme.card,
           borderTopColor: theme.border,
           borderTopWidth: 1,
-          height: Platform.OS === 'ios' ? 88 : 64,
-          paddingBottom: Platform.OS === 'ios' ? 28 : 8,
+          height: Platform.OS === 'ios' ? 88 : Platform.OS === 'web' ? 78 : 70,
+          paddingBottom: Platform.OS === 'ios' ? 28 : Platform.OS === 'web' ? 16 : 12,
           paddingTop: 8,
         },
         tabBarActiveTintColor: theme.pink,
@@ -21,7 +21,9 @@ export default function TabsLayout() {
         tabBarLabelStyle: {
           fontSize: 11,
           fontWeight: '600',
+          marginTop: 2,
         },
+        tabBarIconStyle: { marginBottom: 0 },
       }}
     >
       <Tabs.Screen

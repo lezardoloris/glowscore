@@ -1,4 +1,4 @@
-import { View, Text, Image, Pressable, StyleSheet } from 'react-native';
+import { View, Text, Pressable, StyleSheet } from 'react-native';
 import { useLocalSearchParams, router } from 'expo-router';
 import { useEffect, useState, useRef, useCallback } from 'react';
 import { theme as C } from '../src/theme';
@@ -139,10 +139,7 @@ export default function ProcessingScreen() {
 
   return (
     <View style={styles.container}>
-      {imageUri ? (
-        <Image source={{ uri: imageUri }} style={styles.photo} />
-      ) : null}
-      <ProcessingAnimation progress={progress} statusText={statusText} styleName={style.name} />
+      <ProcessingAnimation progress={progress} statusText={statusText} styleName={style.name} imageUri={imageUri} />
     </View>
   );
 }

@@ -5,10 +5,14 @@ import { useState, useEffect, useCallback } from 'react';
 import { useFocusEffect } from 'expo-router';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import { Ionicons } from '@expo/vector-icons';
+import { LinearGradient } from 'expo-linear-gradient';
+import { AnimatedCircularProgress } from 'react-native-circular-progress';
 import { theme as C } from '../../src/theme';
 import { trackScreen } from '../../src/services/analytics';
 import { getLastScan, ScanRecord } from '../../src/services/history';
 import { getStreak, getPlan, GlowPlan } from '../../src/services/glowPlan';
+
+const LOGO = require('../../assets/logo/logo_wordmark_t.png');
 
 export default function HomeScreen() {
   const [loading, setLoading] = useState(true);
@@ -34,7 +38,6 @@ export default function HomeScreen() {
     }
   }, []);
 
-  // Refresh the dashboard loop every time the tab gains focus (after a scan)
   useFocusEffect(
     useCallback(() => {
       let active = true;
@@ -71,7 +74,6 @@ export default function HomeScreen() {
     return <View style={styles.center}><ActivityIndicator size="large" color={C.pink} /></View>;
   }
 
-  // Camera permission denied overlay
   if (cameraPermDenied) {
     return (
       <View style={styles.center}>
@@ -79,7 +81,7 @@ export default function HomeScreen() {
           <View style={styles.iconCircle}><Ionicons name="camera" size={40} color={C.pink} /></View>
           <Text style={styles.permTitle}>Camera Access Needed</Text>
           <Text style={styles.permSub}>We need camera access to scan your face. Your photo is processed securely and never stored.</Text>
-          <Pressable style={styles.cta} onPress={() => Linking.openSettings()}>
+          <Pressable style={styles.ctaSolid} onPress={() => Linking.openSettings()}>
             <Text style={styles.ctaText}>Open Settings</Text>
           </Pressable>
           <Pressable onPress={() => { setCameraPermDenied(false); pickImage(); }}>
@@ -92,28 +94,38 @@ export default function HomeScreen() {
 
   const tasksToday = plan ? plan.tasks.filter((t) => t.completedDates.includes(new Date().toISOString().split('T')[0])).length : 0;
   const tasksTotal = plan ? plan.tasks.length : 0;
+  const topPct = lastScan && typeof lastScan.percentile === 'number' ? Math.max(1, 100 - lastScan.percentile) : null;
 
   return (
     <View style={styles.container}>
+      {/* Premium brand header */}
       <View style={styles.header}>
-        <Text style={styles.brand}>GlowScore</Text>
+        <Image source={LOGO} style={styles.logo} resizeMode="contain" />
         <Text style={styles.tagline}>{lastScan ? 'Track your glow-up' : 'Reveal your facial harmony'}</Text>
       </View>
 
       {lastScan ? (
         <>
-          {/* Last GlowScore + streak — the retention loop made visible */}
           <View style={styles.scoreCard}>
-            <View style={styles.scoreRing}>
-              <Text style={styles.scoreNum}>{lastScan.overall}</Text>
-              <Text style={styles.scoreOut}>/100</Text>
-            </View>
+            <AnimatedCircularProgress
+              size={96} width={8} fill={lastScan.overall}
+              tintColor={C.pink} backgroundColor={C.track} rotation={0} lineCap="round" duration={900}
+            >
+              {() => (
+                <View style={styles.ringInner}>
+                  <Text style={styles.scoreNum}>{lastScan.overall}</Text>
+                  <Text style={styles.scoreOut}>/100</Text>
+                </View>
+              )}
+            </AnimatedCircularProgress>
             <View style={{ flex: 1 }}>
               <Text style={styles.scoreLabel}>Your Facial Harmony</Text>
-              <Text style={styles.scoreSub}>Last scan {timeAgo(lastScan.createdAt)}</Text>
+              <Text style={styles.scoreSub}>
+                {topPct ? `Top ${topPct}% · ` : ''}Last scan {timeAgo(lastScan.createdAt)}
+              </Text>
               {streak > 0 && (
                 <View style={styles.streakChip}>
-                  <Ionicons name="flame" size={14} color="#fff" />
+                  <Ionicons name="flame" size={13} color="#fff" />
                   <Text style={styles.streakText}>{streak}-day streak</Text>
                 </View>
               )}
@@ -122,17 +134,28 @@ export default function HomeScreen() {
 
           {tasksTotal > 0 && (
             <Pressable style={styles.planRow} onPress={() => router.push('/glow-plan')}>
-              <Ionicons name="checkmark-done-circle-outline" size={20} color={C.pink} />
-              <Text style={styles.planText}>Today's glow-up plan</Text>
+              <View style={styles.planIcon}><Ionicons name="sparkles" size={16} color={C.pink} /></View>
+              <View style={{ flex: 1 }}>
+                <Text style={styles.planText}>Today's glow-up plan</Text>
+                <View style={styles.planTrack}>
+                  <View style={[styles.planFill, { width: `${tasksTotal ? (tasksToday / tasksTotal) * 100 : 0}%` }]} />
+                </View>
+              </View>
               <Text style={styles.planCount}>{tasksToday}/{tasksTotal}</Text>
               <Ionicons name="chevron-forward" size={18} color={C.textSoft} />
             </Pressable>
           )}
 
-          <Pressable style={styles.cta} onPress={takePhoto}>
-            <Ionicons name="scan" size={20} color="#fff" />
-            <Text style={styles.ctaText}>Re-scan to see your progress</Text>
+          <Pressable style={styles.planRow} onPress={() => router.push('/stress-scan')}>
+            <View style={styles.planIcon}><Ionicons name="water" size={16} color={C.pink} /></View>
+            <View style={{ flex: 1 }}>
+              <Text style={styles.planText}>Check your cortisol face</Text>
+              <Text style={styles.scoreSub}>De-puff with a 2-min scan</Text>
+            </View>
+            <Ionicons name="chevron-forward" size={18} color={C.textSoft} />
           </Pressable>
+
+          <GradientCta icon="scan" label="Re-scan to see your progress" onPress={takePhoto} />
           <Pressable style={styles.secondary} onPress={pickImage}>
             <Text style={styles.secondaryText}>Choose a photo</Text>
           </Pressable>
@@ -144,16 +167,13 @@ export default function HomeScreen() {
         </>
       ) : (
         <>
-          {/* First-time hero */}
           <View style={styles.heroCard}>
             <Image source={require('../../assets/components/symmetry.png')} style={styles.heroImg} />
+            <LinearGradient colors={['transparent', 'rgba(45,35,48,0.35)']} style={styles.heroFade} />
           </View>
           <Text style={styles.heroTitle}>Scan your face,{'\n'}reveal your potential</Text>
-          <Text style={styles.heroSub}>A clinical-grade analysis of your facial harmony in seconds.</Text>
-          <Pressable style={styles.cta} onPress={takePhoto}>
-            <Ionicons name="camera" size={20} color="#fff" />
-            <Text style={styles.ctaText}>Take a Selfie</Text>
-          </Pressable>
+          <Text style={styles.heroSub}>An AI-powered read of your facial harmony in seconds.</Text>
+          <GradientCta icon="camera" label="Take a Selfie" onPress={takePhoto} />
           <Pressable style={styles.secondary} onPress={pickImage}>
             <Text style={styles.secondaryText}>Choose a photo</Text>
           </Pressable>
@@ -162,6 +182,17 @@ export default function HomeScreen() {
 
       <Text style={styles.disclaimer}>AI-generated artistic visualization for entertainment only.</Text>
     </View>
+  );
+}
+
+function GradientCta({ icon, label, onPress }: { icon: keyof typeof Ionicons.glyphMap; label: string; onPress: () => void }) {
+  return (
+    <Pressable onPress={onPress} style={styles.ctaWrap}>
+      <LinearGradient colors={['#E0537A', '#EC7FA0']} start={{ x: 0, y: 0 }} end={{ x: 1, y: 1 }} style={styles.cta}>
+        <Ionicons name={icon} size={20} color="#fff" />
+        <Text style={styles.ctaText}>{label}</Text>
+      </LinearGradient>
+    </Pressable>
   );
 }
 
@@ -174,47 +205,57 @@ function timeAgo(iso: string): string {
   return `${Math.floor(d / 7)}w ago`;
 }
 
+const shadow = Platform.OS === 'web'
+  ? ({ boxShadow: '0 8px 24px rgba(176,98,128,0.18)' } as any)
+  : { shadowColor: '#B06280', shadowOpacity: 0.18, shadowRadius: 16, shadowOffset: { width: 0, height: 8 }, elevation: 3 };
+
 const styles = StyleSheet.create({
-  container: { flex: 1, backgroundColor: C.bg, padding: 22, paddingTop: Platform.OS === 'ios' ? 70 : 48 },
+  container: { flex: 1, backgroundColor: C.bg, padding: 22, paddingTop: Platform.OS === 'ios' ? 68 : 46 },
   center: { flex: 1, backgroundColor: C.bg, justifyContent: 'center', alignItems: 'center', padding: 24 },
+
   header: { marginBottom: 22 },
-  brand: { fontSize: 30, fontWeight: '900', color: C.text },
-  tagline: { fontSize: 15, color: C.textSoft, marginTop: 2 },
+  logo: { width: 150, height: 42, marginLeft: -4 },
+  tagline: { fontSize: 15, color: C.textSoft, marginTop: 4 },
 
   scoreCard: {
     flexDirection: 'row', alignItems: 'center', gap: 16, backgroundColor: C.card,
-    borderRadius: 22, padding: 18, marginBottom: 12,
+    borderRadius: 24, padding: 18, marginBottom: 12, ...shadow,
   },
-  scoreRing: {
-    width: 92, height: 92, borderRadius: 46, borderWidth: 5, borderColor: C.pink,
-    alignItems: 'center', justifyContent: 'center',
-  },
-  scoreNum: { fontSize: 30, fontWeight: '900', color: C.text },
-  scoreOut: { fontSize: 12, color: C.textSoft, marginTop: -4 },
+  ringInner: { alignItems: 'center', justifyContent: 'center' },
+  scoreNum: { fontSize: 28, fontWeight: '900', color: C.text },
+  scoreOut: { fontSize: 11, color: C.textSoft, marginTop: -4 },
   scoreLabel: { fontSize: 17, fontWeight: '800', color: C.text },
   scoreSub: { fontSize: 13, color: C.textSoft, marginTop: 2 },
   streakChip: {
     flexDirection: 'row', alignItems: 'center', gap: 5, backgroundColor: C.pink,
-    alignSelf: 'flex-start', borderRadius: 12, paddingHorizontal: 10, paddingVertical: 4, marginTop: 8,
+    alignSelf: 'flex-start', borderRadius: 12, paddingHorizontal: 10, paddingVertical: 4, marginTop: 9,
   },
   streakText: { color: '#fff', fontSize: 12, fontWeight: '800' },
 
   planRow: {
-    flexDirection: 'row', alignItems: 'center', gap: 10, backgroundColor: C.card,
-    borderRadius: 16, padding: 16, marginBottom: 18,
+    flexDirection: 'row', alignItems: 'center', gap: 12, backgroundColor: C.card,
+    borderRadius: 18, padding: 15, marginBottom: 18, ...shadow,
   },
-  planText: { flex: 1, fontSize: 15, fontWeight: '700', color: C.text },
-  planCount: { fontSize: 15, fontWeight: '900', color: C.pink },
+  planIcon: { width: 34, height: 34, borderRadius: 17, backgroundColor: C.pinkSoft, alignItems: 'center', justifyContent: 'center' },
+  planText: { fontSize: 14.5, fontWeight: '800', color: C.text },
+  planTrack: { height: 5, backgroundColor: C.track, borderRadius: 3, overflow: 'hidden', marginTop: 6 },
+  planFill: { height: '100%', backgroundColor: C.pink, borderRadius: 3 },
+  planCount: { fontSize: 14, fontWeight: '900', color: C.pink },
 
-  heroCard: { borderRadius: 24, overflow: 'hidden', marginBottom: 20, backgroundColor: C.card },
-  heroImg: { width: '100%', height: 280 },
+  heroCard: { borderRadius: 26, overflow: 'hidden', marginBottom: 20, backgroundColor: C.card, ...shadow },
+  heroImg: { width: '100%', height: 290 },
+  heroFade: { position: 'absolute', left: 0, right: 0, bottom: 0, height: 90 },
   heroTitle: { fontSize: 28, fontWeight: '900', color: C.text, textAlign: 'center', lineHeight: 34 },
   heroSub: { fontSize: 15, color: C.textSoft, textAlign: 'center', marginTop: 8, marginBottom: 26, paddingHorizontal: 10, lineHeight: 21 },
 
+  ctaWrap: { borderRadius: 30, ...(Platform.OS === 'web' ? ({ boxShadow: '0 6px 18px rgba(224,83,122,0.4)' } as any) : { shadowColor: C.pink, shadowOpacity: 0.4, shadowRadius: 14, shadowOffset: { width: 0, height: 5 }, elevation: 5 }) },
   cta: {
     flexDirection: 'row', alignItems: 'center', justifyContent: 'center', gap: 10,
-    backgroundColor: C.pink, borderRadius: 30, paddingVertical: 18,
-    shadowColor: '#D98CA4', shadowOpacity: 0.45, shadowRadius: 12, shadowOffset: { width: 0, height: 4 }, elevation: 4,
+    borderRadius: 30, paddingVertical: 18,
+  },
+  ctaSolid: {
+    flexDirection: 'row', alignItems: 'center', justifyContent: 'center', gap: 10,
+    backgroundColor: C.pink, borderRadius: 30, paddingVertical: 16, paddingHorizontal: 28, marginTop: 4,
   },
   ctaText: { color: '#fff', fontSize: 17, fontWeight: '900' },
   secondary: { alignItems: 'center', paddingVertical: 16, marginTop: 4 },
