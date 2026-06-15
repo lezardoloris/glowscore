@@ -232,17 +232,38 @@
   },
   {
     "id": "reco_034",
-    "if": { "concern": "peau_relachee_post_weight_loss", "persona": "us_plus_size", "experience": "intermediate" },
+    "if": { "concern": "peau_relachee_post_weight_loss", "persona": "us_plus_size", "experience": "beginner" },
     "then": { "focus_task": "post_change_peptides", "ingredient": "peptides and retinal", "product_category": "serum", "routine_slot": "pm" },
-    "because": "Après perte de poids rapide, peptides et rétinal soutiennent fermeté et densité cutanée.",
+    "because": "Quand la peau change vite, peptides et rétinal soutiennent son confort et son aspect.",
     "sources": ["https://www.glossy.co/beauty/as-ozempic-gains-popularity-a-skin-care-category-catering-to-glp-1-users-is-inevitable/"]
   },
   {
     "id": "reco_035",
     "if": { "concern": "vergetures_inconfort", "persona": "us_plus_size", "experience": "beginner" },
     "then": { "focus_task": "body_hydration_layer", "ingredient": "cocoa butter or bio-oil", "product_category": "body_oil", "routine_slot": "pm" },
-    "because": "L'hydratation corps réduit démangeaisons et inconfort des vergetures en formation.",
+    "because": "Layered body hydration reduces itch and supports stretch-mark comfort.",
     "sources": ["https://www.teenvogue.com/story/how-to-care-for-a-fat-body"]
+  },
+  {
+    "id": "reco_035b",
+    "if": { "concern": "hyperpigmentation_friction", "persona": "us_plus_size", "experience": "beginner" },
+    "then": { "focus_task": "body_hyperpigmentation", "ingredient": "azelaic acid", "product_category": "treatment", "routine_slot": "pm" },
+    "because": "Azelaic acid gently fades friction-related darkening on body zones over 8-12 weeks.",
+    "sources": ["https://www.ncbi.nlm.nih.gov/sites/books/NBK531489/"]
+  },
+  {
+    "id": "reco_035c",
+    "if": { "concern": "body_hydration", "persona": "us_plus_size", "experience": "beginner" },
+    "then": { "focus_task": "body_hydration_layer", "ingredient": "ceramides body", "product_category": "body_care", "routine_slot": "pm" },
+    "because": "Rich barrier creams on dry body zones improve comfort and suppleness.",
+    "sources": ["https://www.teenvogue.com/story/how-to-care-for-a-fat-body"]
+  },
+  {
+    "id": "reco_048",
+    "if": { "concern": "hyperpigmentation_friction", "persona": "us_plus_size", "experience": "beginner" },
+    "then": { "focus_task": "body_even_tone", "ingredient": "azelaic or niacinamide", "product_category": "treatment", "routine_slot": "pm" },
+    "because": "Acide azélaïque et niacinamide unifient le teint des zones de frottement en douceur.",
+    "sources": ["https://www.healthline.com/health/intertrigo"]
   },
   {
     "id": "reco_036",

@@ -35,7 +35,7 @@ export const PRODUCTS: GlowProduct[] = [
   { id: 'glowrecipe_plum', brand: 'Glow Recipe', name: 'Plum Plump Hyaluronic Serum', category: 'serum', ingredient: 'hyaluronic', concernTags: ['deshydratation_severe', 'teint_terne'], budgetTier: 'mid', markets: ['us', 'uk'] },
   { id: 'numbuzin_no5', brand: 'Numbuzin', name: 'No.5 Vitamin-Niacinamide Serum', category: 'serum', ingredient: 'pdrn', concernTags: ['barriere_compromise', 'deshydratation_severe'], budgetTier: 'mid', markets: ['us', 'uk', 'fr'] },
   { id: 'medik8_retinal', brand: 'Medik8', name: 'Crystal Retinal', category: 'serum', ingredient: 'retinol', concernTags: ['rides_fines', 'rides_fermete', 'pores_visibles'], budgetTier: 'premium', markets: ['us', 'uk', 'fr'] },
-  { id: 'medik8_liquid_peptides', brand: 'Medik8', name: 'Liquid Peptides', category: 'serum', ingredient: 'peptides', concernTags: ['rides_fermete', 'rides_fines'], budgetTier: 'premium', markets: ['us', 'uk', 'fr'] },
+  { id: 'medik8_liquid_peptides', brand: 'Medik8', name: 'Liquid Peptides', category: 'serum', ingredient: 'peptides', concernTags: ['rides_fermete', 'rides_fines', 'peau_relachee_post_weight_loss'], budgetTier: 'premium', markets: ['us', 'uk', 'fr'] },
   // Treatments / soothing
   { id: 'anua_heartleaf', brand: 'Anua', name: 'Heartleaf 77% Soothing Toner', category: 'treatment', ingredient: 'azelaic', concernTags: ['rougeurs_rosacee', 'pores_obstrues'], budgetTier: 'budget', markets: ['us', 'uk', 'fr'] },
   { id: 'paulaschoice_bha', brand: "Paula's Choice", name: 'Skin Perfecting 2% BHA Liquid', category: 'exfoliant', ingredient: 'aha', concernTags: ['pores_obstrues', 'pores_visibles', 'teint_terne'], budgetTier: 'mid', markets: ['us', 'uk', 'fr'] },
@@ -54,10 +54,15 @@ export const PRODUCTS: GlowProduct[] = [
   // Hair
   { id: 'kerastase_glass', brand: 'Kerastase', name: 'Resistance Glass Hair Serum', category: 'hair', concernTags: ['cheveux_ternes', 'cheveux_plats'], budgetTier: 'premium', markets: ['us', 'uk', 'fr'] },
   { id: 'theordinary_multipeptide_hair', brand: 'The Ordinary', name: 'Multi-Peptide Serum for Hair Density', category: 'hair', concernTags: ['cheveux_plats', 'cheveux_ternes'], budgetTier: 'budget', markets: ['us', 'uk', 'fr'] },
-  // Body care (persona US plus size, market research 2026-06)
-  { id: 'body_glide', brand: 'Body Glide', name: 'Anti-Chafe Balm', category: 'anti_chafe', concernTags: ['chafing_cuisses', 'body_fold'], budgetTier: 'budget', markets: ['us', 'uk'] },
+  // Body care (persona US plus size, market research 2026-06). Cosmetic only: no OTC drug brands (compliance).
+  { id: 'body_glide', brand: 'Body Glide', name: 'Anti-Chafe Balm', category: 'anti_chafe', concernTags: ['chafing_cuisses'], budgetTier: 'budget', markets: ['us', 'uk'] },
+  { id: 'megababe_thigh', brand: 'Megababe', name: 'Thigh Rescue Anti-Chafe Stick', category: 'anti_chafe', concernTags: ['chafing_cuisses'], budgetTier: 'budget', markets: ['us'] },
+  { id: 'gold_bond_friction', brand: 'Gold Bond', name: 'Friction Defense Stick', category: 'anti_chafe', concernTags: ['chafing_cuisses'], budgetTier: 'budget', markets: ['us'] },
+  { id: 'cerave_healing', brand: 'CeraVe', name: 'Healing Ointment', category: 'body', ingredient: 'petrolatum + ceramides', concernTags: ['intertrigo_plis', 'body_hydration', 'secheresse_locale'], budgetTier: 'budget', markets: ['us', 'uk', 'fr'] },
   { id: 'palmers_cocoa', brand: "Palmer's", name: 'Cocoa Butter Formula', category: 'body', concernTags: ['vergetures_inconfort', 'body_hydration'], budgetTier: 'budget', markets: ['us', 'uk', 'fr'] },
-  { id: 'bio_oil', brand: 'Bio-Oil', name: 'Skincare Oil', category: 'body', concernTags: ['vergetures_inconfort', 'secheresse_locale'], budgetTier: 'budget', markets: ['us', 'uk', 'fr'] },
+  { id: 'bio_oil', brand: 'Bio-Oil', name: 'Skincare Oil', category: 'body', concernTags: ['vergetures_inconfort', 'body_hydration'], budgetTier: 'budget', markets: ['us', 'uk', 'fr'] },
+  // No named OTC antifungal drug products (e.g. Zeasorb AF / miconazole) for compliance: keep cosmetic barriers only.
+  { id: 'theordinary_azelaic', brand: 'The Ordinary', name: 'Azelaic Acid Suspension 10%', category: 'treatment', ingredient: 'azelaic', concernTags: ['hyperpigmentation_friction', 'rougeurs_rosacee'], budgetTier: 'budget', markets: ['us', 'uk', 'fr'] },
   { id: 'mario_contour', brand: 'Makeup by Mario', name: 'Soft Sculpt Shaping Stick', category: 'makeup', concernTags: ['double_menton_maquillage', 'visage_gonfle'], budgetTier: 'mid', markets: ['us', 'uk', 'fr'] },
   { id: 'cosrx_snail', brand: 'COSRX', name: 'Advanced Snail 96 Mucin Essence', category: 'serum', ingredient: 'snail mucin', concernTags: ['deshydratation_passagere', 'teint_terne', 'glass_skin'], budgetTier: 'budget', markets: ['us', 'uk', 'fr'] },
   { id: 'medicube_pdrn', brand: 'Medicube', name: 'PDRN Pink Peptide Serum', category: 'serum', ingredient: 'pdrn', concernTags: ['teint_terne', 'texture'], budgetTier: 'mid', markets: ['us'] },

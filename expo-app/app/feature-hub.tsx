@@ -17,6 +17,17 @@ import { impactMedium } from '../src/services/haptics';
  */
 const TOOLS = [
   {
+    id: 'body_care', title: 'Body Glow Care', subtitle: 'Chafing, folds, comfort protocols',
+    img: require('../assets/components/bodycare.png'), // PS-5.3 inclusive imagery (Gemini)
+    noPhoto: true, // content-only hub: open straight away, no selfie needed
+    route: () => router.push('/body-care'),
+  },
+  {
+    id: 'round_makeup', title: 'Round Face Makeup', subtitle: 'Contour & blush guide',
+    img: require('../assets/components/lips.png'),
+    route: (uri?: string) => router.push({ pathname: '/makeup-round-face', params: { imageUri: uri } }),
+  },
+  {
     id: 'glow_up', title: 'Glow Up Styles', subtitle: 'Clear skin, model look & more',
     img: require('../assets/components/options/symmetry_1.png'),
     route: (uri?: string) => router.push({ pathname: '/styles', params: { imageUri: uri } }),
@@ -72,9 +83,9 @@ const TOOLS = [
     route: (uri?: string) => router.push({ pathname: '/age-transform', params: { imageUri: uri } }),
   },
   {
-    id: 'fit', title: 'Fit Version', subtitle: 'Visualize your fit self',
+    id: 'fit', title: 'Posture Glow', subtitle: 'Lighting & angle tips (wellness framing)',
     img: require('../assets/components/jawline.png'),
-    route: (uri?: string) => router.push({ pathname: '/fitness-transform', params: { imageUri: uri } }),
+    route: (uri?: string) => router.push({ pathname: '/relight', params: { imageUri: uri } }),
   },
 ] as const;
 
@@ -94,6 +105,8 @@ export default function FeatureHubScreen() {
   async function openTool(t: typeof TOOLS[number]) {
     impactMedium();
     trackEvent('studio_tool_tapped', { tool: t.id });
+    // Content-only tools (e.g. Body Care) open without a selfie — no upfront friction.
+    if ('noPhoto' in t && t.noPhoto) { t.route(); return; }
     const uri = photo || (await pickPhoto());
     if (!uri) return; // user cancelled the picker
     t.route(uri);

@@ -5,6 +5,7 @@
 import rules from '../data/reco-rules.json';
 import { PRODUCTS, GlowProduct, getAffiliateUrl } from './products';
 import type { QuizProfile } from '../services/quizProfile';
+import { hasAvoidedIngredient } from '../data/bodyCareSafety';
 
 export interface RecoRule {
   id: string;
@@ -52,8 +53,15 @@ const GOAL_TO_CONCERNS: Record<string, string[]> = {
   lips: ['teint_irregulier'],
   hair: ['cheveux_plats', 'cheveux_ternes'],
   color: ['color_analysis_cool', 'color_analysis_warm'],
-  body_glow: ['irritation_plis', 'frottements_cuisse', 'peau_transformation'],
+  // Must match the concern ids used by reco_031-035/048 in reco-rules.json (canonical taxonomy, EPIC PS-0).
+  body_glow: ['chafing_cuisses', 'intertrigo_plis', 'hyperpigmentation_friction', 'double_menton_maquillage', 'peau_relachee_post_weight_loss', 'vergetures_inconfort'],
 };
+
+/** Concern ids that belong to the US plus-size persona, used to auto-gate reco_031-035/048. */
+export const PLUS_SIZE_CONCERNS = new Set<string>([
+  'chafing_cuisses', 'intertrigo_plis', 'hyperpigmentation_friction', 'double_menton_maquillage',
+  'peau_relachee_post_weight_loss', 'vergetures_inconfort',
+]);
 
 /** Derive reco context from onboarding quiz. */
 export function contextFromQuiz(quiz: QuizProfile | null, extras?: Partial<RecoContext>): RecoContext {
@@ -63,21 +71,34 @@ export function contextFromQuiz(quiz: QuizProfile | null, extras?: Partial<RecoC
   if ((quiz?.outcomes || []).includes('event')) concerns.add('visage_gonfle');
   if (quiz?.glowUpType === 'makeup') concerns.add('makeup_no_makeup');
 
+  // US plus-size persona gates reco_031-035; derive it from the body_glow goal or any plus-size concern.
+  const isPlusSize = (quiz?.goals || []).includes('body_glow') ||
+    [...concerns].some((c) => PLUS_SIZE_CONCERNS.has(c));
+
+  const experience = extras?.experience ||
+    ((quiz?.goals || []).includes('body_glow') ? 'intermediate' : 'beginner');
+
   return {
     concerns: [...concerns],
     skinType: extras?.skinType || 'tous',
-    experience: extras?.experience || 'beginner',
-    persona: extras?.persona || 'all',
+    experience,
+    persona: extras?.persona || (isPlusSize ? 'us_plus_size' : 'all'),
     budgetTier: extras?.budgetTier || 'mid',
     market: extras?.market || 'us',
   };
 }
 
+const EXPERIENCE_RANK: Record<string, number> = { beginner: 0, intermediate: 1 };
+
 function matchesRule(rule: RecoRule, ctx: RecoContext): boolean {
   const cond = rule.if;
   if (cond.concern && !ctx.concerns.includes(cond.concern)) return false;
-  if (cond.skin_type && cond.skin_type !== 'tous' && ctx.skinType && cond.skin_type !== ctx.skinType) return false;
-  if (cond.experience && ctx.experience && cond.experience !== ctx.experience) return false;
+  // skin_type: 'tous' (or an unknown ctx skin type) is a wildcard on either side, so generic rules
+  // are not dropped when the user's skin type is unknown (fixes 5 of 9 face concerns).
+  if (cond.skin_type && cond.skin_type !== 'tous' && ctx.skinType && ctx.skinType !== 'tous' && cond.skin_type !== ctx.skinType) return false;
+  // experience is a floor, not an exact match: an intermediate context still gets beginner rules
+  // (critical now that body_glow users default to 'intermediate' while reco_031-035/048 are 'beginner').
+  if (cond.experience && ctx.experience && (EXPERIENCE_RANK[cond.experience] ?? 0) > (EXPERIENCE_RANK[ctx.experience] ?? 0)) return false;
   if (cond.persona && cond.persona !== ctx.persona && ctx.persona !== 'all') return false;
   if (cond.persona === 'us_plus_size' && ctx.persona !== 'us_plus_size') return false;
   return true;
@@ -108,6 +129,7 @@ function pickProduct(rule: RecoRule, ctx: RecoContext): GlowProduct | null {
     hair_oil: 'hair',
     anti_chafe: 'anti_chafe',
     body_care: 'body',
+    body_oil: 'body',
     face_spray: 'treatment',
     sheet_mask: 'mask',
     toner: 'treatment',
@@ -120,7 +142,8 @@ function pickProduct(rule: RecoRule, ctx: RecoContext): GlowProduct | null {
   const category = categoryMap[rawCategory];
   if (!category) return null;
 
-  let pool = PRODUCTS.filter((p) => p.category === category);
+  // Hard compliance filter: never recommend an actor that is unsafe on rubbed/eroded skin (GUARD-1).
+  let pool = PRODUCTS.filter((p) => p.category === category && !hasAvoidedIngredient(p.ingredient));
 
   if (rule.if.concern) {
     const tagged = pool.filter((p) => p.concernTags.includes(rule.if.concern!));
@@ -142,7 +165,6 @@ function pickProduct(rule: RecoRule, ctx: RecoContext): GlowProduct | null {
   return pool[0] || null;
 }
 
-/** Return top N product recommendations for a user context. */
 export function recommendProducts(ctx: RecoContext, limit = 5): ProductRecommendation[] {
   const typedRules = rules as RecoRule[];
   const out: ProductRecommendation[] = [];
@@ -150,8 +172,10 @@ export function recommendProducts(ctx: RecoContext, limit = 5): ProductRecommend
 
   for (const rule of typedRules) {
     if (!matchesRule(rule, ctx)) continue;
-    const product = pickProduct(rule, ctx);
-    if (product && seenProducts.has(product.id)) continue;
+    let product = pickProduct(rule, ctx);
+    // If the picked product was already recommended by an earlier rule, keep the rule's
+    // distinct ingredient/advice with no duplicate product card (do not drop the rule entirely).
+    if (product && seenProducts.has(product.id)) product = null;
     if (product) seenProducts.add(product.id);
 
     out.push({
@@ -169,26 +193,7 @@ export function recommendProducts(ctx: RecoContext, limit = 5): ProductRecommend
   return out;
 }
 
-/** Map concern string from concerns picker to reco context. */
-export const CONCERN_TO_RECO: Record<string, string> = {
-  breakouts: 'pores_obstrues',
-  dark_circles: 'cernes_bleus',
-  puffiness: 'visage_gonfle',
-  asymmetry: 'teint_terne',
-  redness: 'rougeurs_rosacee',
-  fine_lines: 'rides_fines',
-  texture: 'pores_visibles',
-  dryness: 'deshydratation_severe',
-  sagging: 'rides_fermete',
-};
-
-export function contextFromConcerns(concernIds: string[], extras?: Partial<RecoContext>): RecoContext {
-  return {
-    concerns: concernIds.map((id) => CONCERN_TO_RECO[id] || id).filter(Boolean),
-    skinType: extras?.skinType || 'tous',
-    experience: extras?.experience || 'beginner',
-    persona: extras?.persona || 'all',
-    budgetTier: extras?.budgetTier || 'mid',
-    market: extras?.market || 'us',
-  };
+/** Convenience: recos from onboarding quiz (used by screens). */
+export function recommendForQuiz(quiz: QuizProfile | null, limit = 5): ProductRecommendation[] {
+  return recommendProducts(contextFromQuiz(quiz), limit);
 }

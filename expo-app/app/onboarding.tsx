@@ -20,7 +20,7 @@ import {
 import { saveQuizProfile } from '../src/services/quizProfile';
 import { setAiConsent } from '../src/services/aiConsent';
 import { impactMedium } from '../src/services/haptics';
-import { scheduleActivationSequence, scheduleRoutineMicroPushes } from '../src/services/notifications';
+import { requestPermission, scheduleActivationSequence, scheduleRoutineMicroPushes } from '../src/services/notifications';
 
 // ---------------------------------------------------------------------------
 // Aura palette (light pink clinical-feminine theme)
@@ -175,8 +175,14 @@ export default function OnboardingScreen() {
     });
     await AsyncStorage.setItem('hasCompletedOnboarding', 'true');
     trackOnboardingCompleted();
-    scheduleActivationSequence().catch(() => {});
-    scheduleRoutineMicroPushes().catch(() => {});
+    // Ask for notification permission once, then schedule the behaviour-triggered retention nudges.
+    requestPermission()
+      .then((granted) => {
+        if (!granted) return;
+        scheduleActivationSequence().catch(() => {});
+        scheduleRoutineMicroPushes().catch(() => {});
+      })
+      .catch(() => {});
     router.replace('/(tabs)');
   }
 

@@ -23,6 +23,8 @@ export const ROUTINE_TITLES: RoutineCopyLine[] = [
   { id: 'barrier_sos', titleEn: 'S.O.S. Barrier Repair', titleFr: 'Protocole S.O.S. barrière cutanée', theme: 'barrier', microTipEn: 'Peeling? Ceramides, skip grain scrubs.', microTipFr: 'Desquamation ? Céramides, pas de gommage grains.' },
   { id: 'latte_makeup', titleEn: 'Latte Makeup Warm Glow', titleFr: 'Éclat Latte Makeup', theme: 'makeup' },
   { id: 'body_glow', titleEn: 'Body Glow Care', titleFr: 'Glow corps : plis et confort', theme: 'body', microTipEn: 'Chafing? Barrier balm before you dress.', microTipFr: 'Frottements ? Baume barrière avant de t\'habiller.' },
+  { id: 'round_face_makeup', titleEn: 'Makeup for Round Face', titleFr: 'Maquillage visage rond', theme: 'makeup', microTipEn: 'Contour in a V, blend upward.', microTipFr: 'Contour en V, estomper vers le haut.' },
+  { id: 'skin_through_change', titleEn: 'Support Skin Through Change', titleFr: 'Soutenir la peau en évolution', theme: 'body', microTipEn: 'Peptides + SPF daily for firmness comfort.', microTipFr: 'Peptides + SPF pour le confort fermeté.' },
 ];
 
 export const OBJECTION_HANDLERS: { id: string; fearEn: string; responseEn: string; fearFr: string; responseFr: string }[] = [
@@ -90,6 +92,7 @@ const PERSONA_TO_ROUTINE: Record<string, string> = {
   cortisol: 'debloat_7d',
   skin: 'glass_minimal',
   bodycare: 'body_glow',
+  post_change: 'skin_through_change',
   color: 'color_12',
   hair: 'hair_volume',
   makeup: 'no_makeup',

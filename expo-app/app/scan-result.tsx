@@ -28,6 +28,8 @@ import SoftConfetti from '../src/components/SoftConfetti';
 import { theme as C, radii } from '../src/theme';
 import { fonts } from '../src/typography';
 import { shadow } from '../src/shadows';
+import { recommendForQuiz } from '../src/services/recoEngine';
+import { ProductRecoList } from '../src/components/ProductRecoCard';
 
 const WEB_FRAME_W = 440;
 
@@ -63,6 +65,7 @@ export default function ScanResultScreen() {
   const [animatedTarget, setAnimatedTarget] = useState(0);
   const [showConfetti, setShowConfetti] = useState(false);
   const [avatarBlur, setAvatarBlur] = useState(22);
+  const [productRecos, setProductRecos] = useState<ReturnType<typeof recommendForQuiz>>([]);
   const sawLocked = useRef(false);
   const pagerRef = useRef<ScrollView>(null);
   // Pager pages must match the visible frame width, not the browser window.
@@ -110,6 +113,7 @@ export default function ScanResultScreen() {
         // Persona-branching (EPIC 7.2): bias the scan toward the quiz focus
         const quiz = await getQuizProfile();
         const focus = quiz?.goals?.length ? quiz.goals.join(', ') : quiz?.glowUpType;
+        if (mounted.current) setProductRecos(recommendForQuiz(quiz, 4));
 
         const res = await faceScan(imageUri, token, focus || undefined);
         if (!mounted.current) return;
@@ -402,6 +406,8 @@ export default function ScanResultScreen() {
                 </Pressable>
               );
             })}
+
+            {productRecos.length > 0 && <ProductRecoList recos={productRecos} />}
           </View>
         </ScrollView>
 

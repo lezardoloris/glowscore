@@ -74,6 +74,11 @@ const STYLE_PRESETS: Record<string, { prompt: string; negative_prompt: string; i
     negative_prompt: "different person, different ethnicity, slimmed bones, altered face shape, altered nose, gaunt, weight loss, blurry, deformed, low quality, plastic, fake, cartoon",
     ip_adapter_scale: 0.85,
   },
+  contour_round: {
+    prompt: "the same exact person with subtle cool-tone contour makeup for a round face: soft V-shape shading under cheekbones and jaw, identity fully preserved, natural daylight portrait, photorealistic",
+    negative_prompt: "different person, heavy makeup, altered bone structure, slimmed face, weight loss, cartoon, blurry, deformed",
+    ip_adapter_scale: 0.88,
+  },
 };
 
 // Gemini Nano Banana prompts per style (identity-preserving img2img). Keys here
@@ -86,6 +91,10 @@ const GEMINI_PROMPTS: Record<string, string> = {
     "ONLY from reduced bloating. Keep it strictly photorealistic and fully preserve the core identity, " +
     "ethnicity, gender, bone structure, face shape, nose and eye shape. Do NOT slim the bones, do NOT " +
     "change face shape, do NOT make the face gaunt. Soft flattering daylight, natural healthy skin, 4K raw photo.",
+  contour_round:
+    "Apply subtle cool-tone contour makeup on this exact same person for a round face: soft V under cheekbones, " +
+    "gentle jaw shading, blended upward. Preserve identity, ethnicity, face shape and bone structure completely. " +
+    "No slimming, no bone alteration, no weight change. Photorealistic portrait, natural daylight.",
 };
 
 // ─── Instant Style presets ──────────────────────────────────────────────────

@@ -48,6 +48,13 @@ export default function TabsLayout() {
         }}
       />
       <Tabs.Screen
+        name="body"
+        options={{
+          title: 'Body',
+          tabBarIcon: ({ color, size }) => <Ionicons name="body-outline" size={size} color={color} />,
+        }}
+      />
+      <Tabs.Screen
         name="plan"
         options={{
           title: 'Plan',

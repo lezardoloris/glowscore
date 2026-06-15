@@ -80,7 +80,6 @@ export default function RootLayout() {
         <Stack.Screen name="hair-change" options={{ animation: 'slide_from_right' }} />
         <Stack.Screen name="relight" options={{ animation: 'slide_from_right' }} />
         <Stack.Screen name="age-transform" options={{ animation: 'slide_from_right' }} />
-        <Stack.Screen name="fitness-transform" options={{ animation: 'slide_from_right' }} />
         <Stack.Screen name="virtual-makeup" options={{ animation: 'slide_from_right' }} />
         <Stack.Screen name="camera-scan" options={{ animation: 'fade' }} />
         <Stack.Screen name="component-detail" options={{ animation: 'slide_from_right' }} />
@@ -89,6 +88,10 @@ export default function RootLayout() {
         <Stack.Screen name="visual-weight" options={{ animation: 'slide_from_right' }} />
         <Stack.Screen name="chrono-skincare" options={{ animation: 'slide_from_right' }} />
         <Stack.Screen name="concerns" options={{ animation: 'slide_from_right' }} />
+        <Stack.Screen name="body-care" options={{ animation: 'slide_from_right' }} />
+        <Stack.Screen name="makeup-round-face" options={{ animation: 'slide_from_right' }} />
+        <Stack.Screen name="debloat-morning" options={{ animation: 'slide_from_right' }} />
+        <Stack.Screen name="skin-change-track" options={{ animation: 'slide_from_right' }} />
       </Stack>
         </View>
       </View>

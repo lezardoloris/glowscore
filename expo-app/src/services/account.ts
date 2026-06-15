@@ -1,5 +1,6 @@
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import { resetSubscriber } from './subscription';
+import { cancelAllNotifications } from './notifications';
 
 /**
  * In-app account & data deletion (Apple Guideline 5.1.1(v) / Google Play).
@@ -12,6 +13,9 @@ import { resetSubscriber } from './subscription';
  * RevenueCat alias is a complete deletion from the user's perspective.
  */
 export async function deleteAllData(): Promise<void> {
+  try {
+    await cancelAllNotifications();
+  } catch {}
   try {
     await resetSubscriber();
   } catch {}

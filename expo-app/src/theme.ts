@@ -23,12 +23,3 @@ export const theme = {
 
 /** Radii scale (8/12/16/24/32/full). */
 export const radii = { sm: 8, md: 12, lg: 16, xl: 24, xxl: 32, full: 999 };
-
-/** Background variants for future A/B (Clinical Luxe is default). */
-export const themeVariants = {
-  clinicalLuxe: { bg: '#F9E0E8', panel: '#FBEAF0', label: 'Clinical Luxe' },
-  softGlow: { bg: '#FCE8DC', panel: '#FFF0E6', label: 'Soft Glow' },
-  editorialRose: { bg: '#F5D0DC', panel: '#F9E0E8', label: 'Editorial Rose' },
-} as const;
-
-export type Theme = typeof theme;

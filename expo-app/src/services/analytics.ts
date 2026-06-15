@@ -61,20 +61,6 @@ export function trackPaywallShown(): void {
 }
 
 /**
- * Track a successful purchase.
- */
-export function trackPurchase(productId: string): void {
-  trackEvent('purchase', { productId });
-}
-
-/**
- * Track a share action (initiated).
- */
-export function trackShareInitiated(destination: string): void {
-  trackEvent('share_initiated', { destination });
-}
-
-/**
  * Track a share action (completed).
  */
 export function trackShareCompleted(destination: string): void {
@@ -100,30 +86,8 @@ export function trackOnboardingCompleted(): void {
 
 // MARK: - Pricing & Subscription
 
-export function trackPricingViewed(): void {
-  trackEvent('pricing_viewed');
-}
-
-export function trackTrialStarted(plan: string): void {
-  trackEvent('trial_started', { plan });
-}
-
 export function trackSubscriptionPurchased(plan: string): void {
   trackEvent('subscription_purchased', { plan });
-}
-
-export function trackSkippedToFree(): void {
-  trackEvent('skipped_to_free');
-}
-
-// MARK: - Style & Transform
-
-export function trackStyleSelected(styleId: string): void {
-  trackEvent('style_selected', { styleId });
-}
-
-export function trackTransformCompleted(quality: 'standard' | 'hd'): void {
-  trackEvent('transform_completed_quality', { quality });
 }
 
 // MARK: - Canonical funnel events (deep-research measurement plan)
@@ -144,16 +108,4 @@ export function trackPlanViewed(persona?: string): void {
 }
 export function trackTaskCompleted(category?: string): void {
   trackEvent('TaskCompleted', category ? { category } : undefined);
-}
-
-// MARK: - User Properties
-
-export function setUserProperty(key: string, value: string): void {
-  log(`user_property: ${key}=${value}`);
-
-  if (!isWeb) {
-    // TODO: Firebase Analytics integration
-    // import analytics from '@react-native-firebase/analytics';
-    // analytics().setUserProperty(key, value);
-  }
 }

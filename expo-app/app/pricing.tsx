@@ -4,22 +4,17 @@ import { useState, useEffect } from 'react';
 import { Ionicons } from '@expo/vector-icons';
 import { LinearGradient } from 'expo-linear-gradient';
 import { getOfferings, purchasePackage, purchaseProduct, restorePurchases } from '../src/services/subscription';
-import { trackScreen } from '../src/services/analytics';
+import { trackScreen, trackPaywallShown, trackSubscriptionPurchased } from '../src/services/analytics';
 import { impactMedium } from '../src/services/haptics';
 import { CONFIG } from '../src/config';
 import { theme as C, radii } from '../src/theme';
 import { typography, fonts } from '../src/typography';
 import { shadow, ctaShadow } from '../src/shadows';
+import { PAYWALL_BENEFITS } from '../src/data/routineCopy';
 
 type PlanType = 'weekly' | 'annual' | 'lifetime';
 
-const BENEFITS = [
-  'Detailed score & insights',
-  'Unlimited personalized plan',
-  'All AI Studio tools',
-  'Advanced progress tracking',
-  'Weekly plan updates',
-];
+const BENEFITS = PAYWALL_BENEFITS;
 
 export default function PricingScreen() {
   const [selectedPlan, setSelectedPlan] = useState<PlanType>('annual');
@@ -27,7 +22,7 @@ export default function PricingScreen() {
   const [offering, setOffering] = useState<any>(null);
   const [error, setError] = useState<string | null>(null);
 
-  useEffect(() => { trackScreen('pricing'); }, []);
+  useEffect(() => { trackScreen('pricing'); trackPaywallShown(); }, []);
   useEffect(() => { getOfferings().then(setOffering); }, []);
 
   async function purchase() {
@@ -37,7 +32,7 @@ export default function PricingScreen() {
     try {
       if (selectedPlan === 'lifetime') {
         const success = await purchaseProduct(CONFIG.LIFETIME_PRODUCT_ID);
-        if (success) router.back();
+        if (success) { trackSubscriptionPurchased('lifetime'); router.back(); }
         return;
       }
       if (!offering) { setError('Could not load plans. Check your connection.'); return; }
@@ -45,7 +40,7 @@ export default function PricingScreen() {
       const pkg = offering.availablePackages?.find((p: any) => p.identifier === pkgId);
       if (!pkg) { setError('Plan not available.'); return; }
       const success = await purchasePackage(pkg);
-      if (success) router.back();
+      if (success) { trackSubscriptionPurchased(selectedPlan); router.back(); }
     } catch (e: any) {
       setError(e.message || 'Purchase failed');
     } finally {

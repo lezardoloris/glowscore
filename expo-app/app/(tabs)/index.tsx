@@ -146,6 +146,24 @@ export default function HomeScreen() {
             </Pressable>
           )}
 
+          <Pressable style={styles.row} onPress={() => router.push('/body-care')}>
+            <View style={styles.rowIcon}><Ionicons name="body-outline" size={16} color={C.pink} /></View>
+            <View style={{ flex: 1 }}>
+              <Text style={styles.rowTitle}>Body glow & comfort</Text>
+              <Text style={styles.rowSub}>Chafing, folds, barrier care</Text>
+            </View>
+            <Ionicons name="chevron-forward" size={18} color={C.textSoft} />
+          </Pressable>
+
+          <Pressable style={styles.row} onPress={() => router.push('/debloat-morning')}>
+            <View style={styles.rowIcon}><Ionicons name="timer-outline" size={16} color={C.pink} /></View>
+            <View style={{ flex: 1 }}>
+              <Text style={styles.rowTitle}>5-min morning de-bloat</Text>
+              <Text style={styles.rowSub}>Guided lymphatic routine</Text>
+            </View>
+            <Ionicons name="chevron-forward" size={18} color={C.textSoft} />
+          </Pressable>
+
           <Pressable style={styles.row} onPress={() => router.push('/stress-scan')}>
             <View style={styles.rowIcon}><Ionicons name="water" size={16} color={C.pink} /></View>
             <View style={{ flex: 1 }}>
@@ -180,7 +198,7 @@ export default function HomeScreen() {
       ) : (
         <>
           <View style={styles.firstHero}>
-            <Image source={require('../../assets/components/symmetry.png')} style={styles.heroImg} />
+            <Image source={require('../../assets/components/home_hero.png')} style={styles.heroImg} />
             <LinearGradient colors={['transparent', 'rgba(45,35,48,0.35)']} style={styles.heroFade} />
           </View>
           <Text style={styles.firstTitle}>Scan your face,{'\n'}reveal your potential</Text>

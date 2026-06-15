@@ -310,7 +310,12 @@ function GuidedRoutine({ onDone }: { onDone: () => void }) {
       ))}
 
       {done ? (
-        <Pressable style={styles.cta} onPress={onDone}><Text style={styles.ctaText}>Finish</Text></Pressable>
+        <>
+          <Pressable style={styles.ghost} onPress={() => router.push('/debloat-morning')}>
+            <Text style={styles.ghostText}>Try the faster 5-min morning routine</Text>
+          </Pressable>
+          <Pressable style={styles.cta} onPress={onDone}><Text style={styles.ctaText}>Finish</Text></Pressable>
+        </>
       ) : (
         <Pressable style={styles.cta} onPress={toggle}>
           <Ionicons name={running ? 'pause' : 'play'} size={18} color="#fff" />

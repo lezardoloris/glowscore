@@ -30,11 +30,3 @@ export function ctaShadow(): ViewStyle {
     ? ({ boxShadow: '0 6px 18px rgba(224,83,122,0.4)' } as ViewStyle)
     : { shadowColor: '#E0537A', shadowOpacity: 0.4, shadowRadius: 14, shadowOffset: { width: 0, height: 5 }, elevation: 5 };
 }
-
-/** Static elevation presets (spread into StyleSheet). */
-export const shadows = {
-  elevation1: shadow(1),
-  elevation2: shadow(2),
-  elevation3: shadow(3),
-  glass: shadow('glass'),
-};

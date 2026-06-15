@@ -10,8 +10,11 @@ import {
   getCurrentWeekDays, getCategoryCompletion, getDayCompletion,
   GlowPlan, GlowTask, PlanCategory,
 } from '../src/services/glowPlan';
+import { recommendForQuiz } from '../src/services/recoEngine';
+import { getQuizProfile } from '../src/services/quizProfile';
+import { ProductRecoList } from '../src/components/ProductRecoCard';
 import { impactMedium, notificationSuccess } from '../src/services/haptics';
-import { trackScreen, trackEvent } from '../src/services/analytics';
+import { trackScreen, trackPlanViewed, trackTaskCompleted } from '../src/services/analytics';
 
 const CAT_ICON: Record<string, keyof typeof Ionicons.glyphMap> = {
   Skincare: 'water-outline',
@@ -22,15 +25,17 @@ const CAT_ICON: Record<string, keyof typeof Ionicons.glyphMap> = {
   Hair: 'cut-outline',
   Eyes: 'eye-outline',
   'Glow Habits': 'sparkles-outline',
+  'Body Care': 'body-outline',
 };
 const CAT_ORDER: PlanCategory[] = [
-  'Skincare', 'Face Fitness', 'Eyes', 'Makeup', 'Hair', 'Style & Color', 'Lifestyle', 'Glow Habits',
+  'Skincare', 'Body Care', 'Face Fitness', 'Eyes', 'Makeup', 'Hair', 'Style & Color', 'Lifestyle', 'Glow Habits',
 ];
 
 export default function GlowPlanScreen() {
   const [plan, setPlan] = useState<GlowPlan | null>(null);
   const [streak, setStreak] = useState(0);
   const [loading, setLoading] = useState(true);
+  const [recos, setRecos] = useState<ReturnType<typeof recommendForQuiz>>([]);
   const [selectedDay, setSelectedDay] = useState(() => new Date().toISOString().split('T')[0]);
   const weekDays = getCurrentWeekDays();
   const todayKey = new Date().toISOString().split('T')[0];
@@ -38,8 +43,11 @@ export default function GlowPlanScreen() {
   useEffect(() => {
     trackScreen('glow_plan');
     (async () => {
-      setPlan(await getPlan());
+      const [p, quiz] = await Promise.all([getPlan(), getQuizProfile()]);
+      setPlan(p);
+      trackPlanViewed(p?.persona);
       setStreak(await getStreak());
+      setRecos(recommendForQuiz(quiz, 4));
       setLoading(false);
     })();
   }, []);
@@ -51,7 +59,7 @@ export default function GlowPlanScreen() {
     setPlan(p ? { ...p } : p);
     const s = await getStreak();
     setStreak(s);
-    trackEvent('glowplan_task_toggled');
+    trackTaskCompleted();
     if (s > 0) notificationSuccess();
   }
 
@@ -164,9 +172,17 @@ export default function GlowPlanScreen() {
         </View>
       ))}
 
+      <Pressable style={styles.linkRow} onPress={() => router.push('/body-care')}>
+        <Ionicons name="body-outline" size={18} color={C.pink} />
+        <Text style={styles.linkText}>Body glow & comfort hub</Text>
+        <Ionicons name="chevron-forward" size={16} color={C.textSoft} />
+      </Pressable>
+
       <Text style={styles.hint}>
         Check off a task each day to keep your streak. Re-scan weekly to watch your GlowScore climb.
       </Text>
+
+      <ProductRecoList recos={recos} />
     </ScrollView>
   );
 }
@@ -230,4 +246,9 @@ const styles = StyleSheet.create({
   taskTextDone: { color: C.textSoft, textDecorationLine: 'line-through' },
 
   hint: { ...typography.caption, textAlign: 'center', marginTop: 8 },
+  linkRow: {
+    flexDirection: 'row', alignItems: 'center', gap: 10, backgroundColor: C.card,
+    borderRadius: radii.lg, padding: 14, marginTop: 12, ...shadow(1),
+  },
+  linkText: { fontFamily: fonts.bodySemi, fontSize: 14, color: C.text, flex: 1 },
 });

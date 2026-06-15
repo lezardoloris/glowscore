@@ -36,53 +36,6 @@ function dayKey(d: Date = new Date()): string {
   return d.toISOString().split('T')[0];
 }
 
-/** Completion % for a category on a given day (default today). */
-export function categoryCompletion(plan: GlowPlan, cat: PlanCategory, dateKey?: string): number {
-  const dk = dateKey || dayKey();
-  const tasks = plan.tasks.filter((t) => (t.category || 'Glow Habits') === cat);
-  if (!tasks.length) return 0;
-  const done = tasks.filter((t) => t.completedDates.includes(dk)).length;
-  return Math.round((done / tasks.length) * 100);
-}
-
-/** Overall completion for one calendar day. */
-export function dayCompletion(plan: GlowPlan, dateKey: string): number {
-  if (!plan.tasks.length) return 0;
-  const done = plan.tasks.filter((t) => t.completedDates.includes(dateKey)).length;
-  return Math.round((done / plan.tasks.length) * 100);
-}
-
-/** Last 7 days ending today (for week selector). */
-export function getLast7Days(): { key: string; label: string; isToday: boolean }[] {
-  const labels = ['S', 'M', 'T', 'W', 'T', 'F', 'S'];
-  const out: { key: string; label: string; isToday: boolean }[] = [];
-  const today = new Date();
-  for (let i = 6; i >= 0; i--) {
-    const d = new Date(today);
-    d.setDate(today.getDate() - i);
-    const key = dayKey(d);
-    out.push({ key, label: labels[d.getDay()], isToday: i === 0 });
-  }
-  return out;
-}
-
-/** Grouped category summary for plan dashboard. */
-export const PLAN_CATEGORY_GROUPS: { label: string; cats: PlanCategory[] }[] = [
-  { label: 'Skin', cats: ['Skincare'] },
-  { label: 'Stress & De-bloat', cats: ['Face Fitness', 'Lifestyle'] },
-  { label: 'Eyes & habits', cats: ['Eyes', 'Glow Habits'] },
-  { label: 'Makeup & style', cats: ['Makeup', 'Hair', 'Style & Color'] },
-  { label: 'Body care', cats: ['Body Care'] },
-];
-
-export function groupCompletion(plan: GlowPlan, cats: PlanCategory[], dateKey?: string): number {
-  const dk = dateKey || dayKey();
-  const tasks = plan.tasks.filter((t) => cats.includes((t.category || 'Glow Habits') as PlanCategory));
-  if (!tasks.length) return 0;
-  const done = tasks.filter((t) => t.completedDates.includes(dk)).length;
-  return Math.round((done / tasks.length) * 100);
-}
-
 export async function getPlan(): Promise<GlowPlan | null> {
   try {
     const raw = await AsyncStorage.getItem(PLAN_KEY);
@@ -94,7 +47,7 @@ export async function getPlan(): Promise<GlowPlan | null> {
 
 // ─── Persona + score plan library ───────────────────────────────────────────
 
-type Item = { text: string; category: PlanCategory };
+type Item = { text: string; category: PlanCategory; id?: string };
 
 const PERSONA_LABEL: Record<string, string> = {
   skin: 'Glass-Skin Glow',
@@ -190,11 +143,11 @@ const FOCUS_TASKS: Record<string, Item[]> = {
     { text: 'Trial your hair + makeup look and photograph it in daylight', category: 'Glow Habits' },
   ],
   bodycare: [
-    { text: 'Anti-chafe balm on thighs/underarms before dressing (e.g. Body Glide)', category: 'Body Care' },
-    { text: 'Keep skin folds dry after shower: pat dry, cool air if needed', category: 'Body Care' },
-    { text: 'Layer body care: wash, body oil, then rich butter on dry zones (e.g. Palmer\'s)', category: 'Body Care' },
-    { text: 'Soft V-shape contour under chin, blend downward (cool tone, e.g. Makeup by Mario)', category: 'Makeup' },
-    { text: 'Peptides + SPF daily if your skin is changing (firmness support, not medical)', category: 'Skincare' },
+    { id: 'body_anti_chafe', text: 'Anti-chafe balm on thighs/underarms before dressing (e.g. Body Glide, Megababe)', category: 'Body Care' },
+    { id: 'body_fold_care', text: 'Body fold care: pat folds dry after shower, cool air, then barrier cream on clean skin', category: 'Body Care' },
+    { id: 'body_hydration_layer', text: 'Body hydration layers PM: gentle wash → body oil → rich butter on dry zones (e.g. Palmer\'s)', category: 'Body Care' },
+    { text: 'Soft cool-tone contour to add definition where you like it, blend downward (e.g. Makeup by Mario)', category: 'Makeup' },
+    { text: 'Peptides + SPF daily to support your skin while it changes (comfort and healthy-looking skin)', category: 'Skincare' },
   ],
 };
 
@@ -279,9 +232,22 @@ export function buildPersonaTasks(quiz: QuizProfile | null, score?: PlanScoreInp
   const seen = new Set<string>();
   const deduped = items.filter((it) => (seen.has(it.text) ? false : (seen.add(it.text), true)));
 
+  // CRIT-2 (review 2026-06): for plus-size users, body care must own >=2 of the 5 daily slots,
+  // otherwise the body tasks get sliced off and the reason she downloaded never enters the loop.
+  let finalItems: Item[];
+  if ((quiz?.goals || []).includes('body_glow')) {
+    const body = FOCUS_TASKS.bodycare.slice(0, 2);
+    const reserved = [FOUNDATION[0], FOUNDATION[2], ...body]; // SPF, progress selfie, 2 body care
+    const reservedTexts = new Set(reserved.map((r) => r.text));
+    const fill = deduped.filter((it) => !reservedTexts.has(it.text));
+    finalItems = [...reserved, ...fill].slice(0, MAX_PLAN_TASKS);
+  } else {
+    finalItems = deduped.slice(0, MAX_PLAN_TASKS);
+  }
+
   const personaLabel = PERSONA_LABEL[primary] || 'Your Glow-Up';
   // Cap the daily list so it stays actionable (foundation + 2 focuses + capstone).
-  return { items: deduped.slice(0, MAX_PLAN_TASKS), persona: primary, personaLabel, intro: introFor(personaLabel, score?.overall) };
+  return { items: finalItems, persona: primary, personaLabel, intro: introFor(personaLabel, score?.overall) };
 }
 
 // ─── Persistence ────────────────────────────────────────────────────────────
@@ -295,8 +261,8 @@ async function persistTasks(items: Item[], meta?: Partial<GlowPlan>): Promise<vo
     const tasks: GlowTask[] = items.map((it, i) => {
       const prev = byText[it.text];
       return prev
-        ? { ...prev, category: it.category }
-        : { id: `${Date.now()}-${i}-${Math.random().toString(36).slice(2, 8)}`, text: it.text, category: it.category, completedDates: [] };
+        ? { ...prev, id: it.id || prev.id, category: it.category }
+        : { id: it.id || `${Date.now()}-${i}-${Math.random().toString(36).slice(2, 8)}`, text: it.text, category: it.category, completedDates: [] };
     });
     const plan: GlowPlan = {
       createdAt: existing?.createdAt || new Date().toISOString(),
@@ -350,15 +316,6 @@ export async function saveDestressPlan(): Promise<void> {
     intro: existing?.intro || 'Your daily de-bloat ritual to lower the Stress & Bloat Index. Consistency beats intensity.',
     score: existing?.score,
   });
-}
-
-/**
- * Legacy fallback: create/refresh the plan from raw scan tips. Kept so a scan
- * without a quiz profile still produces a checklist.
- */
-export async function savePlanFromTips(tips: string[]): Promise<void> {
-  if (!tips || tips.length === 0) return;
-  await persistTasks(tips.map((text) => ({ text, category: 'Glow Habits' as PlanCategory })));
 }
 
 export function isDoneToday(task: GlowTask): boolean {
@@ -437,6 +394,7 @@ export function getCategoryCompletion(
     Hair: 'Makeup & Style',
     Eyes: 'Complexion & Glow',
     'Glow Habits': 'Glow Habits',
+    'Body Care': 'Body care',
   };
   const merged = new Map<string, { cat: PlanCategory; done: number; total: number }>();
   for (const t of plan.tasks) {

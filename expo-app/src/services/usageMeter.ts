@@ -34,9 +34,4 @@ export async function recordHDGeneration(): Promise<void> {
   await AsyncStorage.setItem(HD_COUNT_KEY, String(count + 1));
 }
 
-export async function remainingHD(): Promise<number> {
-  const count = await resetIfNewDay(HD_COUNT_KEY, HD_DATE_KEY);
-  return Math.max(0, CONFIG.MAX_HD_TRANSFORMS_PER_DAY - count);
-}
-
 // HARD PAYWALL: the free "preview" quota helpers were removed with the free tier.

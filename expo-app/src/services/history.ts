@@ -38,24 +38,6 @@ export async function addToHistory(record: TransformationRecord): Promise<void> 
   }
 }
 
-export async function deleteFromHistory(id: string): Promise<void> {
-  try {
-    const existing = await getHistory();
-    const updated = existing.filter((r) => r.id !== id);
-    await AsyncStorage.setItem(HISTORY_KEY, JSON.stringify(updated));
-  } catch (e) {
-    console.warn('[History] Failed to delete record:', e);
-  }
-}
-
-export async function clearHistory(): Promise<void> {
-  try {
-    await AsyncStorage.removeItem(HISTORY_KEY);
-  } catch (e) {
-    console.warn('[History] Failed to clear history:', e);
-  }
-}
-
 // ─── GlowScore scan history (retention: track score over time) ───────────────
 
 const SCAN_KEY = 'glowscore_history';
