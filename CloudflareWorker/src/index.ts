@@ -300,8 +300,9 @@ function percentileFromOverall(overall: number): number {
 /** HMAC-SHA256 signature (first 16 bytes, hex) for signed /images/ URLs. */
 /** Short content hash for idempotent caching of analyses (hashes a prefix for speed). */
 async function analysisHash(s: string): Promise<string> {
-  const buf = await crypto.subtle.digest("SHA-256", new TextEncoder().encode(s.slice(0, 6000)));
-  return [...new Uint8Array(buf)].slice(0, 12).map((b) => b.toString(16).padStart(2, "0")).join("");
+  // Hash the FULL payload (not a prefix) so similar JPEG/EXIF headers cannot collide.
+  const buf = await crypto.subtle.digest("SHA-256", new TextEncoder().encode(s));
+  return [...new Uint8Array(buf)].slice(0, 16).map((b) => b.toString(16).padStart(2, "0")).join("");
 }
 
 async function signKey(key: string, secret: string): Promise<string> {
@@ -368,8 +369,8 @@ async function validateHdAuth(
   headers: Record<string, string>
 ): Promise<{ subscriberToken: string } | Response> {
   const authHeader = request.headers.get("Authorization");
-  // Local dev bypass (never in production): keeps the web preview testable.
-  if (env.ENVIRONMENT !== "production") {
+  // Local dev bypass — default-deny: ONLY when explicitly "development".
+  if (env.ENVIRONMENT === "development") {
     return { subscriberToken: authHeader?.startsWith("Bearer ") ? authHeader.slice(7) : "dev-bypass" };
   }
   if (!authHeader?.startsWith("Bearer ")) {
@@ -390,8 +391,8 @@ async function validatePremiumAuth(
   headers: Record<string, string>
 ): Promise<{ subscriberToken: string } | Response> {
   const authHeader = request.headers.get("Authorization");
-  // Local dev bypass (never in production).
-  if (env.ENVIRONMENT !== "production") {
+  // Local dev bypass — default-deny: ONLY when explicitly "development".
+  if (env.ENVIRONMENT === "development") {
     return { subscriberToken: authHeader?.startsWith("Bearer ") ? authHeader.slice(7) : "dev-bypass" };
   }
   if (!authHeader?.startsWith("Bearer ")) {
