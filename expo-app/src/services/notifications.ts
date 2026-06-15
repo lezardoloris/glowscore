@@ -207,6 +207,43 @@ export async function scheduleActivationSequence(): Promise<void> {
   console.log('[Notifications] Activation sequence (D1/D3/D7) scheduled');
 }
 
+/**
+ * 10 supportive micro-nudges (EPIC 10.5), one per day for ~10 days. Behaviour-
+ * triggered (call after onboarding/first scan), App Store compliant, no-op on web.
+ * Reinforces the daily glow-up habit with bite-size, kind tips.
+ */
+const MICRO_NUDGES: { title: string; body: string }[] = [
+  { title: 'Glow tip ✨', body: 'SPF every morning is the single biggest glow + anti-aging habit. Two seconds, big payoff.' },
+  { title: 'Hydration check', body: 'Apply your serum on slightly damp skin to lock in more moisture.' },
+  { title: 'Keep it simple', body: 'A few consistent steps beat a 12-step routine you cannot keep up. Skinimalism wins.' },
+  { title: 'De-puff minute', body: '60 seconds of gua sha, sweeping up and toward the ears, wakes up your face.' },
+  { title: 'Layer smart', body: 'Vitamin C in the AM, retinol in the PM. Never the same routine.' },
+  { title: 'Sleep is skincare', body: '7-8 hours is when your skin repairs. The cheapest glow-up there is.' },
+  { title: 'Progress, not perfection', body: 'Take your front-lit selfie today. Future you will love the before/after.' },
+  { title: 'Your colors', body: 'Wearing one shade from your palette makes your skin look instantly more awake.' },
+  { title: 'Barrier first', body: 'If skin feels tight or stings, pause actives and let ceramides rebuild the barrier.' },
+  { title: 'Re-scan day', body: 'Been following your plan? Re-scan to watch your GlowScore climb.' },
+];
+
+export async function scheduleMicroNudges(): Promise<void> {
+  if (isWeb) return;
+  const Notifications = await import('expo-notifications');
+  const scheduled = await Notifications.getAllScheduledNotificationsAsync();
+  for (const n of scheduled) {
+    if (n.identifier.startsWith('micro_')) await Notifications.cancelScheduledNotificationAsync(n.identifier);
+  }
+  const day = 24 * 60 * 60;
+  for (let i = 0; i < MICRO_NUDGES.length; i++) {
+    const n = MICRO_NUDGES[i];
+    await Notifications.scheduleNotificationAsync({
+      identifier: `micro_${i}`,
+      content: { title: n.title, body: n.body, sound: false },
+      trigger: { type: Notifications.SchedulableTriggerInputTypes.TIME_INTERVAL, seconds: (i + 1) * day + 9 * 3600, repeats: false },
+    });
+  }
+  console.log('[Notifications] 10 micro-nudges scheduled');
+}
+
 export async function cancelAllNotifications(): Promise<void> {
   if (isWeb) return;
 
