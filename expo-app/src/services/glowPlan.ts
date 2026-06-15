@@ -11,7 +11,7 @@ const PLAN_KEY = 'glow_plan';
 
 export type PlanCategory =
   | 'Skincare' | 'Face Fitness' | 'Lifestyle' | 'Style & Color'
-  | 'Makeup' | 'Hair' | 'Eyes' | 'Glow Habits';
+  | 'Makeup' | 'Hair' | 'Eyes' | 'Glow Habits' | 'Body Care';
 
 export interface GlowTask {
   id: string;
@@ -58,6 +58,7 @@ const PERSONA_LABEL: Record<string, string> = {
   corporate: 'Polished & Professional',
   cortisol: 'De-Bloat Ritual',
   event: 'Event Countdown',
+  bodycare: 'Body Glow Care',
 };
 
 // Universal daily foundation (every plan)
@@ -138,11 +139,19 @@ const FOCUS_TASKS: Record<string, Item[]> = {
     { text: 'Lock in a consistent skincare routine (best results need 8-12 weeks)', category: 'Skincare' },
     { text: 'Trial your hair + makeup look and photograph it in daylight', category: 'Glow Habits' },
   ],
+  bodycare: [
+    { text: 'Anti-chafe balm on thighs/underarms before dressing (e.g. Body Glide)', category: 'Body Care' },
+    { text: 'Keep skin folds dry after shower: pat dry, cool air if needed', category: 'Body Care' },
+    { text: 'Layer body care: wash, body oil, then rich butter on dry zones (e.g. Palmer\'s)', category: 'Body Care' },
+    { text: 'Soft V-shape contour under chin, blend downward (cool tone, e.g. Makeup by Mario)', category: 'Makeup' },
+    { text: 'Peptides + SPF daily if your skin is changing (firmness support, not medical)', category: 'Skincare' },
+  ],
 };
 
 const GOAL_TO_FOCUS: Record<string, string> = {
   clear_skin: 'skin', harmony: 'harmony', eyes: 'eyes',
   jawline: 'jawline', lips: 'lips', hair: 'hair', color: 'color',
+  body_glow: 'bodycare',
 };
 
 // Map a scan sub-score key to a focus area (to target the weakest trait)
@@ -209,6 +218,10 @@ export function buildPersonaTasks(quiz: QuizProfile | null, score?: PlanScoreInp
   if ((quiz?.outcomes || []).includes('event')) items.push(...FOCUS_TASKS.event.slice(0, 2));
   if ((quiz?.outcomes || []).includes('work') && primary !== 'corporate') items.push(...FOCUS_TASKS.corporate.slice(0, 2));
   if (quiz?.glowUpType === 'makeup' && primary !== 'makeup') items.push(...FOCUS_TASKS.makeup.slice(0, 2));
+  // US plus-size persona: body fold + chafing tasks (market research P1)
+  if ((quiz?.goals || []).includes('body_glow') || primary === 'jawline' || primary === 'cortisol') {
+    items.push(...FOCUS_TASKS.bodycare.slice(0, 2));
+  }
 
   items.push(capstone(score?.overall));
 

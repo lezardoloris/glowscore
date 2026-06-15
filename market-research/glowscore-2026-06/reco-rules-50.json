@@ -1,0 +1,352 @@
+[
+  {
+    "id": "reco_001",
+    "if": { "concern": "pores_visibles", "skin_type": "grasse", "experience": "beginner" },
+    "then": { "focus_task": "skin_pores_texture", "ingredient": "niacinamide 5-10%", "product_category": "serum", "routine_slot": "am" },
+    "because": "La niacinamide régule l'activité des glandes sébacées et réduit l'apparence des pores dilatés sans assécher l'épiderme.",
+    "sources": ["https://www.reddit.com/r/SkincareAddiction/", "https://www.byrdie.com/"]
+  },
+  {
+    "id": "reco_002",
+    "if": { "concern": "barriere_compromise", "skin_type": "sensible", "experience": "beginner" },
+    "then": { "focus_task": "skin_barrier_repair", "ingredient": "ceramides", "product_category": "moisturizer", "routine_slot": "pm" },
+    "because": "Les céramides restaurent le film protecteur lipidique pour stopper l'irritation et limiter la déshydratation.",
+    "sources": ["https://www.reddit.com/r/30PlusSkinCare/", "https://www.allure.com/"]
+  },
+  {
+    "id": "reco_003",
+    "if": { "concern": "rides_fines", "skin_type": "seche", "experience": "beginner" },
+    "then": { "focus_task": "antiage_retinol_intro", "ingredient": "retinaldehyde 0.05%", "product_category": "serum", "routine_slot": "pm" },
+    "because": "Le rétinal exige une étape de moins que le rétinol pour se convertir en acide rétinoïque, offrant des résultats plus rapides et mieux tolérés.",
+    "sources": ["https://www.reddit.com/r/kbeauty/", "https://www.byrdie.com/"]
+  },
+  {
+    "id": "reco_004",
+    "if": { "concern": "visage_gonfle", "skin_type": "tous", "experience": "beginner" },
+    "then": { "focus_task": "debloat_morning_routine", "ingredient": "caffeine", "product_category": "eye_cream_or_serum", "routine_slot": "am" },
+    "because": "La caféine applique un effet tenseur et décongestionnant immédiat par vasoconstriction locale pour affiner le visage.",
+    "sources": ["https://www.healthline.com/", "https://www.tiktok.com/tag/cortisolface"]
+  },
+  {
+    "id": "reco_005",
+    "if": { "concern": "cernes_bruns", "skin_type": "tous", "experience": "intermediate" },
+    "then": { "focus_task": "eyes_brighten", "ingredient": "tranexamic acid", "product_category": "eye_cream", "routine_slot": "pm" },
+    "because": "L'acide tranexamique inhibe l'activation de la tyrosinase pour atténuer la pigmentation foncée sous les yeux.",
+    "sources": ["https://www.reddit.com/r/AsianBeauty/", "https://www.byrdie.com/"]
+  },
+  {
+    "id": "reco_006",
+    "if": { "concern": "teint_terne", "skin_type": "seche", "experience": "intermediate" },
+    "then": { "focus_task": "skin_glass_routine", "ingredient": "PDRN", "product_category": "serum", "routine_slot": "am" },
+    "because": "Le PDRN stimule la régénération cellulaire profonde pour un fini de peau lisse et un éclat naturel durable.",
+    "sources": ["https://makeuptutorials.com/best-k-beauty-products-2026-bouncy-skin/"]
+  },
+  {
+    "id": "reco_007",
+    "if": { "concern": "pores_obstrues", "skin_type": "mixte", "experience": "intermediate" },
+    "then": { "focus_task": "skin_pores_texture", "ingredient": "salicylic acid 2%", "product_category": "toner", "routine_slot": "pm" },
+    "because": "L'acide salicylique pénètre en profondeur dans les follicules sébacés pour dissoudre les bouchons de sébum.",
+    "sources": ["https://www.reddit.com/r/SkincareAddiction/"]
+  },
+  {
+    "id": "reco_008",
+    "if": { "concern": "cheveux_plats", "skin_type": "cheveux_fins", "experience": "beginner" },
+    "then": { "focus_task": "hair_scalp", "ingredient": "sel marin", "product_category": "scalp_scrub", "routine_slot": "weekly" },
+    "because": "Le gommage physique au sel marin élimine les accumulations de produits et stimule le volume à la racine.",
+    "sources": ["https://www.reddit.com/r/finehair/"]
+  },
+  {
+    "id": "reco_009",
+    "if": { "concern": "color_analysis_cool", "skin_type": "cool_undertone", "experience": "beginner" },
+    "then": { "focus_task": "color_makeup_palette", "ingredient": "tonalites froides", "product_category": "blush", "routine_slot": "am" },
+    "because": "Les tons froids comme le lilas complètent la carnation naturelle sans faire ressortir les rougeurs du teint.",
+    "sources": ["https://www.reddit.com/r/coloranalysis/"]
+  },
+  {
+    "id": "reco_010",
+    "if": { "concern": "rides_profondes", "skin_type": "mature", "experience": "intermediate", "note": "educational_only_no_prescription" },
+    "then": { "focus_task": "antiage_retinol_intro", "ingredient": "retinaldehyde", "product_category": "serum", "routine_slot": "pm" },
+    "because": "Pour les rides profondes, les communautés recommandent une progression vers des rétinoïdes. GlowScore oriente vers rétinal OTC, pas prescription.",
+    "sources": ["https://www.reddit.com/r/30PlusSkinCare/"]
+  },
+  {
+    "id": "reco_011",
+    "if": { "concern": "rougeurs_rosacee", "skin_type": "sensible", "experience": "beginner" },
+    "then": { "focus_task": "skin_barrier_repair", "ingredient": "Centella Asiatica", "product_category": "serum", "routine_slot": "am" },
+    "because": "L'extrait de Centella calme rapidement l'inflammation de surface et réduit la réactivité cutanée.",
+    "sources": ["https://www.reddit.com/r/AsianBeauty/"]
+  },
+  {
+    "id": "reco_012",
+    "if": { "concern": "teint_matiere", "skin_type": "mature", "experience": "beginner" },
+    "then": { "focus_task": "makeup_no_makeup", "ingredient": "silice sans talc", "product_category": "blurring_powder", "routine_slot": "am" },
+    "because": "La silice floute les imperfections sans figer la peau ni marquer les ridules des visages matures.",
+    "sources": ["https://www.reddit.com/r/MakeupAddiction/"]
+  },
+  {
+    "id": "reco_013",
+    "if": { "concern": "deshydratation_severe", "skin_type": "seche", "experience": "beginner" },
+    "then": { "focus_task": "skin_glass_routine", "ingredient": "beta-glucan", "product_category": "toner", "routine_slot": "am" },
+    "because": "Le bêta-glucane retient l'eau de manière performante pour repulper la peau.",
+    "sources": ["https://www.reddit.com/r/AsianBeauty/"]
+  },
+  {
+    "id": "reco_014",
+    "if": { "concern": "color_analysis_warm", "skin_type": "warm_undertone", "experience": "beginner" },
+    "then": { "focus_task": "color_makeup_palette", "ingredient": "tonalites chaudes terreuses", "product_category": "bronzer", "routine_slot": "am" },
+    "because": "Les tons chauds comme le bronze réchauffent le teint et valorisent les reflets dorés.",
+    "sources": ["https://www.reddit.com/r/coloranalysis/"]
+  },
+  {
+    "id": "reco_015",
+    "if": { "concern": "secheresse_capillaire", "skin_type": "cuir_chevelu_sec", "experience": "beginner" },
+    "then": { "focus_task": "hair_shine", "ingredient": "huile coco et romarin", "product_category": "hair_oil", "routine_slot": "weekly" },
+    "because": "Un bain d'huile pré-shampoing protège la structure capillaire.",
+    "sources": ["https://www.reddit.com/r/finehair/"]
+  },
+  {
+    "id": "reco_016",
+    "if": { "concern": "hyperpigmentation", "skin_type": "tous", "experience": "intermediate" },
+    "then": { "focus_task": "skin_pores_texture", "ingredient": "azelaic acid 10%", "product_category": "serum", "routine_slot": "pm" },
+    "because": "L'acide azélaïque cible les mélanocytes hyperactifs pour estomper les taches.",
+    "sources": ["https://www.reddit.com/r/30PlusSkinCare/"]
+  },
+  {
+    "id": "reco_017",
+    "if": { "concern": "desquamation_retinoides", "skin_type": "seche", "experience": "intermediate" },
+    "then": { "focus_task": "skin_barrier_repair", "ingredient": "methode sandwich", "product_category": "moisturizer", "routine_slot": "pm" },
+    "because": "Appliquer un soin émollient avant et après le rétinoïde limite la desquamation.",
+    "sources": ["https://www.reddit.com/r/30PlusSkinCare/"]
+  },
+  {
+    "id": "reco_018",
+    "if": { "concern": "cernes_creux", "skin_type": "mature", "experience": "beginner" },
+    "then": { "focus_task": "eyes_depuff", "ingredient": "ginseng and retinal", "product_category": "eye_serum", "routine_slot": "pm" },
+    "because": "Le ginseng active la circulation tandis que le rétinal stimule le collagène sous l'œil.",
+    "sources": ["https://www.reddit.com/r/AsianBeauty/"]
+  },
+  {
+    "id": "reco_019",
+    "if": { "concern": "boutons_frequents", "skin_type": "sensible", "experience": "intermediate" },
+    "then": { "focus_task": "skin_pores_texture", "ingredient": "PHA", "product_category": "toner", "routine_slot": "pm" },
+    "because": "Les PHA exfolient en douceur sans échauffer les peaux sensibles.",
+    "sources": ["https://www.reddit.com/r/AsianBeauty/"]
+  },
+  {
+    "id": "reco_020",
+    "if": { "concern": "stress_cutane", "skin_type": "sensible", "experience": "beginner" },
+    "then": { "focus_task": "skin_barrier_repair", "ingredient": "ectoine", "product_category": "moisturizer", "routine_slot": "am" },
+    "because": "L'ectoïne protège l'activité cellulaire des effets desséchants liés au stress.",
+    "sources": ["https://www.whowhatwear.com/beauty/skin/2026-skincare-trends"]
+  },
+  {
+    "id": "reco_021",
+    "if": { "concern": "perte_densite_capillaire", "skin_type": "cheveux_fins", "experience": "beginner" },
+    "then": { "focus_task": "hair_volume", "ingredient": "proteines de riz", "product_category": "leave_in_spray", "routine_slot": "am" },
+    "because": "L'extrait de riz gaine le cheveu pour donner du gonflant aux racines.",
+    "sources": ["https://www.reddit.com/r/finehair/"]
+  },
+  {
+    "id": "reco_022",
+    "if": { "concern": "teint_jaunatre", "skin_type": "cool_undertone", "experience": "beginner" },
+    "then": { "focus_task": "color_makeup_palette", "ingredient": "tonalites cerise froides", "product_category": "lipstick", "routine_slot": "am" },
+    "because": "Le rouge cerise atténue les tons olive ou jaunâtres chez les types froids.",
+    "sources": ["https://www.reddit.com/r/coloranalysis/"]
+  },
+  {
+    "id": "reco_023",
+    "if": { "concern": "rougeurs_acne", "skin_type": "acneique", "experience": "beginner" },
+    "then": { "focus_task": "skin_barrier_repair", "ingredient": "hypochlorous acid", "product_category": "face_spray", "routine_slot": "am" },
+    "because": "L'acide hypochloreux élimine les bactéries de l'acné tout en calmant les rougeurs.",
+    "sources": ["https://www.reddit.com/r/30PlusSkinCare/"]
+  },
+  {
+    "id": "reco_024",
+    "if": { "concern": "deshydratation_passagere", "skin_type": "tous", "experience": "beginner" },
+    "then": { "focus_task": "skin_glass_routine", "ingredient": "snail mucin 96%", "product_category": "essence", "routine_slot": "am" },
+    "because": "La bave d'escargot combine allantoïne et nutriments pour hydrater intensément.",
+    "sources": ["https://www.reddit.com/r/AsianBeauty/"]
+  },
+  {
+    "id": "reco_025",
+    "if": { "concern": "taches_brunes", "skin_type": "tous", "experience": "intermediate" },
+    "then": { "focus_task": "skin_pores_texture", "ingredient": "kojic acid", "product_category": "serum", "routine_slot": "pm" },
+    "because": "L'acide kojique unifie le teint et corrige les taches solaires.",
+    "sources": ["https://www.reddit.com/r/kbeauty/"]
+  },
+  {
+    "id": "reco_026",
+    "if": { "concern": "ridules_yeux", "skin_type": "seche", "experience": "intermediate" },
+    "then": { "focus_task": "eyes_depuff", "ingredient": "bakuchiol", "product_category": "eye_cream", "routine_slot": "pm" },
+    "because": "Le bakuchiol offre une action lissante douce adaptée au contour de l'œil.",
+    "sources": ["https://www.reddit.com/r/AsianBeauty/"]
+  },
+  {
+    "id": "reco_027",
+    "if": { "concern": "pellicules_seches", "skin_type": "cuir_chevelu_sec", "experience": "beginner" },
+    "then": { "focus_task": "hair_scalp", "ingredient": "tea tree oil", "product_category": "scalp_essence", "routine_slot": "pm" },
+    "because": "L'huile de tea tree élimine les pellicules de sécheresse sans agresser le cuir chevelu.",
+    "sources": ["https://www.reddit.com/r/finehair/"]
+  },
+  {
+    "id": "reco_028",
+    "if": { "concern": "visage_gonfle_soir", "skin_type": "tous", "experience": "beginner" },
+    "then": { "focus_task": "debloat_lymphatic", "ingredient": "squalane", "product_category": "facial_oil", "routine_slot": "pm" },
+    "because": "Le squalane offre une glisse idéale pour le massage lymphatique sans boucher les pores.",
+    "sources": ["https://www.healthline.com/health-news/cortisol-face-tiktok"]
+  },
+  {
+    "id": "reco_029",
+    "if": { "concern": "cernes_bleus", "skin_type": "tous", "experience": "beginner" },
+    "then": { "focus_task": "eyes_dark_circles", "ingredient": "correcteur peche", "product_category": "color_corrector", "routine_slot": "am" },
+    "because": "Les sous-tons pêche annulent la nuance bleue et violette des cernes.",
+    "sources": ["https://www.reddit.com/r/MakeupAddiction/"]
+  },
+  {
+    "id": "reco_030",
+    "if": { "concern": "tiraillements_sensibilite", "skin_type": "sensible", "experience": "beginner" },
+    "then": { "focus_task": "skin_barrier_repair", "ingredient": "mugwort", "product_category": "essence", "routine_slot": "am" },
+    "because": "L'armoise fermentée calme immédiatement les rougeurs et soulage l'inconfort.",
+    "sources": ["https://www.reddit.com/r/AsianBeauty/"]
+  },
+  {
+    "id": "reco_031",
+    "if": { "concern": "chafing_cuisses", "persona": "us_plus_size", "experience": "beginner" },
+    "then": { "focus_task": "body_chafe_prevent", "ingredient": "zinc oxide barrier", "product_category": "anti_chafe", "routine_slot": "am" },
+    "because": "Une barrière physique ou lubrifiante réduit le frottement peau contre peau.",
+    "sources": ["https://www.teenvogue.com/story/how-to-care-for-a-fat-body"]
+  },
+  {
+    "id": "reco_032",
+    "if": { "concern": "intertrigo_plis", "persona": "us_plus_size", "experience": "beginner" },
+    "then": { "focus_task": "body_fold_care", "ingredient": "keep dry plus barrier cream", "product_category": "body_care", "routine_slot": "am" },
+    "because": "Garder les plis secs et protégés prévient les irritations sous-poitrine et ventre.",
+    "sources": ["https://www.ncbi.nlm.nih.gov/sites/books/NBK531489/"]
+  },
+  {
+    "id": "reco_033",
+    "if": { "concern": "double_menton_maquillage", "persona": "us_plus_size", "experience": "beginner" },
+    "then": { "focus_task": "makeup_contour_soft", "ingredient": "contour cool tone V-shape", "product_category": "contour_stick", "routine_slot": "am" },
+    "because": "Le contour en V sous le menton, blendé vers le bas, structure le visage naturellement.",
+    "sources": ["https://www.newbeauty.com/view/how-to-hide-double-chin-with-makeup"]
+  },
+  {
+    "id": "reco_034",
+    "if": { "concern": "peau_relachee_post_weight_loss", "persona": "us_plus_size", "experience": "intermediate" },
+    "then": { "focus_task": "post_change_peptides", "ingredient": "peptides and retinal", "product_category": "serum", "routine_slot": "pm" },
+    "because": "Après perte de poids rapide, peptides et rétinal soutiennent fermeté et densité cutanée.",
+    "sources": ["https://www.glossy.co/beauty/as-ozempic-gains-popularity-a-skin-care-category-catering-to-glp-1-users-is-inevitable/"]
+  },
+  {
+    "id": "reco_035",
+    "if": { "concern": "vergetures_inconfort", "persona": "us_plus_size", "experience": "beginner" },
+    "then": { "focus_task": "body_hydration_layer", "ingredient": "cocoa butter or bio-oil", "product_category": "body_oil", "routine_slot": "pm" },
+    "because": "L'hydratation corps réduit démangeaisons et inconfort des vergetures en formation.",
+    "sources": ["https://www.teenvogue.com/story/how-to-care-for-a-fat-body"]
+  },
+  {
+    "id": "reco_036",
+    "if": { "concern": "rides_fermete", "skin_type": "mature", "experience": "beginner" },
+    "then": { "focus_task": "antiage_peptides", "ingredient": "copper peptides", "product_category": "serum", "routine_slot": "am" },
+    "because": "Les peptides de cuivre stimulent la production d'élastine pour raffermir la peau.",
+    "sources": ["https://www.reddit.com/r/30PlusSkinCare/"]
+  },
+  {
+    "id": "reco_037",
+    "if": { "concern": "vieillissement_solaire", "skin_type": "tous", "experience": "beginner" },
+    "then": { "focus_task": "antiage_spf_daily", "ingredient": "broad spectrum SPF 50", "product_category": "sunscreen", "routine_slot": "am" },
+    "because": "Un SPF performant protège le collagène contre les UVA.",
+    "sources": ["https://www.reddit.com/r/30PlusSkinCare/"]
+  },
+  {
+    "id": "reco_038",
+    "if": { "concern": "objection_trop_etapes", "skin_type": "tous", "experience": "beginner" },
+    "then": { "focus_task": "skin_barrier_repair", "ingredient": "routine 4 steps max", "product_category": "routine_template", "routine_slot": "am" },
+    "because": "Les communautés rejettent le burnout beauté ; 4-5 étapes max augmente l'adhérence.",
+    "sources": ["https://www.reddit.com/r/SkincareAddiction/"]
+  },
+  {
+    "id": "reco_039",
+    "if": { "concern": "budget_limite", "skin_type": "tous", "experience": "beginner" },
+    "then": { "focus_task": "skin_glass_routine", "ingredient": "drugstore dupes", "product_category": "serum", "routine_slot": "am", "budget_tier": "budget" },
+    "because": "CeraVe, The Ordinary, COSRX offrent efficacité à prix accessible.",
+    "sources": ["https://www.reddit.com/r/SkincareAddiction/"]
+  },
+  {
+    "id": "reco_040",
+    "if": { "concern": "tenue_maquillage", "skin_type": "mixte", "experience": "beginner" },
+    "then": { "focus_task": "makeup_no_makeup", "ingredient": "rice lotion prep", "product_category": "moisturizer", "routine_slot": "am" },
+    "because": "Une lotion légère lisse la texture pour une tenue optimale sans pelucher.",
+    "sources": ["https://www.reddit.com/r/AsianBeauty/"]
+  },
+  {
+    "id": "reco_041",
+    "if": { "concern": "inflammation_peau", "skin_type": "grasse", "experience": "beginner" },
+    "then": { "focus_task": "skin_barrier_repair", "ingredient": "madecassoside", "product_category": "sheet_mask", "routine_slot": "pm" },
+    "because": "Le madécassoside calme rapidement l'inflammation superficielle.",
+    "sources": ["https://www.reddit.com/r/AsianBeauty/"]
+  },
+  {
+    "id": "reco_042",
+    "if": { "concern": "cheveux_ternes", "skin_type": "tous", "experience": "beginner" },
+    "then": { "focus_task": "hair_shine", "ingredient": "apple cider vinegar rinse", "product_category": "rinse", "routine_slot": "weekly" },
+    "because": "Le vinaigre de cidre lisse les écailles capillaires pour restaurer la brillance.",
+    "sources": ["https://www.cloudninehair.com/blogs/hair/how-to-detox-your-scalp"]
+  },
+  {
+    "id": "reco_043",
+    "if": { "concern": "cernes_fonces", "skin_type": "tous", "experience": "beginner" },
+    "then": { "focus_task": "eyes_brighten", "ingredient": "glutathione", "product_category": "eye_cream", "routine_slot": "pm" },
+    "because": "Le glutathion régule la mélanine pour estomper la coloration brune sous l'œil.",
+    "sources": ["https://www.reddit.com/r/AsianBeauty/"]
+  },
+  {
+    "id": "reco_044",
+    "if": { "concern": "pores_dilates", "skin_type": "grasse", "experience": "beginner" },
+    "then": { "focus_task": "skin_pores_texture", "ingredient": "clay cleanser", "product_category": "cleanser", "routine_slot": "weekly" },
+    "because": "L'argile absorbe l'excès de sébum et désincruste les pores.",
+    "sources": ["https://www.reddit.com/r/AsianBeauty/"]
+  },
+  {
+    "id": "reco_045",
+    "if": { "concern": "secheresse_locale", "skin_type": "seche", "experience": "beginner" },
+    "then": { "focus_task": "skin_barrier_repair", "ingredient": "rosehip oil", "product_category": "facial_oil", "routine_slot": "pm" },
+    "because": "L'huile de rosier sauvage adoucit la peau et atténue les zones sèches.",
+    "sources": ["https://www.reddit.com/r/SkincareAddiction/"]
+  },
+  {
+    "id": "reco_046",
+    "if": { "concern": "pellicules_capillaires", "skin_type": "cuir_chevelu_sec", "experience": "beginner" },
+    "then": { "focus_task": "hair_scalp", "ingredient": "clarifying shampoo", "product_category": "shampoo", "routine_slot": "weekly" },
+    "because": "Un lavage clarifiant régulier élimine les impuretés sans irriter.",
+    "sources": ["https://www.reddit.com/r/finehair/"]
+  },
+  {
+    "id": "reco_047",
+    "if": { "concern": "cernes_colores", "skin_type": "medium_to_deep", "experience": "beginner" },
+    "then": { "focus_task": "eyes_dark_circles", "ingredient": "correcteur abricot", "product_category": "color_corrector", "routine_slot": "am" },
+    "because": "Les tons abricot équilibrent les cernes brunes sur peaux moyennes à foncées.",
+    "sources": ["https://www.reddit.com/r/MakeupAddiction/"]
+  },
+  {
+    "id": "reco_048",
+    "if": { "concern": "sensibilite_contact", "skin_type": "sensible", "experience": "beginner" },
+    "then": { "focus_task": "skin_barrier_repair", "ingredient": "hydrating toner", "product_category": "toner", "routine_slot": "am" },
+    "because": "Une lotion apaisante renforce la barrière des peaux sensibles.",
+    "sources": ["https://www.reddit.com/r/AsianBeauty/"]
+  },
+  {
+    "id": "reco_049",
+    "if": { "concern": "glow_up_30_days", "skin_type": "tous", "experience": "beginner" },
+    "then": { "focus_task": "glow_up_30day_plan", "ingredient": "progressive habit stack", "product_category": "program", "routine_slot": "am" },
+    "because": "Les utilisatrices attendent un plan 30 jours avec victoires visibles en 2-4 semaines.",
+    "sources": ["https://www.gcimagazine.com/consumers-markets/news/22928395/20242025-skin-hair-nail-makeup-trends-pinterests-predictions-google-searches"]
+  },
+  {
+    "id": "reco_050",
+    "if": { "concern": "latte_makeup", "skin_type": "warm_undertone", "experience": "beginner" },
+    "then": { "focus_task": "makeup_latte", "ingredient": "warm monochrome tones", "product_category": "blush_bronzer", "routine_slot": "am" },
+    "because": "Le latte makeup monochrome chaud réveille le teint sans surcharge.",
+    "sources": ["https://www.countryandtownhouse.com/style/health-and-beauty/latte-makeup-trend/"]
+  }
+]

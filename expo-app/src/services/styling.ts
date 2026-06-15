@@ -1,5 +1,6 @@
 import { Platform } from 'react-native';
 import { CONFIG, workerHeaders } from '../config';
+import { analyzeColorSeasonLocal } from './colorScience';
 
 const isWeb = Platform.OS === 'web';
 const REAL_WORKER = !CONFIG.WORKER_BASE_URL.includes('your-domain');
@@ -97,11 +98,16 @@ const MOCK_VWEIGHT: VisualWeightResult = {
 };
 
 export async function analyzeColorSeason(imageUri: string, token: string): Promise<ColorSeasonResult> {
-  if (isWeb && !REAL_WORKER) { await new Promise(r => setTimeout(r, 1600)); return MOCK_COLOR; }
+  // Web: deterministic color science (pixel sampling) — reliable + offline, no LLM.
+  if (isWeb) {
+    const local = await analyzeColorSeasonLocal(imageUri);
+    if (local) return local;
+    if (!REAL_WORKER) return MOCK_COLOR;
+  }
   try {
     return await postJson<ColorSeasonResult>('/api/color-season', imageUri, token);
   } catch (e) {
-    if (isWeb) return MOCK_COLOR; // web preview never blocks on a missing dev LLM key
+    if (isWeb) return MOCK_COLOR;
     throw e;
   }
 }

@@ -7,7 +7,9 @@ import {
   getPlan, toggleTaskToday, isDoneToday, getStreak, getPlanWeek, getWeekFocus,
   GlowPlan, GlowTask, PlanCategory,
 } from '../src/services/glowPlan';
-import { recommendProducts, Focus, Product } from '../src/services/recoEngine';
+import { recommendProducts, contextFromConcerns, ProductRecommendation } from '../src/services/recoEngine';
+import { GlowProduct } from '../src/services/products';
+import AsyncStorage from '@react-native-async-storage/async-storage';
 import { impactMedium, notificationSuccess } from '../src/services/haptics';
 import { trackScreen, trackEvent } from '../src/services/analytics';
 
@@ -142,7 +144,7 @@ export default function GlowPlanScreen() {
         </View>
       ))}
 
-      <RecommendedProducts focus={(plan.persona as Focus) || 'skin'} />
+      <RecommendedProducts />
 
       <Text style={styles.hint}>
         Check off a task each day to keep your streak. Re-scan weekly to watch your GlowScore climb.
@@ -151,25 +153,33 @@ export default function GlowPlanScreen() {
   );
 }
 
-function RecommendedProducts({ focus }: { focus: Focus }) {
-  const products = recommendProducts([focus], { limit: 4 });
-  if (!products.length) return null;
-  const tier = (b: Product['budget']) => (b === 'budget' ? '$' : b === 'mid' ? '$$' : '$$$');
+function RecommendedProducts() {
+  const [recs, setRecs] = useState<ProductRecommendation[]>([]);
+  useEffect(() => {
+    (async () => {
+      let ids: string[] = [];
+      try { ids = JSON.parse((await AsyncStorage.getItem('glow_concerns')) || '[]'); } catch {}
+      const ctx = contextFromConcerns(ids);
+      setRecs(recommendProducts(ctx, 6).filter((r) => r.product));
+    })();
+  }, []);
+  if (!recs.length) return null;
+  const tier = (b: GlowProduct['budgetTier']) => (b === 'budget' ? '$' : b === 'mid' ? '$$' : b === 'premium' ? '$$$' : '$$$$');
   return (
     <View style={styles.recoBlock}>
       <Text style={styles.recoTitle}>Recommended for you</Text>
-      <Text style={styles.recoSub}>Picked for your focus. Affiliate links support the app.</Text>
-      {products.map((p) => (
-        <Pressable key={p.id} style={styles.recoCard} onPress={() => { trackEvent('product_tapped', { id: p.id }); Linking.openURL(p.affiliateUrl).catch(() => {}); }}>
+      <Text style={styles.recoSub}>Picked for your concerns. Affiliate links support the app.</Text>
+      {recs.map((r) => r.product ? (
+        <Pressable key={r.ruleId + r.product.id} style={styles.recoCard} onPress={() => { trackEvent('product_tapped', { id: r.product!.id }); Linking.openURL(r.affiliateUrl || '').catch(() => {}); }}>
           <View style={styles.recoIcon}><Ionicons name="bag-handle-outline" size={18} color={C.pink} /></View>
           <View style={{ flex: 1 }}>
-            <Text style={styles.recoBrand}>{p.brand}</Text>
-            <Text style={styles.recoName} numberOfLines={1}>{p.name}</Text>
+            <Text style={styles.recoBrand}>{r.product.brand}</Text>
+            <Text style={styles.recoName} numberOfLines={1}>{r.product.name}</Text>
           </View>
-          <Text style={styles.recoTier}>{tier(p.budget)}</Text>
+          <Text style={styles.recoTier}>{tier(r.product.budgetTier)}</Text>
           <Ionicons name="open-outline" size={16} color={C.textSoft} />
         </Pressable>
-      ))}
+      ) : null)}
     </View>
   );
 }

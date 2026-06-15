@@ -298,6 +298,12 @@ function percentileFromOverall(overall: number): number {
 }
 
 /** HMAC-SHA256 signature (first 16 bytes, hex) for signed /images/ URLs. */
+/** Short content hash for idempotent caching of analyses (hashes a prefix for speed). */
+async function analysisHash(s: string): Promise<string> {
+  const buf = await crypto.subtle.digest("SHA-256", new TextEncoder().encode(s.slice(0, 6000)));
+  return [...new Uint8Array(buf)].slice(0, 12).map((b) => b.toString(16).padStart(2, "0")).join("");
+}
+
 async function signKey(key: string, secret: string): Promise<string> {
   const enc = new TextEncoder();
   const cryptoKey = await crypto.subtle.importKey("raw", enc.encode(secret), { name: "HMAC", hash: "SHA-256" }, false, ["sign"]);
@@ -1002,6 +1008,14 @@ async function handleColorSeason(request: Request, env: Env, headers: Record<str
   if (!isValidImageBase64(body.image)) return Response.json({ error: "Invalid image format" }, { status: 400, headers });
   const auth = await validatePremiumAuth(request, env, headers);
   if (auth instanceof Response) return auth;
+
+  // Idempotent cache: same photo returns the cached result, free, no LLM call.
+  const cacheKey = `cs:${await analysisHash(body.image)}`;
+  try {
+    const cached = await env.RATE_LIMIT_KV.get(cacheKey);
+    if (cached) return new Response(cached, { headers: { ...headers, "Content-Type": "application/json" } });
+  } catch {}
+
   const rl = await checkRateLimit(request, env, headers, "color", 10, true, auth.subscriberToken);
   if (rl instanceof Response) return rl;
   const { currentCount, rateLimitKey } = rl;
@@ -1019,7 +1033,7 @@ async function handleColorSeason(request: Request, env: Env, headers: Record<str
   const res = await callVisionJSON(env, `data:image/jpeg;base64,${body.image}`, rubric, 600, headers, rateLimitKey, currentCount);
   if (res instanceof Response) return res;
   const d = res.data || {};
-  return Response.json({
+  const payload = JSON.stringify({
     feature: "color_season",
     season: String(d.season || "").slice(0, 24),
     sub_season: String(d.sub_season || "").slice(0, 32),
@@ -1033,7 +1047,9 @@ async function handleColorSeason(request: Request, env: Env, headers: Record<str
     lip: asHexArray([d.lip], 1)[0] || "",
     blush: asHexArray([d.blush], 1)[0] || "",
     remaining_today: 10 - (currentCount + 1),
-  }, { headers });
+  });
+  try { await env.RATE_LIMIT_KV.put(cacheKey, payload, { expirationTtl: 7 * 86400 }); } catch {}
+  return new Response(payload, { headers: { ...headers, "Content-Type": "application/json" } });
 }
 
 // POST /api/visual-weight — high/low visual weight styling typology (premium)
@@ -1046,6 +1062,13 @@ async function handleVisualWeight(request: Request, env: Env, headers: Record<st
   if (!isValidImageBase64(body.image)) return Response.json({ error: "Invalid image format" }, { status: 400, headers });
   const auth = await validatePremiumAuth(request, env, headers);
   if (auth instanceof Response) return auth;
+
+  const cacheKey = `vw:${await analysisHash(body.image)}`;
+  try {
+    const cached = await env.RATE_LIMIT_KV.get(cacheKey);
+    if (cached) return new Response(cached, { headers: { ...headers, "Content-Type": "application/json" } });
+  } catch {}
+
   const rl = await checkRateLimit(request, env, headers, "vweight", 10, true, auth.subscriberToken);
   if (rl instanceof Response) return rl;
   const { currentCount, rateLimitKey } = rl;
@@ -1063,7 +1086,7 @@ async function handleVisualWeight(request: Request, env: Env, headers: Record<st
   if (res instanceof Response) return res;
   const d = res.data || {};
   const tips = Array.isArray(d.makeup_tips) ? d.makeup_tips.filter((x: any) => typeof x === "string").slice(0, 3) : [];
-  return Response.json({
+  const payload = JSON.stringify({
     feature: "visual_weight",
     weight: ["high", "low", "balanced"].includes(d.weight) ? d.weight : "balanced",
     score: Math.max(0, Math.min(100, parseInt(d.score) || 0)),
@@ -1072,7 +1095,9 @@ async function handleVisualWeight(request: Request, env: Env, headers: Record<st
     description: String(d.description || "").slice(0, 160),
     makeup_tips: tips,
     remaining_today: 10 - (currentCount + 1),
-  }, { headers });
+  });
+  try { await env.RATE_LIMIT_KV.put(cacheKey, payload, { expirationTtl: 7 * 86400 }); } catch {}
+  return new Response(payload, { headers: { ...headers, "Content-Type": "application/json" } });
 }
 
 // ─── Vision LLM helper (GlowScore) ──────────────────────────────────────────
