@@ -2,7 +2,7 @@
  * Product recommendation engine from market research rules (reco-rules.json).
  */
 
-import rules from './reco-rules.json';
+import rules from '../data/reco-rules.json';
 import { PRODUCTS, GlowProduct, getAffiliateUrl } from './products';
 import type { QuizProfile } from '../services/quizProfile';
 
@@ -83,12 +83,43 @@ function matchesRule(rule: RecoRule, ctx: RecoContext): boolean {
 }
 
 function pickProduct(rule: RecoRule, ctx: RecoContext): GlowProduct | null {
-  const category = rule.then.product_category;
-  if (!category || category === 'routine_template' || category === 'program' || category === 'device' || category === 'supplements') {
+  const rawCategory = rule.then.product_category;
+  if (!rawCategory || rawCategory === 'routine_template' || rawCategory === 'program' || rawCategory === 'device' || rawCategory === 'supplements') {
     return null;
   }
 
-  let pool = PRODUCTS.filter((p) => p.category === category || category.includes(p.category));
+  const categoryMap: Record<string, GlowProduct['category']> = {
+    serum: 'serum',
+    essence: 'serum',
+    moisturizer: 'moisturizer',
+    spf: 'spf',
+    sunscreen: 'spf',
+    cleanser: 'cleanser',
+    eye_cream: 'eye',
+    eye_cream_or_serum: 'eye',
+    eye_serum: 'eye',
+    color_corrector: 'makeup',
+    contour_stick: 'makeup',
+    foundation: 'makeup',
+    blurring_powder: 'makeup',
+    scalp_scrub: 'hair',
+    shampoo: 'hair',
+    hair_oil: 'hair',
+    anti_chafe: 'anti_chafe',
+    body_care: 'body',
+    face_spray: 'treatment',
+    sheet_mask: 'mask',
+    toner: 'treatment',
+    facial_oil: 'treatment',
+    leave_in_spray: 'hair',
+    rinse: 'hair',
+    device: 'tool',
+  };
+
+  const category = categoryMap[rawCategory];
+  if (!category) return null;
+
+  let pool = PRODUCTS.filter((p) => p.category === category);
 
   if (rule.if.concern) {
     const tagged = pool.filter((p) => p.concernTags.includes(rule.if.concern!));

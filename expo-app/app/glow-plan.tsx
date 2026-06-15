@@ -11,7 +11,7 @@ import { recommendProducts, contextFromConcerns, ProductRecommendation } from '.
 import { GlowProduct } from '../src/services/products';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import { impactMedium, notificationSuccess } from '../src/services/haptics';
-import { trackScreen, trackEvent } from '../src/services/analytics';
+import { trackScreen, trackEvent, trackPlanViewed, trackTaskCompleted } from '../src/services/analytics';
 
 const CAT_ICON: Record<string, keyof typeof Ionicons.glyphMap> = {
   Skincare: 'water-outline',
@@ -22,9 +22,10 @@ const CAT_ICON: Record<string, keyof typeof Ionicons.glyphMap> = {
   Hair: 'cut-outline',
   Eyes: 'eye-outline',
   'Glow Habits': 'sparkles-outline',
+  'Body Care': 'body-outline',
 };
 const CAT_ORDER: PlanCategory[] = [
-  'Skincare', 'Face Fitness', 'Eyes', 'Makeup', 'Hair', 'Style & Color', 'Lifestyle', 'Glow Habits',
+  'Skincare', 'Face Fitness', 'Eyes', 'Makeup', 'Hair', 'Body Care', 'Style & Color', 'Lifestyle', 'Glow Habits',
 ];
 
 export default function GlowPlanScreen() {
@@ -35,9 +36,11 @@ export default function GlowPlanScreen() {
   useEffect(() => {
     trackScreen('glow_plan');
     (async () => {
-      setPlan(await getPlan());
+      const p = await getPlan();
+      setPlan(p);
       setStreak(await getStreak());
       setLoading(false);
+      if (p) trackPlanViewed(p.persona);
     })();
   }, []);
 
@@ -48,6 +51,8 @@ export default function GlowPlanScreen() {
     const s = await getStreak();
     setStreak(s);
     trackEvent('glowplan_task_toggled');
+    const task = p?.tasks.find((t) => t.id === id);
+    if (task && isDoneToday(task)) trackTaskCompleted(task.category);
     if (s > 0) notificationSuccess();
   }
 

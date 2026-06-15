@@ -1,7 +1,9 @@
 import { Stack, usePathname } from 'expo-router';
 import { useEffect } from 'react';
-import { View, Platform, StyleSheet } from 'react-native';
+import { View, Platform, StyleSheet, ActivityIndicator } from 'react-native';
 import { StatusBar } from 'expo-status-bar';
+import { useFonts, Fraunces_400Regular, Fraunces_600SemiBold } from '@expo-google-fonts/fraunces';
+import { Inter_400Regular, Inter_500Medium, Inter_600SemiBold } from '@expo-google-fonts/inter';
 import { initPurchases } from '../src/services/subscription';
 import { trackScreen } from '../src/services/analytics';
 import ErrorBoundary from '../src/components/ErrorBoundary';
@@ -11,6 +13,13 @@ const isWeb = Platform.OS === 'web';
 
 export default function RootLayout() {
   const pathname = usePathname();
+  const [fontsLoaded] = useFonts({
+    Fraunces_400Regular,
+    Fraunces_600SemiBold,
+    Inter_400Regular,
+    Inter_500Medium,
+    Inter_600SemiBold,
+  });
 
   useEffect(() => {
     initPurchases();
@@ -22,6 +31,14 @@ export default function RootLayout() {
       trackScreen(screenName);
     }
   }, [pathname]);
+
+  if (!fontsLoaded) {
+    return (
+      <View style={[styles.fill, styles.fontLoader]}>
+        <ActivityIndicator color={theme.pink} />
+      </View>
+    );
+  }
 
   return (
     <ErrorBoundary>
@@ -61,7 +78,6 @@ export default function RootLayout() {
         <Stack.Screen name="visual-weight" options={{ animation: 'slide_from_right' }} />
         <Stack.Screen name="chrono-skincare" options={{ animation: 'slide_from_right' }} />
         <Stack.Screen name="concerns" options={{ animation: 'slide_from_right' }} />
-        <Stack.Screen name="referral" options={{ animation: 'slide_from_right' }} />
       </Stack>
         </View>
       </View>
@@ -71,6 +87,7 @@ export default function RootLayout() {
 
 const styles = StyleSheet.create({
   fill: { flex: 1 },
+  fontLoader: { alignItems: 'center', justifyContent: 'center', backgroundColor: theme.bg },
   // Desktop web: dim backdrop, app constrained to a centered phone-width column.
   webOuter: { flex: 1, alignItems: 'center', backgroundColor: '#E4BACB' },
   webPhone: { flex: 1, width: '100%', maxWidth: 440, backgroundColor: theme.bg, overflow: 'hidden' },

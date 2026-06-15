@@ -11,7 +11,7 @@ export interface GlowProduct {
   id: string;
   brand: string;
   name: string;
-  category: 'serum' | 'moisturizer' | 'spf' | 'cleanser' | 'eye' | 'treatment' | 'exfoliant' | 'mask' | 'tool' | 'makeup' | 'hair';
+  category: 'serum' | 'moisturizer' | 'spf' | 'cleanser' | 'eye' | 'treatment' | 'exfoliant' | 'mask' | 'tool' | 'makeup' | 'hair' | 'body' | 'anti_chafe';
   concernTags: string[];
   ingredient?: string;
   budgetTier: BudgetTier;
@@ -52,4 +52,12 @@ export const PRODUCTS: GlowProduct[] = [
   // Hair
   { id: 'kerastase_glass', brand: 'Kerastase', name: 'Resistance Glass Hair Serum', category: 'hair', concernTags: ['cheveux_ternes', 'cheveux_plats'], budgetTier: 'premium', markets: ['us', 'uk', 'fr'] },
   { id: 'theordinary_multipeptide_hair', brand: 'The Ordinary', name: 'Multi-Peptide Serum for Hair Density', category: 'hair', concernTags: ['cheveux_plats', 'cheveux_ternes'], budgetTier: 'budget', markets: ['us', 'uk', 'fr'] },
+  // Body care (persona US plus size, market research 2026-06)
+  { id: 'body_glide', brand: 'Body Glide', name: 'Anti-Chafe Balm', category: 'anti_chafe', concernTags: ['chafing_cuisses', 'body_fold'], budgetTier: 'budget', markets: ['us', 'uk'] },
+  { id: 'palmers_cocoa', brand: "Palmer's", name: 'Cocoa Butter Formula', category: 'body', concernTags: ['vergetures_inconfort', 'body_hydration'], budgetTier: 'budget', markets: ['us', 'uk', 'fr'] },
+  { id: 'bio_oil', brand: 'Bio-Oil', name: 'Skincare Oil', category: 'body', concernTags: ['vergetures_inconfort', 'secheresse_locale'], budgetTier: 'budget', markets: ['us', 'uk', 'fr'] },
+  { id: 'mario_contour', brand: 'Makeup by Mario', name: 'Soft Sculpt Shaping Stick', category: 'makeup', concernTags: ['double_menton_maquillage', 'visage_gonfle'], budgetTier: 'mid', markets: ['us', 'uk', 'fr'] },
+  { id: 'cosrx_snail', brand: 'COSRX', name: 'Advanced Snail 96 Mucin Essence', category: 'serum', ingredient: 'snail mucin', concernTags: ['deshydratation_passagere', 'teint_terne', 'glass_skin'], budgetTier: 'budget', markets: ['us', 'uk', 'fr'] },
+  { id: 'medicube_pdrn', brand: 'Medicube', name: 'PDRN Pink Peptide Serum', category: 'serum', ingredient: 'pdrn', concernTags: ['teint_terne', 'texture'], budgetTier: 'mid', markets: ['us'] },
+  { id: 'bobbi_corrector', brand: 'Bobbi Brown', name: 'Under Eye Color Corrector', category: 'makeup', concernTags: ['cernes_bleus', 'cernes_colores'], budgetTier: 'premium', markets: ['us', 'uk', 'fr'] },
 ];

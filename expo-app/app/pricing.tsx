@@ -5,6 +5,7 @@ import { Ionicons } from '@expo/vector-icons';
 import { getOfferings, purchasePackage, purchaseProduct, restorePurchases } from '../src/services/subscription';
 import { trackScreen } from '../src/services/analytics';
 import { CONFIG } from '../src/config';
+import { PAYWALL_BENEFITS } from '../src/data/routineCopy';
 
 type PlanType = 'weekly' | 'annual' | 'lifetime';
 
@@ -19,13 +20,7 @@ const C = {
   textSoft: '#8A7B85',
 };
 
-const FEATURES = [
-  'Full Facial Harmony report (all 6 components)',
-  'Your personalized treatment plan',
-  'See Your Maxed-Out Self reveal',
-  'HD / 4K transformations',
-  'Weekly progress re-scans',
-];
+const FEATURES = PAYWALL_BENEFITS;
 
 export default function PricingScreen() {
   const [selectedPlan, setSelectedPlan] = useState<PlanType>('annual');
@@ -158,6 +153,8 @@ export default function PricingScreen() {
         </Pressable>
       </View>
 
+      <Text style={styles.guarantee}>7-day satisfaction guarantee on annual and lifetime plans</Text>
+
       {/* Primary CTA */}
       <Pressable style={styles.cta} onPress={purchase} disabled={purchasing}>
         <Text style={styles.ctaText}>{getCTAText()}</Text>
@@ -224,6 +221,7 @@ const styles = StyleSheet.create({
   },
   ctaText: { color: '#fff', fontSize: 18, fontWeight: '900' },
   socialProof: { fontSize: 13, color: C.textSoft, textAlign: 'center', marginTop: 12, fontWeight: '600' },
+  guarantee: { fontSize: 12, color: C.pink, textAlign: 'center', marginBottom: 12, fontWeight: '700' },
   error: { color: '#C2415B', fontSize: 13, textAlign: 'center', marginTop: 12 },
   legal: { fontSize: 12, color: C.textSoft, textAlign: 'center', marginTop: 12 },
   legalSmall: { fontSize: 10, color: C.textSoft, textAlign: 'center', marginTop: 8, opacity: 0.8 },

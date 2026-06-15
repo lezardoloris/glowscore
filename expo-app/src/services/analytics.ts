@@ -126,6 +126,26 @@ export function trackTransformCompleted(quality: 'standard' | 'hd'): void {
   trackEvent('transform_completed_quality', { quality });
 }
 
+// MARK: - Canonical funnel events (deep-research measurement plan)
+// QuizStart/Complete -> ScanStart/Complete -> ScoreRevealed -> PaywallSeen ->
+// TrialStarted -> Subscribed -> PlanViewed -> TaskCompleted.
+
+export function trackScanStart(source?: string): void {
+  trackEvent('ScanStart', source ? { source } : undefined);
+}
+export function trackScanComplete(overall: number): void {
+  trackEvent('ScanComplete', { overall });
+}
+export function trackScoreRevealed(overall: number, unlocked: boolean): void {
+  trackEvent('ScoreRevealed', { overall, unlocked });
+}
+export function trackPlanViewed(persona?: string): void {
+  trackEvent('PlanViewed', persona ? { persona } : undefined);
+}
+export function trackTaskCompleted(category?: string): void {
+  trackEvent('TaskCompleted', category ? { category } : undefined);
+}
+
 // MARK: - User Properties
 
 export function setUserProperty(key: string, value: string): void {

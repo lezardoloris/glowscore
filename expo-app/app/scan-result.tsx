@@ -6,7 +6,7 @@ import { useLocalSearchParams, router } from 'expo-router';
 import { useEffect, useRef, useState } from 'react';
 import { Ionicons } from '@expo/vector-icons';
 import { impactMedium, notificationSuccess } from '../src/services/haptics';
-import { trackScreen, trackEvent } from '../src/services/analytics';
+import { trackScreen, trackEvent, trackScanStart, trackScanComplete, trackScoreRevealed } from '../src/services/analytics';
 import { checkSubscription, getSubscriberToken } from '../src/services/subscription';
 import { faceScan, GlowScore } from '../src/services/faceScan';
 import AnalysisLoader from '../src/components/AnalysisLoader';
@@ -96,6 +96,7 @@ export default function ScanResultScreen() {
         return;
       }
       if (mounted.current) { setAwaitingConsent(false); setAnalysisComplete(false); }
+      trackScanStart('scan_result');
 
       try {
         const [sub, invUnlocked, invCount] = await Promise.all([
@@ -122,6 +123,7 @@ export default function ScanResultScreen() {
         setScore(res);
         setLoading(false);
         notificationSuccess();
+        trackScanComplete(res.overall);
 
         // Maxed-Out Self teaser (EPIC 4.4): pre-generate the glow_max so the
         // locked reveal shows HER blurred potential right before the paywall.
@@ -239,7 +241,7 @@ export default function ScanResultScreen() {
     return (
       <AnalysisLoader
         photo={typeof imageUri === 'string' ? imageUri : undefined}
-        onComplete={() => setAnalysisComplete(true)}
+        onComplete={() => { setAnalysisComplete(true); if (score) trackScoreRevealed(score.overall, unlocked); }}
       />
     );
   }
