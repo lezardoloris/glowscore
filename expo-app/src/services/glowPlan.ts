@@ -252,6 +252,23 @@ export async function savePlanForProfile(quiz: QuizProfile | null, score?: PlanS
   await persistTasks(items, { persona, personaLabel, intro, score: score?.overall });
 }
 
+/** Build + save a plan from the concern picker (concerns.tsx -> focus keys). */
+export async function savePlanFromConcerns(focuses: string[]): Promise<void> {
+  const uniq = [...new Set(focuses)].filter((f) => FOCUS_TASKS[f]);
+  if (!uniq.length) return;
+  const items: Item[] = [...FOUNDATION];
+  uniq.forEach((f) => items.push(...(FOCUS_TASKS[f] || []).slice(0, 3)));
+  items.push(capstone(undefined));
+  const seen = new Set<string>();
+  const deduped = items.filter((it) => (seen.has(it.text) ? false : (seen.add(it.text), true)));
+  const primary = uniq[0];
+  await persistTasks(deduped.slice(0, 12), {
+    persona: primary,
+    personaLabel: PERSONA_LABEL[primary] || 'Your Glow-Up',
+    intro: 'Built around the concerns you picked. Consistency over 8-12 weeks is where the magic happens.',
+  });
+}
+
 /**
  * Stress-Faciometre: merge the de-bloat ritual into the existing plan (without
  * dropping the persona plan), so the hero feature feeds the daily retention loop.

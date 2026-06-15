@@ -1,16 +1,31 @@
-import { Image, StyleSheet, ImageStyle, StyleProp } from 'react-native';
+import { View, Text, StyleSheet, StyleProp, ViewStyle } from 'react-native';
+import { theme as C } from '../theme';
 
 /**
- * The single GlowScore brand mark used app-wide (rose-gold wordmark, transparent).
- * Centered by default. Replaces the old mixed "GlowUp" text + variants.
+ * The single GlowUp brand mark used app-wide: a soft-pink pill badge with a kiss
+ * mark + "GlowUp" wordmark. Centered by default. (Preferred over the wordmark image.)
  */
-const LOGO = require('../../assets/logo/logo_wordmark_t.png');
-const RATIO = 216 / 778; // native wordmark aspect ratio
-
-export default function BrandLogo({ width = 150, style }: { width?: number; style?: StyleProp<ImageStyle> }) {
-  return <Image source={LOGO} style={[styles.logo, { width, height: Math.round(width * RATIO) }, style]} resizeMode="contain" />;
+export default function BrandLogo({ width = 150, style }: { width?: number; style?: StyleProp<ViewStyle> }) {
+  const fs = Math.max(15, Math.round(width * 0.125)); // scale text from the legacy width prop
+  return (
+    <View style={[styles.badge, style]}>
+      <Text style={[styles.lips, { fontSize: fs + 3 }]}>💋</Text>
+      <Text style={[styles.name, { fontSize: fs }]}>GlowUp</Text>
+    </View>
+  );
 }
 
 const styles = StyleSheet.create({
-  logo: { alignSelf: 'center' },
+  badge: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    alignSelf: 'center',
+    gap: 8,
+    backgroundColor: C.pinkSoft,
+    paddingHorizontal: 16,
+    paddingVertical: 8,
+    borderRadius: 24,
+  },
+  lips: { },
+  name: { color: C.pink, fontWeight: '900', letterSpacing: 0.2 },
 });

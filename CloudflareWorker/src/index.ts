@@ -650,7 +650,7 @@ export default {
 
     // H7 FIX: Allow localhost for web dev, restrict in production
     const origin = request.headers.get("Origin") || "";
-    const allowedOrigins = ["https://glowupai.app", "http://localhost:8081", "http://localhost:19006"];
+    const allowedOrigins = ["https://glowupai.app", "https://glowscore-nine.vercel.app", "http://localhost:8081", "http://localhost:19006"];
     const corsOrigin = allowedOrigins.includes(origin) ? origin : "https://glowupai.app";
     const corsHeaders = {
       "Access-Control-Allow-Origin": corsOrigin,

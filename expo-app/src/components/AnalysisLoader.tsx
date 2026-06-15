@@ -4,6 +4,7 @@ import { AnimatedCircularProgress } from 'react-native-circular-progress';
 import { LinearGradient } from 'expo-linear-gradient';
 import { Ionicons } from '@expo/vector-icons';
 import { theme as C } from '../theme';
+import FaceMeshOverlay from './FaceMeshOverlay';
 
 /**
  * Premium multi-step analysis loader. Runs a deliberate staged sequence (face
@@ -54,6 +55,7 @@ export default function AnalysisLoader({
 
   const travel = PHOTO / 2 - 8;
   const scanY = scanAnim.interpolate({ inputRange: [0, 0.5, 1], outputRange: [-travel, travel, -travel] });
+  const meshOpacity = scanAnim.interpolate({ inputRange: [0, 0.5, 1], outputRange: [0.3, 0.75, 0.3] });
   const pct = Math.round((done / steps.length) * 100);
   const current = Math.min(done, steps.length - 1);
 
@@ -67,6 +69,9 @@ export default function AnalysisLoader({
           {() => (
             <View style={styles.photoWrap}>
               {photo ? <Image source={{ uri: photo }} style={styles.photo} /> : <View style={[styles.photo, { backgroundColor: C.pinkSoft }]} />}
+              <Animated.View style={[StyleSheet.absoluteFill, { opacity: meshOpacity }]} pointerEvents="none">
+                <FaceMeshOverlay size={PHOTO} />
+              </Animated.View>
               <Animated.View style={[styles.scanLine, { transform: [{ translateY: scanY }] }]}>
                 <LinearGradient colors={['rgba(224,83,122,0)', 'rgba(224,83,122,0.85)', 'rgba(224,83,122,0)']} start={{ x: 0, y: 0 }} end={{ x: 1, y: 0 }} style={styles.scanGrad} />
               </Animated.View>

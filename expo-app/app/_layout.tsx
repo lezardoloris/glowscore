@@ -60,6 +60,7 @@ export default function RootLayout() {
         <Stack.Screen name="color-season" options={{ animation: 'slide_from_right' }} />
         <Stack.Screen name="visual-weight" options={{ animation: 'slide_from_right' }} />
         <Stack.Screen name="chrono-skincare" options={{ animation: 'slide_from_right' }} />
+        <Stack.Screen name="concerns" options={{ animation: 'slide_from_right' }} />
       </Stack>
         </View>
       </View>

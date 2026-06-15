@@ -154,6 +154,15 @@ export default function HomeScreen() {
             <Ionicons name="chevron-forward" size={18} color={C.textSoft} />
           </Pressable>
 
+          <Pressable style={styles.planRow} onPress={() => router.push('/concerns')}>
+            <View style={styles.planIcon}><Ionicons name="sparkles-outline" size={16} color={C.pink} /></View>
+            <View style={{ flex: 1 }}>
+              <Text style={styles.planText}>What do you want to improve?</Text>
+              <Text style={styles.scoreSub}>Tailor your plan to your goals</Text>
+            </View>
+            <Ionicons name="chevron-forward" size={18} color={C.textSoft} />
+          </Pressable>
+
           <GradientCta icon="scan" label="Re-scan to see your progress" onPress={takePhoto} />
           <Pressable style={styles.secondary} onPress={pickImage}>
             <Text style={styles.secondaryText}>Choose a photo</Text>
