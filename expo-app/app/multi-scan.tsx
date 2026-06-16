@@ -1,5 +1,5 @@
 import { View, Text, Pressable, StyleSheet, Image, ScrollView } from 'react-native';
-import { router } from 'expo-router';
+import { router, useLocalSearchParams } from 'expo-router';
 import { useEffect, useState } from 'react';
 import * as ImagePicker from 'expo-image-picker';
 import { Ionicons } from '@expo/vector-icons';
@@ -10,11 +10,13 @@ import ScreenHeader from '../src/components/ScreenHeader';
 import { impactMedium } from '../src/services/haptics';
 import { trackScreen, trackEvent } from '../src/services/analytics';
 import { assessPhoto } from '../src/services/photoQuality';
+import LiveCameraCapture from '../src/components/LiveCameraCapture';
 
 /**
- * Guided multi-angle capture (review 2026-06): front + 3/4 left + 3/4 right stills.
- * Cross-platform (camera on native, picker fallback on web), no heavy live 3D mesh.
- * More angles raise scan reliability; degrades gracefully to a single front photo.
+ * Guided multi-angle capture (review 2026-06): front + 3/4 left + 3/4 right.
+ * Real-time live camera (expo-camera CameraView, works on web + native) with a
+ * face oval, plus a gallery fallback. More angles raise scan reliability;
+ * degrades gracefully to a single front photo.
  */
 const ANGLES = [
   { id: 'front', label: 'Look straight ahead', hint: 'Face centered, neutral expression, soft front light' },
@@ -23,23 +25,23 @@ const ANGLES = [
 ] as const;
 
 export default function MultiScanScreen() {
+  const { first } = useLocalSearchParams<{ first?: string }>();
   const [shots, setShots] = useState<(string | undefined)[]>([undefined, undefined, undefined]);
   const [step, setStep] = useState(0);
   const [warning, setWarning] = useState<string | null>(null);
+  const [capturing, setCapturing] = useState<number | null>(null);
 
   useEffect(() => { trackScreen('multi_scan'); }, []);
 
-  async function capture(index: number) {
+  function capture(index: number) {
     impactMedium();
-    let r: ImagePicker.ImagePickerResult;
-    const perm = await ImagePicker.requestCameraPermissionsAsync();
-    if (perm.granted) {
-      r = await ImagePicker.launchCameraAsync({ quality: 0.85, allowsEditing: true, aspect: [1, 1], cameraType: ImagePicker.CameraType.front });
-    } else {
-      r = await ImagePicker.launchImageLibraryAsync({ mediaTypes: ['images'] as any, quality: 0.85, allowsEditing: true, aspect: [1, 1] });
-    }
-    if (r.canceled || !r.assets?.[0]) return;
-    const uri = r.assets[0].uri;
+    setCapturing(index); // open the live camera for this angle
+  }
+
+  async function handleCaptured(uri: string) {
+    const index = capturing;
+    setCapturing(null);
+    if (index == null) return;
     const next = [...shots];
     next[index] = uri;
     setShots(next);
@@ -57,13 +59,13 @@ export default function MultiScanScreen() {
   function analyze() {
     if (!front) return;
     impactMedium();
-    router.push({ pathname: '/scan-result', params: { imageUri: front, extraUris: JSON.stringify(extras) } });
+    router.push({ pathname: '/scan-result', params: { imageUri: front, extraUris: JSON.stringify(extras), ...(first ? { first } : {}) } });
   }
 
   async function quickSingle() {
     const r = await ImagePicker.launchImageLibraryAsync({ mediaTypes: ['images'] as any, quality: 0.85, allowsEditing: true, aspect: [1, 1] });
     if (!r.canceled && r.assets?.[0]) {
-      router.push({ pathname: '/scan-result', params: { imageUri: r.assets[0].uri } });
+      router.push({ pathname: '/scan-result', params: { imageUri: r.assets[0].uri, ...(first ? { first } : {}) } });
     }
   }
 
@@ -129,6 +131,15 @@ export default function MultiScanScreen() {
           <Text style={styles.secondaryText}>Use a single photo instead</Text>
         </Pressable>
       </ScrollView>
+
+      {capturing !== null && (
+        <LiveCameraCapture
+          label={ANGLES[capturing].label}
+          hint={ANGLES[capturing].hint}
+          onCapture={handleCaptured}
+          onClose={() => setCapturing(null)}
+        />
+      )}
     </View>
   );
 }

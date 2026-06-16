@@ -49,7 +49,7 @@ const METRIC_DEFS = [
 ] as const;
 
 export default function ScanResultScreen() {
-  const { imageUri, extraUris } = useLocalSearchParams<{ imageUri: string; extraUris?: string }>();
+  const { imageUri, extraUris, first } = useLocalSearchParams<{ imageUri: string; extraUris?: string; first?: string }>();
   const [loading, setLoading] = useState(true);
   const [analysisComplete, setAnalysisComplete] = useState(false);
   const [error, setError] = useState<string | null>(null);
@@ -294,7 +294,7 @@ export default function ScanResultScreen() {
           <View style={page === 0 ? styles.stepDotActive : styles.stepDot} />
           <View style={page === 1 ? styles.stepDotActive : styles.stepDot} />
         </View>
-        <Pressable style={styles.closeBtn} onPress={() => router.replace('/(tabs)')} hitSlop={10}>
+        <Pressable style={styles.closeBtn} onPress={() => router.replace(first === '1' ? '/personalize' : '/(tabs)')} hitSlop={10}>
           <Ionicons name="close" size={24} color={C.text} />
         </Pressable>
       </View>
