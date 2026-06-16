@@ -9,6 +9,7 @@ import { shadow, ctaShadow } from '../src/shadows';
 import ScreenHeader from '../src/components/ScreenHeader';
 import { impactMedium } from '../src/services/haptics';
 import { trackScreen, trackEvent } from '../src/services/analytics';
+import { assessPhoto } from '../src/services/photoQuality';
 
 /**
  * Guided multi-angle capture (review 2026-06): front + 3/4 left + 3/4 right stills.
@@ -24,6 +25,7 @@ const ANGLES = [
 export default function MultiScanScreen() {
   const [shots, setShots] = useState<(string | undefined)[]>([undefined, undefined, undefined]);
   const [step, setStep] = useState(0);
+  const [warning, setWarning] = useState<string | null>(null);
 
   useEffect(() => { trackScreen('multi_scan'); }, []);
 
@@ -37,11 +39,15 @@ export default function MultiScanScreen() {
       r = await ImagePicker.launchImageLibraryAsync({ mediaTypes: ['images'] as any, quality: 0.85, allowsEditing: true, aspect: [1, 1] });
     }
     if (r.canceled || !r.assets?.[0]) return;
+    const uri = r.assets[0].uri;
     const next = [...shots];
-    next[index] = r.assets[0].uri;
+    next[index] = uri;
     setShots(next);
     trackEvent('multi_scan_shot', { angle: ANGLES[index].id });
-    if (index < ANGLES.length - 1 && index === step) setStep(index + 1);
+    // Soft quality gate: warn (do not block) on dark/low-res shots so the score stays reliable.
+    const q = await assessPhoto(uri);
+    setWarning(q.ok ? null : (q.reason || null));
+    if (q.ok && index < ANGLES.length - 1 && index === step) setStep(index + 1);
   }
 
   const front = shots[0];
@@ -67,6 +73,13 @@ export default function MultiScanScreen() {
       <ScrollView contentContainerStyle={styles.content} showsVerticalScrollIndicator={false}>
         <Text style={styles.title}>Capture 3 angles</Text>
         <Text style={styles.sub}>More angles give a more accurate read. You can also use one photo.</Text>
+
+        {warning && (
+          <View style={styles.warnBox}>
+            <Ionicons name="alert-circle-outline" size={16} color="#D97742" />
+            <Text style={styles.warnText}>{warning}</Text>
+          </View>
+        )}
 
         {/* Progress dots */}
         <View style={styles.dots}>
@@ -125,6 +138,8 @@ const styles = StyleSheet.create({
   content: { paddingHorizontal: 20, paddingBottom: 40 },
   title: { ...typography.h2, fontFamily: fonts.displayBold, marginTop: 4 },
   sub: { ...typography.body2, color: C.textSoft, marginTop: 6, marginBottom: 16 },
+  warnBox: { flexDirection: 'row', alignItems: 'center', gap: 8, backgroundColor: '#FBE9DC', borderRadius: radii.md, padding: 12, marginBottom: 14 },
+  warnText: { flex: 1, fontFamily: fonts.body, fontSize: 13, color: '#A85A2E', lineHeight: 18 },
   dots: { flexDirection: 'row', gap: 8, justifyContent: 'center', marginBottom: 18 },
   dot: { width: 9, height: 9, borderRadius: 5, backgroundColor: C.track },
   dotActive: { backgroundColor: C.pink, transform: [{ scale: 1.2 }] },

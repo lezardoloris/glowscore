@@ -12,6 +12,7 @@ import {
 } from '../src/services/glowPlan';
 import { recommendForQuiz } from '../src/services/recoEngine';
 import { getQuizProfile } from '../src/services/quizProfile';
+import { getScanHistory } from '../src/services/history';
 import { ProductRecoList } from '../src/components/ProductRecoCard';
 import { impactMedium, notificationSuccess } from '../src/services/haptics';
 import { trackScreen, trackPlanViewed, trackTaskCompleted } from '../src/services/analytics';
@@ -31,11 +32,29 @@ const CAT_ORDER: PlanCategory[] = [
   'Skincare', 'Body Care', 'Face Fitness', 'Eyes', 'Makeup', 'Hair', 'Style & Color', 'Lifestyle', 'Glow Habits',
 ];
 
+// A supportive prompt that rotates daily so the plan never looks identical two days running.
+const TODAY_FOCUS = [
+  'SPF first thing, even indoors. It is the single biggest glow habit.',
+  'Front-lit progress selfie today. Future you will love the before and after.',
+  '60 seconds of gua sha, sweeping up toward the ears, to wake up your face.',
+  'Hydrate on slightly damp skin to lock in more moisture.',
+  'Go easy on salty food tonight to wake up less puffy.',
+  'Wear one shade from your best palette and notice how awake you look.',
+  'Consistency over intensity. Tick one small thing and keep the streak alive.',
+];
+function focusOfTheDay(): string {
+  const d = new Date();
+  const dayOfYear = Math.floor((d.getTime() - new Date(d.getFullYear(), 0, 0).getTime()) / 86400000);
+  return TODAY_FOCUS[dayOfYear % TODAY_FOCUS.length];
+}
+
 export default function GlowPlanScreen() {
   const [plan, setPlan] = useState<GlowPlan | null>(null);
   const [streak, setStreak] = useState(0);
   const [loading, setLoading] = useState(true);
   const [recos, setRecos] = useState<ReturnType<typeof recommendForQuiz>>([]);
+  const [currentScore, setCurrentScore] = useState<number | null>(null);
+  const [scoreDelta, setScoreDelta] = useState<number | null>(null);
   const [selectedDay, setSelectedDay] = useState(() => new Date().toISOString().split('T')[0]);
   const weekDays = getCurrentWeekDays();
   const todayKey = new Date().toISOString().split('T')[0];
@@ -43,9 +62,13 @@ export default function GlowPlanScreen() {
   useEffect(() => {
     trackScreen('glow_plan');
     (async () => {
-      const [p, quiz] = await Promise.all([getPlan(), getQuizProfile()]);
+      const [p, quiz, scans] = await Promise.all([getPlan(), getQuizProfile(), getScanHistory()]);
       setPlan(p);
       trackPlanViewed(p?.persona);
+      if (scans.length) {
+        setCurrentScore(scans[0].overall);
+        if (scans.length > 1) setScoreDelta(scans[0].overall - scans[1].overall);
+      }
       setStreak(await getStreak());
       setRecos(recommendForQuiz(quiz, 4));
       setLoading(false);
@@ -101,6 +124,24 @@ export default function GlowPlanScreen() {
       <Text style={styles.eyebrow}>MY GLOW-UP PLAN</Text>
       <Text style={styles.title}>{plan.personaLabel || 'Your Glow-Up'}</Text>
       <Text style={styles.weekLabel}>Week {week}/12 · {getWeekFocus(week)}</Text>
+
+      {currentScore != null && (
+        <View style={styles.scoreRow}>
+          <Text style={styles.scoreRowText}>GlowScore {currentScore}</Text>
+          {scoreDelta != null && scoreDelta !== 0 && (
+            <View style={[styles.deltaPill, { backgroundColor: scoreDelta > 0 ? '#DDF3E4' : '#FBE9DC' }]}>
+              <Text style={[styles.deltaPillText, { color: scoreDelta > 0 ? C.good : '#D97742' }]}>
+                {scoreDelta > 0 ? '+' : ''}{scoreDelta} since last scan
+              </Text>
+            </View>
+          )}
+        </View>
+      )}
+
+      <View style={[styles.focusCard, shadow(1)]}>
+        <Ionicons name="sparkles" size={16} color={C.pink} />
+        <Text style={styles.focusText}><Text style={styles.focusLabel}>Today's focus: </Text>{focusOfTheDay()}</Text>
+      </View>
 
       {/* Day selector M T W T F S S */}
       <View style={styles.dayRow}>
@@ -198,7 +239,14 @@ const styles = StyleSheet.create({
   back: { alignSelf: 'flex-start', marginBottom: 8 },
   eyebrow: typography.eyebrow,
   title: { ...typography.h2, fontFamily: fonts.displayBold, marginTop: 4 },
-  weekLabel: { fontFamily: fonts.bodySemi, fontSize: 14, color: C.pink, marginTop: 6, marginBottom: 14 },
+  weekLabel: { fontFamily: fonts.bodySemi, fontSize: 14, color: C.pink, marginTop: 6, marginBottom: 10 },
+  scoreRow: { flexDirection: 'row', alignItems: 'center', gap: 10, marginBottom: 10 },
+  scoreRowText: { fontFamily: fonts.bodyBold, fontSize: 15, color: C.text },
+  deltaPill: { borderRadius: radii.full, paddingHorizontal: 10, paddingVertical: 3 },
+  deltaPillText: { fontFamily: fonts.bodyBold, fontSize: 12 },
+  focusCard: { flexDirection: 'row', alignItems: 'center', gap: 10, backgroundColor: C.card, borderRadius: radii.lg, padding: 12, marginBottom: 14 },
+  focusText: { flex: 1, fontFamily: fonts.body, fontSize: 13, color: C.textSoft, lineHeight: 18 },
+  focusLabel: { fontFamily: fonts.bodyBold, color: C.text },
 
   dayRow: { flexDirection: 'row', justifyContent: 'space-between', marginBottom: 16 },
   dayChip: {

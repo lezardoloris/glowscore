@@ -4,6 +4,7 @@ import { useState, useEffect } from 'react';
 import { Ionicons } from '@expo/vector-icons';
 import { LinearGradient } from 'expo-linear-gradient';
 import { getOfferings, purchasePackage, purchaseProduct, restorePurchases } from '../src/services/subscription';
+import { getLastScan, ScanRecord } from '../src/services/history';
 import { trackScreen, trackPaywallShown, trackSubscriptionPurchased } from '../src/services/analytics';
 import { impactMedium } from '../src/services/haptics';
 import { CONFIG } from '../src/config';
@@ -21,9 +22,11 @@ export default function PricingScreen() {
   const [purchasing, setPurchasing] = useState(false);
   const [offering, setOffering] = useState<any>(null);
   const [error, setError] = useState<string | null>(null);
+  const [lastScan, setLastScan] = useState<ScanRecord | null>(null);
 
   useEffect(() => { trackScreen('pricing'); trackPaywallShown(); }, []);
   useEffect(() => { getOfferings().then(setOffering); }, []);
+  useEffect(() => { getLastScan().then(setLastScan); }, []);
 
   async function purchase() {
     impactMedium();
@@ -71,6 +74,13 @@ export default function PricingScreen() {
       </Pressable>
 
       <Text style={styles.title}>Unlock your full{'\n'}GlowUp potential</Text>
+
+      {lastScan ? (
+        <View style={[styles.scoreCard, shadow(1)]}>
+          <Text style={styles.scoreNum}>{lastScan.overall}<Text style={styles.scoreOut}> /100</Text></Text>
+          <Text style={styles.scoreLabel}>Your GlowScore. Unlock your personalized plan, your weak-spot fixes and your Maxed-Out Self preview.</Text>
+        </View>
+      ) : null}
 
       <View style={[styles.benefitsCard, shadow(2)]}>
         {BENEFITS.map((feature) => (
@@ -167,7 +177,11 @@ const styles = StyleSheet.create({
     width: 40, height: 40, borderRadius: 20, backgroundColor: C.card,
     alignItems: 'center', justifyContent: 'center', ...shadow(1),
   },
-  title: { ...typography.h1, fontFamily: fonts.displayBold, textAlign: 'center', marginTop: 8, marginBottom: 20 },
+  title: { ...typography.h1, fontFamily: fonts.displayBold, textAlign: 'center', marginTop: 8, marginBottom: 16 },
+  scoreCard: { backgroundColor: C.card, borderRadius: radii.xl, padding: 16, alignItems: 'center', marginBottom: 16 },
+  scoreNum: { fontFamily: fonts.displayBold, fontSize: 40, color: C.pink },
+  scoreOut: { fontFamily: fonts.body, fontSize: 15, color: C.textSoft },
+  scoreLabel: { fontFamily: fonts.body, fontSize: 13, color: C.textSoft, textAlign: 'center', marginTop: 4, lineHeight: 18 },
   benefitsCard: {
     backgroundColor: C.card, borderRadius: radii.xl, padding: 18, gap: 12, marginBottom: 22,
   },

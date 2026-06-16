@@ -84,6 +84,16 @@ const STYLE_PRESETS: Record<string, { prompt: string; negative_prompt: string; i
 // Gemini Nano Banana prompts per style (identity-preserving img2img). Keys here
 // route through callGeminiGlowup instead of fal.ai when GEMINI_API_KEY is set.
 const GEMINI_PROMPTS: Record<string, string> = {
+  clear_skin:
+    "Show this exact same person with visibly clearer, smoother skin: even out skin tone, calm redness, " +
+    "reduce blemishes, acne and rough texture, keep pores looking natural, add a healthy hydrated glow. " +
+    "Fully preserve identity, ethnicity, gender, face shape, nose and eye shape. Do NOT lighten the skin tone, " +
+    "do NOT change bone structure or face shape. Strictly photorealistic, soft natural light, 4K raw photo.",
+  model_look:
+    "Restyle this exact same person as a polished high-fashion editorial portrait: flattering studio light, " +
+    "refined clear skin, subtle professional makeup, elegant styling. Fully preserve identity, ethnicity, " +
+    "gender, face shape and features. No skin lightening, no bone-structure changes. Strictly photorealistic, " +
+    "recognizably the same person, 4K raw photo.",
   destress:
     "Show this exact same person after a week of consistent lymphatic drainage and lower stress. " +
     "Reduce facial puffiness and water retention, de-puff the under-eyes and soften dark circles, " +
